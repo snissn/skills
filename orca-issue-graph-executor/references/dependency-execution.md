@@ -117,7 +117,7 @@ A node can be declared mergeable only when:
 - the branch is rebased/updated onto the final intended base;
 - required tests/benchmarks were rerun after that update;
 - PR body and comments no longer rely on speculative predecessor facts;
-- latest-head CI and AI reviews are green/resolved;
+- latest-head CI and AI reviews are green/resolved, and AI reviews were requested only after the PR reached a mature reviewable head;
 - coordinator final review passes.
 
 Merge in topological order. If two nodes are independent, either may merge first after their own gates pass.

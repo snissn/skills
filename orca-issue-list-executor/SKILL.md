@@ -106,6 +106,7 @@ Give the manager:
 - required conformance/compatibility checks for generic substrate changes;
 - instruction to produce a subtask plan before broad implementation;
 - instruction to report PR URL, branch, latest head SHA, checks, AI review status, tests, benchmarks, and blockers.
+- instruction not to request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviews until the PR has coherent code, focused tests, required benchmark evidence or an explicit not-applicable rationale, an accurate PR body/status comment, no known local blockers, and latest-head CI running or green.
 
 ### 2. Monitor manager progress
 
@@ -181,7 +182,7 @@ Require the manager to:
 - fix or explicitly reject each finding with rationale;
 - rerun required tests/benchmarks, including identical before/after benchmarks for any performance-sensitive fix;
 - update PR body/comments;
-- re-request AI review if meaningful code changed;
+- re-request AI review if meaningful code changed, but only after the PR is mature again and no known local blocker remains;
 - return a fresh mergeability handoff.
 
 Repeat coordinator final review until pass.

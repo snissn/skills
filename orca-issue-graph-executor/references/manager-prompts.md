@@ -36,8 +36,9 @@ Your tasks:
 4. Implement only this issue's scope.
 5. Drive review/fix loops and PR readiness using github-pr-mergeable.
 6. Treat material performance regressions as blockers: profile, optimize, rerun identical before/after evidence, and do not claim mergeability unless eliminated or explicitly accepted by the coordinator/user.
-7. Do not merge directly unless the coordinator explicitly delegates merge authority.
-8. Return handoffs at these milestones:
+7. Do not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviews until the PR is mature: coherent code pushed, focused tests and required benchmarks run or explained, PR body/status evidence current, no known local blockers, and latest-head CI running or green.
+8. Do not merge directly unless the coordinator explicitly delegates merge authority.
+9. Return handoffs at these milestones:
    - implementation plan complete;
    - PR opened;
    - dependency-ready candidate, if public contract is stable;
@@ -57,6 +58,7 @@ Final handoff must include:
 - tests/benchmarks with exact commands and before/after regression assessment;
 - CI status;
 - AI review status;
+- confirmation that AI reviews were not requested until the PR was mature enough to avoid review-credit churn;
 - unresolved threads/blockers;
 - mergeability statement.
 ```
@@ -105,7 +107,7 @@ Your tasks:
 4. Implement against the snapshot with minimal churn.
 5. Keep PR draft/WIP or clearly marked blocked if opened before predecessors merge.
 6. Report any predecessor contract mismatch immediately.
-7. After predecessor merge, rebase/update to final base, rerun required tests/benchmarks, resolve any material performance regression by profiling/optimization or explicit coordinator/user acceptance, update PR body, and only then request final mergeability review.
+7. After predecessor merge, rebase/update to final base, rerun required tests/benchmarks, resolve any material performance regression by profiling/optimization or explicit coordinator/user acceptance, update PR body, and only then request AI review/final mergeability review.
 
 Handoff requirements:
 - current blocked/unblocked state;
@@ -148,7 +150,7 @@ Required response:
 - fix or explicitly reject each finding with rationale;
 - rerun required tests/benchmarks; profile and optimize any material regression before claiming mergeability;
 - update PR body/comments;
-- request AI review again if meaningful code changed;
+- request AI review again if meaningful code changed, but only after the PR is mature again and no known local blocker remains;
 - return a fresh mergeability handoff with latest head SHA and CI/review state.
 
 Do not merge directly unless the coordinator explicitly delegates merge authority.

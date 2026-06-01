@@ -1,4 +1,4 @@
 interface:
   display_name: "GitHub Tracker Issue"
-  short_description: "Create #1646-style GitHub tracker issues"
-  default_prompt: "Use $gh-tracker-issue to create or update a GitHub tracker issue with clear goal, boundaries, milestones, tests, benchmarks, PR process, and completion criteria."
+  short_description: "Create repo-aware GitHub tracker issues"
+  default_prompt: "Use $gh-tracker-issue to create or update a repo-aware GitHub tracker issue with clear goal, boundaries, milestones, tests, benchmarks, branch/PR process, mature-PR-gated AI review requirements, and completion criteria."

@@ -1,4 +1,4 @@
 interface:
   display_name: "GitHub PR Mergeable"
-  short_description: "Drive PRs through mergeable gates and merge when authorized/default"
-  default_prompt: "Use $github-pr-mergeable to make a GitHub PR or PR stack mergeable and merge by default when acting as coordinator after gates pass: latest-head CI, tests, benchmarks, and AI review resolution."
+  short_description: "Drive PRs through repo-aware mergeable gates"
+  default_prompt: "Use $github-pr-mergeable to make a GitHub PR or PR stack mergeable under repo policy: latest-head CI, tests, benchmarks when relevant, PR description quality, and Codex/Copilot/CodeRabbit review resolution. Request AI reviews only after the PR is mature enough to avoid review-credit churn. Merge only when repo policy and user authorization permit."

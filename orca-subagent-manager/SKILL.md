@@ -131,7 +131,8 @@ Use a single subtask worktree when the issue only needs one implementation chunk
 7. **Mergeable closeout**
    - Load and follow `/skill:github-pr-mergeable` or read the skill directly.
    - Ensure latest-head CI is green or explicitly non-blocking with evidence.
-   - Request Codex, Copilot, and CodeRabbit reviews where available, resolve findings, and rerun after meaningful pushes.
+   - Request Codex, Copilot, and CodeRabbit reviews where available only after the PR is mature enough to avoid review-credit churn: coherent code, focused tests, required benchmark evidence or rationale, accurate PR body/status evidence, no known local blockers, and latest-head CI running or green.
+   - Resolve findings, and rerun after meaningful pushes only after the PR is mature again.
    - Update PR body/comment with exact tests, benchmarks, counters, risks, and unresolved deferrals.
    - Do not merge directly unless the coordinator explicitly delegates merge authority.
 

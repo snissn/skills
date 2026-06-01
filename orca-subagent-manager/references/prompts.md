@@ -23,7 +23,7 @@ Your responsibilities:
 5. Run execution -> review -> fix loops until each chunk passes review.
 6. Integrate accepted changes into your manager branch and own final tests/benchmarks/docs/PR body.
 7. Treat any material benchmark/storage/rebuild/allocation regression as a blocker: profile, optimize, rerun identical before/after evidence, and do not claim mergeability unless the regression is eliminated or explicitly accepted by the coordinator/user.
-8. Drive the resulting PR to mergeable state: latest-head CI, AI reviews, resolved findings, evidence current.
+8. Drive the resulting PR to mergeable state: latest-head CI, mature-PR-gated AI reviews, resolved findings, evidence current. Do not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviews until coherent code is pushed, focused tests and required benchmarks are run or explained, PR body/status evidence is current, no known local blockers remain, and latest-head CI is running or green.
 
 Return first with the subtask plan and dispatch commands/prompts. Do not start broad implementation until the plan is clear.
 ```
@@ -87,7 +87,7 @@ Return:
 ```text
 You are the finalizer for manager issue #<issue>.
 
-Load /skill:github-pr-mergeable. Integrate only reviewed subtask changes, resolve conflicts, run final validation, update PR body/issue evidence, request AI reviews, and drive the PR to mergeable state. Treat performance regressions as blocking until optimized or explicitly accepted. Do not merge directly unless the coordinator explicitly delegates merge authority.
+Load /skill:github-pr-mergeable. Integrate only reviewed subtask changes, resolve conflicts, run final validation, update PR body/issue evidence, then request AI reviews only after the mature-PR gate is satisfied. Drive the PR to mergeable state. Treat performance regressions as blocking until optimized or explicitly accepted. Do not merge directly unless the coordinator explicitly delegates merge authority.
 
 Return an evidence-backed final report with latest-head CI, AI review status, tests/benchmarks, PR URL, remaining risks/deferrals, and worktrees created.
 ```

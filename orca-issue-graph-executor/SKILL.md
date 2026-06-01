@@ -49,6 +49,7 @@ If dependency edges are ambiguous, ask a concise clarifying question before disp
 - Managers must keep context bounded: write long logs/diffs/review transcripts and benchmark output to artifact files and summarize them instead of pasting or streaming large terminal output into Pi context.
 - Coordinator must not silently take over manager-owned implementation/finalization work. If a manager stalls, overflows, or loses context, either unstick that manager with a concise prompt or replace it with a fresh manager instance using an artifact-backed handoff.
 - Managers must not merge unless the coordinator explicitly delegates merge authority. Coordinator merge rules from `/skill:orca-issue-list-executor` still apply, with default merge intent after gates pass.
+- Managers must not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviews until a PR is mature enough to avoid review-credit churn: coherent code, focused tests, required benchmark evidence or rationale, current PR body/status evidence, no known local blockers, and latest-head CI running or green.
 - Before spawning managers, produce a graph/execution plan and pause for user approval unless the user has already explicitly authorized immediate execution.
 - Cross-cutting format, API, or shared-hot-path changes require a design/contract gate before parallel implementation proceeds.
 - Material performance regressions from a PR’s own changes are graph-level blockers: the node stays `fix-needed`/blocked until optimized away or explicitly accepted by the coordinator/user with evidence.
@@ -176,7 +177,7 @@ Before declaring any PR mergeable, and especially a dependent PR:
 - dependent branch is rebased/updated onto the merged base;
 - focused tests/benchmarks are rerun after that update;
 - PR body reflects final predecessor facts, not speculative snapshots;
-- CI/reviews are latest-head and no blocking threads remain.
+- CI/reviews are latest-head, AI reviews were requested only after the final mature head was ready for review, and no blocking threads remain.
 
 Merge in topological order. If a descendant reaches implementation completion early, keep it blocked as `mergeable-candidate` until predecessors merge and final revalidation passes.
 

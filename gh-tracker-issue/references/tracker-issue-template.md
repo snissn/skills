@@ -1,4 +1,4 @@
-# #1646-Style Tracker Issue Template
+# GitHub Tracker Issue Template
 
 Use this as a structure guide. Keep sections that matter for the requested workstream and remove sections that do not.
 
@@ -13,8 +13,8 @@ Land <capability/substrate> for <product/workstream>
 Examples:
 
 ```text
-Land TreeDB column-store-native vector graph search
-Land shared mmap-backed column-store views for native vector graph search
+Land browser WASM KZG optimization for no-local-helper uploads
+Land shared cache invalidation for API read paths
 ```
 
 ## Body Structure
@@ -34,8 +34,10 @@ List current branches, PRs, commits, profiles, benchmark artifacts, issue links,
 
 Use tables for benchmark evidence:
 
-| Benchmark | Workers | ns/op | ops/sec | B/op | allocs/op |
-| --- | ---: | ---: | ---: | ---: | ---: |
+| Benchmark | Baseline | Candidate | Delta | Notes |
+| --- | ---: | ---: | ---: | --- |
+
+Use the metrics that fit the workstream. Examples: wall time, per-unit latency, throughput, memory footprint, allocation count, storage footprint, rebuild time, browser responsiveness, or domain-specific counters.
 
 ## Current State
 
@@ -61,6 +63,17 @@ Describe the intended order and what blocks later milestones.
 
 Identify adjacent PRs, issues, agents, branches, or modules and which files/areas each lane owns.
 
+## Branch And PR Policy
+
+State the repo-specific policy discovered from `AGENTS.md`, `CONTRIBUTING.md`, PR templates, or equivalent files.
+
+- [ ] Work must happen on a topic branch unless repo policy says otherwise.
+- [ ] Direct pushes to protected/default branches are prohibited unless explicitly authorized by repo policy and the user.
+- [ ] PRs must be mergeable before merge: latest-head CI, focused tests, benchmark evidence when relevant, and AI/code-review findings resolved or explicitly rejected with rationale.
+- [ ] Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviews are requested only after the PR is mature enough to avoid review-credit churn: coherent code, focused tests, required benchmark evidence or rationale, current PR body/status evidence, no known local blockers, and latest-head CI running or green.
+- [ ] Human approval or maintainer approval requirement is stated when required by repo policy.
+- [ ] Self-merge policy is stated when relevant.
+
 ## Required PR Body Sections
 
 - [ ] Linked tracker issue and milestone.
@@ -69,8 +82,8 @@ Identify adjacent PRs, issues, agents, branches, or modules and which files/area
 - [ ] Close-phase test evidence.
 - [ ] Close-phase benchmark evidence.
 - [ ] Performance regression assessment: any material regression is blocking until optimized away or explicitly accepted with evidence.
-- [ ] Markdown benchmark table with `ns/op`, `ops/sec`, `B/op`, `allocs/op`, and relevant counters.
-- [ ] Setup/decode/search/doc-fetch timing boundary.
+- [ ] Markdown benchmark table with domain-appropriate before/after metrics and relevant counters.
+- [ ] Measurement boundary: what is timed and what is excluded.
 - [ ] AI review status and unresolved thread summary.
 
 ## Per-PR Test And Performance Workflow
@@ -93,7 +106,7 @@ Close phase:
 - [ ] Re-run relevant benchmarks.
 - [ ] Compare before/after throughput and allocations.
 - [ ] Treat material regressions as blocking: profile, optimize, rerun, and do not merge unless eliminated or explicitly accepted as minimized/correctness-required.
-- [ ] Request iterative AI reviews until passing or intentionally resolved.
+- [ ] Request iterative AI reviews only after the PR is mature, then repeat after meaningful fixes until passing or intentionally resolved.
 
 ## CI Backlog Directive
 
@@ -204,14 +217,13 @@ Define the standard benchmark matrix. Include:
 - [ ] Dataset shape.
 - [ ] What is timed.
 - [ ] What is excluded from the timer.
-- [ ] `ns/op`.
-- [ ] `ops/sec`.
-- [ ] `B/op`.
-- [ ] `allocs/op`.
+- [ ] Runtime or latency metrics.
+- [ ] Throughput metrics where relevant.
+- [ ] Memory, allocation, or footprint metrics where relevant.
 - [ ] Relevant domain counters.
 - [ ] Profile artifact paths when profiles are collected.
 
-Regression gate: if the candidate is materially worse in runtime, throughput, allocations, storage/rebuild overhead, or relevant counters, the issue/PR remains incomplete until the team profiles and optimizes the changed path. A remaining regression needs explicit coordinator/user acceptance, a clear correctness or scope rationale, and updated evidence.
+Regression gate: if the candidate is materially worse in runtime, throughput, latency, memory, allocations, storage/rebuild overhead, browser responsiveness, or relevant counters, the issue/PR remains incomplete until the team profiles and optimizes the changed path. A remaining regression needs explicit coordinator/user acceptance, a clear correctness or scope rationale, and updated evidence.
 
 ## Tests
 
@@ -234,7 +246,7 @@ State evidence required before closing the tracker:
 - [ ] Required benchmarks are recorded.
 - [ ] No unaccepted material performance regression remains.
 - [ ] Current evidence proves the goal, not just a subset.
-- [ ] PRs are mergeable: latest-head CI green and AI reviews passing/resolved.
+- [ ] PRs are mergeable under the repo policy: latest-head CI green, required tests pass, benchmark evidence is posted when relevant, and AI/code-review findings are passing, resolved, or explicitly rejected with rationale.
 - [ ] Docs/examples are updated when user-facing behavior changed.
 
 ## Deferred Follow-Ups

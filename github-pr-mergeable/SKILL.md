@@ -1,11 +1,33 @@
 ---
 name: "github-pr-mergeable"
-description: "Drive one or more GitHub pull requests through mergeable readiness and merge by default when coordinator-owned and gates pass: deep review, test/benchmark coverage, PR description quality, latest-head CI, AI review resolution, and optional merge execution."
+description: "Drive one or more GitHub pull requests through mergeable readiness, and merge only when repo policy and user authorization permit: deep review, test/benchmark coverage, PR description quality, latest-head CI, AI review resolution, and optional merge execution."
 ---
 
 # GitHub PR Mergeable Loop
 
-Use this skill when the user asks to make PRs mergeable, stabilize PRs, resolve reviews, get CI green, prepare a PR stack for review, or ensure Codex/Copilot/CodeRabbit are passing. Default assumption: the user wants eligible PRs merged after they satisfy the mergeable gate, unless the user explicitly says **do not merge** or the agent is acting as a non-coordinator subagent.
+Use this skill when the user asks to make PRs mergeable, stabilize PRs, resolve reviews, get CI green, prepare a PR stack for review, or ensure Codex/Copilot/CodeRabbit are passing.
+
+Default assumption: make eligible PRs mergeable. Merge execution is allowed only when repo policy permits it and the user has authorized merge execution, either explicitly in the current request or through a repo/workstream rule that clearly delegates it. If repo policy requires human approval, prohibits self-merge, or says agents must not merge, stop at mergeable evidence and hand off.
+
+## Policy Audit First
+
+Before merge-related action, inspect repo-local policy when available:
+
+- `AGENTS.md`;
+- `CONTRIBUTING.md`;
+- PR templates;
+- branch protection or merge policy docs;
+- tracker issues or roadmap docs named by the user.
+
+Repo-local rules override this skill. If policy and user instructions conflict, follow the stricter/no-merge interpretation unless the user explicitly authorizes a documented exception.
+
+## Operating Modes
+
+- `readiness-only`: make the PR or stack objectively mergeable, but do not merge.
+- `mergeable-with-human-approval`: make the PR or stack mergeable and clearly state that human approval/merge is required.
+- `coordinator-merge`: make and merge PRs only when repo policy allows agent/coordinator merge and the user has authorized it.
+
+If the mode is ambiguous, default to `readiness-only`.
 
 ## Definition Of Mergeable
 
@@ -16,7 +38,7 @@ A PR is mergeable only when current evidence proves:
 - code has had an internal deep review for correctness, drift, complexity, and tests;
 - tests cover the behavior changed by the PR;
 - performance-sensitive changes include relevant benchmark evidence in the PR body or a PR comment, and do **not** show an unaccepted material regression;
-- Codex, Copilot, and CodeRabbit reviews have been requested after meaningful pushes where available;
+- Codex, Copilot, and CodeRabbit reviews have been requested only after the PR is mature enough to avoid review-credit churn, and after meaningful pushes where available;
 - AI review findings are fixed or explicitly rejected with rationale;
 - review threads are commented on and marked resolved where the platform supports resolution;
 - PR description accurately states scope, tests, benchmarks, risks, and remaining caveats.
@@ -30,9 +52,9 @@ For any PR that touches a hot path, storage/read/write path, cache, search, deco
 A regression includes worse `ns/op`, `ops/sec`, `B/op`, `allocs/op`, rebuild/storage overhead, latency sub-timers, or domain counters caused by the PR’s own code. When evidence shows a regression:
 
 1. Mark the PR **not mergeable / performance-blocked** in the handoff or PR comment.
-2. Profile and optimize the changed path before merging; remove avoidable extra work, allocations, copies, I/O, locks, scans, or setup inside the measured boundary.
+2. Profile and optimize the changed path before mergeability can be claimed; remove avoidable extra work, allocations, copies, I/O, locks, scans, or setup inside the measured boundary.
 3. Rerun the identical before/after benchmark matrix on the latest head and update the PR evidence.
-4. Merge only if the regression is eliminated, or if the remaining regression is proven correctness-required/unavoidable, minimized, explicitly documented with impact and profiles, and accepted by the coordinator/user.
+4. Claim mergeability only if the regression is eliminated, or if the remaining regression is proven correctness-required/unavoidable, minimized, explicitly documented with impact and profiles, and accepted by the coordinator/user.
 
 Do not normalize regressions as “expected overhead” without this investigation and explicit acceptance.
 
@@ -88,7 +110,7 @@ Report exact commands and outcomes in the PR body or comment.
 
 If the PR touches a hot path, storage/read path, cache, search, decode, query, serialization, or materialization path, include benchmark evidence.
 
-Benchmark comments/descriptions should include:
+Benchmark comments/descriptions should include domain-appropriate metrics. For Go/Rust microbenchmarks this often includes:
 
 - exact command;
 - hardware/context if known;
@@ -101,7 +123,7 @@ Benchmark comments/descriptions should include:
 - `allocs/op`;
 - relevant domain counters such as rows/s, queries/s, bytes read, cache hits/misses, candidates/search, edges/search, or docs fetched.
 
-Use markdown tables. Always include `ops/sec` when reporting `ns/op`.
+Use markdown tables. Always include `ops/sec` when reporting `ns/op`. For other domains, use metrics that match the claimed improvement, such as wall time, per-unit latency, p95/p99, memory footprint, bundle size, browser responsiveness, GPU/CPU utilization, or per-stage timing.
 
 Do not optimize unrelated upstream cost inside every PR, but do not accept local regressions from the PR’s own code. If performance drops after review fixes, identify the change that caused it, whether it was correctness-required, and whether local CPU/memcopy/allocation overhead can be removed. A PR with an unexplained or avoidable material regression is not mergeable even if CI and AI reviews are green.
 
@@ -125,9 +147,23 @@ gh run watch <RUN_ID> --repo <OWNER>/<REPO>
 
 Cancel only stale/non-head runs unless the user explicitly authorizes broader cleanup. Do not cancel the only active CI for a PR head unless you are about to push or have already pushed a newer head.
 
+## Mature PR Before AI Review
+
+Do not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviewers merely because a PR exists. First make the PR mature enough that the requested review is likely to inspect the intended final shape:
+
+- coherent code for the scoped issue is pushed;
+- focused tests and required benchmarks have run, or the PR body states why a required benchmark is not yet applicable;
+- the PR body or status comment includes current scope, tests, benchmark evidence, known risks, and non-goals;
+- internal deep review has found no known blocking correctness, performance, CI, or scope issues;
+- latest-head CI is running or already green for the head that should be reviewed.
+
+If a later meaningful push changes code, benchmarks, or review-relevant behavior, restore this maturity gate before re-requesting AI review. Do not churn AI review credits across half-formed intermediate heads, speculative stack propagation, or PRs with known local blockers.
+
 ## AI Review Loop
 
-After meaningful pushes and before final mergeable claim, request reviews from configured AI reviewers.
+After meaningful pushes, after the maturity gate above is satisfied, and before final mergeable claim, request reviews from configured AI reviewers.
+
+Default assumption: Codex, Copilot, and CodeRabbit should be requested when available. If one of these bots is unavailable in the repo, say so explicitly and continue with the available reviewers.
 
 Use the repo’s established commands when known. Common pattern:
 
@@ -198,7 +234,7 @@ Ensure the PR body or a final status comment includes:
 - CI status for latest head;
 - AI review status for Codex, Copilot, and CodeRabbit;
 - known caveats or intentionally deferred work;
-- merge intent/status: merged by coordinator, pending merge, or intentionally not merged with reason.
+- merge intent/status: mergeable handoff, pending human approval, merged by authorized coordinator, or intentionally not merged with reason.
 
 For stacked PRs, also include base PR/branch, dependency order, and whether downstream PRs need rebasing after changes.
 
@@ -233,10 +269,10 @@ Preferred batch workflow:
 4. If the fix affects descendants, merge/rebase it into a bounded downstream batch.
 5. Push downstream batch heads.
 6. Cancel stale non-head CI runs.
-7. Request/re-request AI reviews only after each PR has the coherent latest head that reviewers should inspect.
+7. Request/re-request AI reviews only after each PR has the mature, coherent latest head that reviewers should inspect.
 8. Watch CI/reviews while doing non-conflicting work on the next bounded batch.
 
-When acting as the coordinator and the user has not opted out, merge PRs after the Definition Of Mergeable is satisfied. When acting as a manager/subagent, do not merge directly unless the coordinator explicitly delegates that authority; hand off mergeable evidence to the coordinator.
+Merge only when the selected operating mode is `coordinator-merge`, repo policy permits it, and the user has authorized it. Otherwise, do not merge directly; hand off mergeable evidence to the coordinator or human reviewer.
 
 ## Final Response
 
