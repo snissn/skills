@@ -1,0 +1,4 @@
+interface:
+  display_name: "PolyStore Deck Polish"
+  short_description: "Finalize PolyStore deck UI consistency"
+  default_prompt: "Use $polystore-deck-polish to polish the PolyStore deck UI so pagination, footers, typography, templates, and dark/light image elements feel final and consistent."
