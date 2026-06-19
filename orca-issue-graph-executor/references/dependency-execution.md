@@ -47,6 +47,29 @@ L1 = nodes whose predecessors are all in earlier layers
 
 Start all nodes in a layer that have no unready predecessor, subject to max parallelism. Descendants may start before predecessor merge only when all direct predecessors are `dependency-ready`.
 
+## Flexible Scheduling Modes
+
+Use the least parallel scheduling mode that still saves useful wall time:
+
+| Mode | Use when | Start rule |
+| --- | --- | --- |
+| `strict-serial` | Every issue depends on merged facts or shared files churn heavily. | Start a dependent only after predecessors merge. |
+| `layer-parallel` | Multiple nodes are independent and low-conflict. | Start ready topological-layer nodes up to `max_parallel_managers`. |
+| `pipelined` | A mostly serial chain can overlap finalization with the next implementation. | Start one or more successors after predecessors reach `dependency-ready`, but keep them blocked before final review/merge. |
+| `adaptive` | The graph mixes independent roots and high-overlap chains. | Use layer parallelism for independent nodes and bounded pipelining for chains. |
+
+Recommended conservative pipeline defaults:
+
+```yaml
+scheduling_mode: pipelined
+max_parallel_managers: 2
+max_speculative_successors_per_chain: 1
+max_speculative_depth: 1
+dependency_ready_starts_allowed: true
+```
+
+These defaults allow exactly the common pattern: one predecessor PR is in CI/review/final polish while one direct successor starts implementation from a dependency-ready contract snapshot. Increase speculative depth or successor count only when contract churn risk is low and the manifest records why.
+
 ## Node States
 
 | State | Meaning | May unblock descendants? | May be mergeable? |
@@ -81,11 +104,21 @@ A descendant started before predecessor merge must be treated as speculative:
 - branch/PR title should make blocked status obvious when practical;
 - PR can be draft or WIP;
 - manager may implement and run local tests against a contract snapshot;
-- manager must not claim final mergeability;
+- manager must not claim final mergeability, request final AI review, or request merge;
 - coordinator must not merge it;
 - final rebase/revalidation after predecessor merge is mandatory.
 
 For multiple predecessors, start the descendant only when all direct predecessors are dependency-ready, unless the user explicitly authorizes partial speculative work.
+
+Before starting a speculative descendant, verify the pipeline window:
+
+- running manager count is below `max_parallel_managers`;
+- unmerged descendant count on that chain is below `max_speculative_successors_per_chain`;
+- speculative distance from the nearest merged base is no greater than `max_speculative_depth`;
+- predecessor handoff says public contract churn is unlikely;
+- no open review, benchmark, or format findings are likely to invalidate the consumed contract.
+
+If any check fails, leave the node `pending` or `blocked` and record the reason instead of starting it.
 
 ## Sync Windows
 
@@ -130,7 +163,11 @@ Recommended execution manifest fields:
 repo: owner/name
 base_ref: origin/main
 merge_authorized: true|false|scope
+scheduling_mode: strict-serial|layer-parallel|pipelined|adaptive
 max_parallel_managers: N
+max_speculative_successors_per_chain: N
+max_speculative_depth: N
+dependency_ready_starts_allowed: true|false
 nodes:
   123:
     title: ...

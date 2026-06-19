@@ -1,6 +1,6 @@
 ---
 name: orca-issue-graph-executor
-description: "Execute a dependency graph of GitHub issues with Orca Pi subagent managers: infer ticket dependencies, run independent layers in parallel, start blocked downstream work once predecessors are dependency-ready, and enforce predecessor merges before dependent mergeability."
+description: "Execute a flexible dependency graph of GitHub issues with Orca Pi subagent managers: infer ticket dependencies, run independent layers in parallel, pipeline one or more speculative successors once predecessors are dependency-ready, and enforce predecessor merges before dependent mergeability."
 ---
 
 # Orca Issue Graph Executor
@@ -36,6 +36,7 @@ Do not use this skill when:
 - Explicit dependency constraints, if the user has them.
 - Merge opt-out status, if any. Default assumption is that the user wants mergeable PRs merged.
 - Maximum parallel manager count, if the user wants a limit.
+- Scheduling mode/pipeline window, if relevant: `strict-serial`, `layer-parallel`, `pipelined`, or `adaptive`, plus max speculative successors/depth.
 - Current base branch/ref and Orca parent worktree.
 
 If dependency edges are ambiguous, ask a concise clarifying question before dispatching managers. Do not ask for merge authorization unless the user’s merge intent is explicitly unclear or contradictory; default intent is merge after gates pass.
@@ -47,6 +48,8 @@ If dependency edges are ambiguous, ask a concise clarifying question before disp
 - Downstream speculative managers must know they are blocked on predecessor merge and must treat predecessor contracts as snapshots, not final facts.
 - Avoid continuous churn: propagate upstream changes to descendants only at defined sync windows or when a public contract/blocker changes.
 - Managers must keep context bounded: write long logs/diffs/review transcripts and benchmark output to artifact files and summarize them instead of pasting or streaming large terminal output into Pi context.
+- Coordinator must actively run the graph loop while any manager is `running`: poll manager terminals and git/PR state, classify progress, unstick or recover stalled managers, update the manifest, and repeat until each active node reaches `dependency-ready`, `mergeable-candidate`, `merged`, or `blocked/fix-needed`.
+- Coordinator must not treat "manager spawned/running" as a stopping condition unless the user explicitly asks to pause. A response to the user while managers remain active must state the coordinator loop is continuing and must include the next poll/recovery action.
 - Coordinator must not silently take over manager-owned implementation/finalization work. If a manager stalls, overflows, or loses context, either unstick that manager with a concise prompt or replace it with a fresh manager instance using an artifact-backed handoff.
 - Managers must not merge unless the coordinator explicitly delegates merge authority. Coordinator merge rules from `/skill:orca-issue-list-executor` still apply, with default merge intent after gates pass.
 - Managers must not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviews until a PR is mature enough to avoid review-credit churn: coherent code, focused tests, required benchmark evidence or rationale, current PR body/status evidence, no known local blockers, and latest-head CI running or green.
@@ -90,20 +93,25 @@ Produce a concise execution plan and stop before spawning managers unless the us
 
 - inferred dependency graph and layers;
 - conflict/contract risk table;
-- proposed parallel batches and max concurrency;
+- scheduling mode: `strict-serial`, `layer-parallel`, `pipelined`, or `adaptive`;
+- proposed parallel batches, max concurrency, max speculative successors per chain, and max speculative depth;
 - which issues, if any, will start speculatively and what they are blocked on;
 - merge order and final revalidation gates;
 - expected churn risks and sync windows.
 
 Ask for one of: approve execution, revise graph, force serial execution, or stop.
 
-### 5. Dispatch ready layers in parallel
+### 5. Dispatch ready work according to the scheduling mode
 
 For each approved ready issue, spawn an isolated xhigh manager using the manager spawn pattern from `/skill:orca-issue-list-executor`.
 
 - Independent roots use the current intended base, usually latest `origin/main`.
+- `strict-serial`: start the next dependent only after predecessor merge.
+- `layer-parallel`: start all ready independent nodes in topological layers, subject to max parallelism.
+- `pipelined`: allow a bounded successor window, commonly one predecessor in finalization plus one speculative descendant.
+- `adaptive`: use `layer-parallel` for independent low-conflict nodes and `pipelined` for high-overlap dependency chains.
 - Speculative dependents use the most stable predecessor contract snapshot available and are explicitly marked blocked.
-- Apply max parallelism if requested; otherwise use a conservative number of concurrent managers and report it.
+- Apply max parallelism, max speculative successors per chain, and max speculative depth from the manifest; otherwise use a conservative number and report it.
 
 Prompt managers with the templates in [manager prompts](references/manager-prompts.md). Require managers to load:
 
@@ -131,16 +139,57 @@ A predecessor becomes **dependency-ready** only when its public contract is stab
 
 Dependency-ready is not mergeable. It only permits blocked descendants to start speculative work.
 
+### 6.5. Active coordinator poll loop
+
+While any issue manager is in `running` state, the coordinator must run an active poll loop instead of passively waiting or ending the turn after dispatch.
+
+Poll cadence:
+
+- Active implementation/review loop: poll each running manager at least every 2-5 minutes when the coordinator is active in the conversation.
+- CI-only wait: poll PR checks/reviews at least every 10-15 minutes, or sooner when GitHub/webhook output indicates progress.
+- Long benchmark/profile runs: record the command, host, artifact directory, expected duration, and poll the process/artifact status at a documented interval appropriate to the run.
+
+Each poll must collect and classify:
+
+- terminal status, latest output cursor/tail, and whether the manager is idle, working, waiting on CI/benchmark, blocked, or requesting input;
+- local worktree state: `git status --short`, branch, recent commits, and whether expected files/tests changed;
+- PR state if one exists: head SHA, draft/ready state, mergeability, CI, reviews, unresolved threads, and PR body/evidence freshness;
+- current node state and the next expected transition;
+- manifest changes needed for new commits, PRs, artifacts, blockers, or state transitions.
+
+Coordinator loop:
+
+```text
+poll running managers -> classify progress -> update manifest ->
+if progress continues: schedule next poll
+if input needed: answer or route to user
+if idle/stalled: send concise unstick prompt
+if still stalled after recovery window: replace/recover manager
+if dependency-ready/mergeable/blocked: apply graph gate and proceed
+```
+
+Stall handling:
+
+- If a manager is idle with no git/PR/test progress for two consecutive active polls, or roughly 10-15 minutes during an expected implementation phase, send an unstick prompt asking for a concise status, current blocker, and next concrete command/edit.
+- If there is still no useful progress after the next poll window, follow Manager continuity and recovery: save facts to the manifest, then restart or replace the manager rather than letting the graph sit idle.
+- If the manager is only passively watching CI or a long benchmark and has documented the wait condition, do not treat it as stalled; poll the external condition instead.
+
 ### 7. Start downstream speculative work
 
-When all direct predecessors of an issue are dependency-ready, start that issue's manager even if predecessors are not merged, unless doing so would cause high churn or require unresolved product decisions.
+When all direct predecessors of an issue are dependency-ready, start that issue's manager even if predecessors are not merged, unless doing so would cause high churn, exceed the configured pipeline window, or require unresolved product decisions.
+
+Pipeline controls:
+
+- `max_speculative_successors_per_chain`: maximum unmerged descendants that may be running behind a dependency-ready predecessor on a single chain. Use `1` for the common "one next PR while the blocker finalizes" pattern.
+- `max_speculative_depth`: how many unmerged edges may separate a speculative node from the nearest merged base. Use `1` for conservative stacks; increase only for stable contracts and low conflict risk.
+- `dependency_ready_starts_allowed`: set false to temporarily freeze downstream starts when reviews/benchmarks may still change a public contract.
 
 The downstream prompt must include:
 
 - predecessor issue/PR URLs and head SHAs;
 - contract snapshot it may rely on;
-- explicit blocked status;
-- instruction not to claim mergeability or request final merge until predecessors merge;
+- explicit blocked status and pipeline window limits;
+- instruction not to claim mergeability, request final AI review, or request final merge until predecessors merge;
 - sync policy and revalidation requirements after predecessor merges.
 
 ### 8. Manager continuity and recovery
@@ -214,6 +263,8 @@ Before claiming graph execution is complete or paused, verify:
 - [ ] Dependency graph and layers are recorded in the manifest.
 - [ ] No cycle or unresolved edge remains.
 - [ ] Every spawned manager has an issue, base/snapshot, state, terminal, and worktree recorded.
+- [ ] Every active `running` manager has a recent poll record or current wait condition, and the next poll/recovery action is known.
+- [ ] No manager is silently idle/stalled without an unstick or recovery action in progress.
 - [ ] Every speculative descendant is explicitly blocked on predecessor merge.
 - [ ] No dependent PR is called mergeable before predecessors merge.
 - [ ] Every mergeable PR has latest-head CI/review evidence after final base update.

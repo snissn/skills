@@ -15,6 +15,7 @@ Context:
 - Issue: <URL>
 - Title: <TITLE>
 - Dependency graph state: ready, no unmerged predecessors.
+- Scheduling mode/pipeline window: <SCHEDULING_MODE_AND_LIMITS>
 - Base ref/SHA: <BASE_REF> / <BASE_SHA>
 - Parent tracker/invariants: <SUMMARY>
 - Non-goals: <NON_GOALS>
@@ -74,7 +75,13 @@ Load and follow:
 
 IMPORTANT GRAPH STATUS:
 This is speculative downstream work. You are blocked on predecessor issue(s): <PREDECESSORS>.
-You may implement against the contract snapshot below, but you must not claim final mergeability, undraft the PR for final review, or request merge until all predecessors are merged and your branch is rebased/revalidated on the final base.
+You may implement against the contract snapshot below, but you must not claim final mergeability, undraft the PR for final review, request final AI review, or request merge until all predecessors are merged and your branch is rebased/revalidated on the final base.
+
+Scheduling mode/pipeline window:
+- mode: <SCHEDULING_MODE>
+- max speculative successors per chain: <MAX_SPECULATIVE_SUCCESSORS_PER_CHAIN>
+- max speculative depth: <MAX_SPECULATIVE_DEPTH>
+- your speculative distance from merged base: <SPECULATIVE_DISTANCE>
 
 Predecessor contract snapshot:
 <For each predecessor: issue, PR, branch, head SHA, contract surface, known risks>
@@ -111,6 +118,7 @@ Your tasks:
 
 Handoff requirements:
 - current blocked/unblocked state;
+- pipeline window consumed and whether it should remain open to further descendants;
 - predecessor snapshot SHAs consumed;
 - local tests/benchmarks run, regression status, and whether they rely on unmerged predecessor code;
 - files likely to conflict on final rebase;

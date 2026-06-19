@@ -241,12 +241,83 @@ def parse_colgranule(path: str | Path | None) -> dict[str, Any]:
     return {"raw": data, "timings": timings}
 
 
+def parse_compression_audit(path: str | Path | None) -> dict[str, Any]:
+    data = load_json(path) if path else None
+    return data if isinstance(data, dict) else {}
+
+
 def bool_label(value: Any) -> str:
     if value is None:
         return "unknown"
     if isinstance(value, bool):
         return "true" if value else "false"
     return str(value)
+
+
+def first_non_empty(*values: Any) -> Any:
+    for value in values:
+        if value not in (None, ""):
+            return value
+    return None
+
+
+def audit_values_cell(fields: Any, limit: int = 3) -> str:
+    if not isinstance(fields, list):
+        return ""
+    values: list[str] = []
+    seen: set[str] = set()
+    for field in fields:
+        if not isinstance(field, dict):
+            continue
+        value = field.get("value")
+        if value in (None, ""):
+            continue
+        text = str(value)
+        if text in seen:
+            continue
+        values.append(text)
+        seen.add(text)
+        if len(values) >= limit:
+            break
+    return ", ".join(values)
+
+
+def compression_final_status(audit: dict[str, Any]) -> str:
+    if not audit:
+        return "non-final: compression audit missing"
+    issues: list[str] = []
+    result_compression = audit.get("result_compression_summary") or {}
+    retained_status = audit.get("retained_payload_status_audit") or {}
+    retained_audit = audit.get("retained_payload_audit") or {}
+    column_audit = audit.get("column_section_audit") or {}
+    frame = audit.get("vlog_frame_audit") or {}
+    value_vlog = frame.get("value_vlog") or {}
+
+    if result_compression.get("silent_none_suspected"):
+        issues.append("silent requested/actual none suspected")
+    if retained_status.get("retained_payload_encoding_status_missing"):
+        issues.append("retained encoding status missing")
+    if retained_status.get("retained_payload_encoding_inactive"):
+        issues.append("retained encoding inactive")
+    if retained_status.get("retained_payload_compression_status_missing"):
+        issues.append("retained compression status missing")
+    if retained_status.get("retained_payload_compression_inactive"):
+        issues.append("retained compression inactive")
+    if retained_audit.get("required_for_final_claim") and retained_audit.get("status") != "passed":
+        issues.append("path-aware retained audit not passed")
+    if column_audit.get("status") == "filesystem_oracle_only":
+        issues.append("column section audit is filesystem-only")
+
+    raw_fraction = value_vlog.get("raw_mode_payload_fraction")
+    if isinstance(raw_fraction, (int, float)) and raw_fraction > 0.01:
+        issues.append("value_vlog raw-mode payload above budget")
+
+    if not issues:
+        return "pass"
+    shown = "; ".join(issues[:6])
+    if len(issues) > 6:
+        shown += f"; +{len(issues) - 6} more"
+    return f"non-final: {shown}"
 
 
 def main() -> None:
@@ -257,6 +328,7 @@ def main() -> None:
     ap.add_argument("--clickhouse-result", help="Optional ClickHouse JSONBench result JSON")
     ap.add_argument("--clickhouse-fresh", action="store_true", help="Mark ClickHouse result as freshly rerun for this comparison")
     ap.add_argument("--colgranule-raw", help="Optional experiments/colgranule/JSONBENCH_COMPARISON_RAW.json")
+    ap.add_argument("--compression-audit", help="Optional compression_audit.json from scripts/treedb_jsonbench_storage_audit.py")
     ap.add_argument("--gomap-head", default="unknown")
     ap.add_argument("--jsonbench-head", default="unknown")
     ap.add_argument("--title", default="TreeDB JSONBench Breakdown")
@@ -272,6 +344,10 @@ def main() -> None:
     parity = parse_parity_report(args.parity_report)
     clickhouse = parse_clickhouse(args.clickhouse_result)
     colgranule = parse_colgranule(args.colgranule_raw)
+    compression_audit = parse_compression_audit(args.compression_audit)
+    retained_status_audit = compression_audit.get("retained_payload_status_audit") if compression_audit else {}
+    if not isinstance(retained_status_audit, dict):
+        retained_status_audit = {}
 
     ch_raw = clickhouse.get("raw", {})
     ch_timings = clickhouse.get("timings", {})
@@ -300,6 +376,7 @@ def main() -> None:
     else:
         print("- ClickHouse result: `n/a`")
     print(f"- colgranule raw: `{args.colgranule_raw}` (historical/prototype only)" if args.colgranule_raw else "- colgranule raw: `n/a`")
+    print(f"- compression audit: `{args.compression_audit}`" if args.compression_audit else "- compression audit: `n/a`")
     print(f"- gomap head: `{args.gomap_head}`")
     print(f"- JSONBench head: `{args.jsonbench_head}`\n")
 
@@ -313,6 +390,44 @@ def main() -> None:
         ("storage source", first.get("storage_source")),
         ("typed column owner", first.get("typed_column_owner")),
         ("retained payload", first.get("retained_payload_policy")),
+        (
+            "retained payload encoding",
+            first_non_empty(
+                first.get("retained_payload_encoding"),
+                first.get("retained_payload_encoding_policy"),
+                audit_values_cell(retained_status_audit.get("retained_payload_encoding_fields")),
+            ),
+        ),
+        (
+            "retained payload encoding status",
+            first_non_empty(
+                first.get("retained_payload_encoding_status"),
+                audit_values_cell(retained_status_audit.get("retained_payload_encoding_status_fields")),
+            ),
+        ),
+        (
+            "retained payload compression",
+            first_non_empty(
+                first.get("retained_payload_compression"),
+                first.get("retained_payload_compression_policy"),
+                audit_values_cell(retained_status_audit.get("retained_payload_compression_fields")),
+            ),
+        ),
+        (
+            "retained payload compression status",
+            first_non_empty(
+                first.get("retained_payload_compression_status"),
+                audit_values_cell(retained_status_audit.get("retained_payload_compression_status_fields")),
+            ),
+        ),
+        (
+            "typed column compression",
+            first_non_empty(
+                first.get("typed_column_compression"),
+                first.get("typed_column_compression_policy"),
+                first.get("compression_policy_label"),
+            ),
+        ),
         ("fallback", first.get("fallback_reason")),
         ("document scan fallback", bool_label(first.get("document_scan_fallback"))),
         ("reconstruction", bool_label(reconstruction_valid)),
@@ -321,6 +436,8 @@ def main() -> None:
     print("| field | value |")
     print("|---|---|")
     for k, v in fields:
+        if v is None:
+            v = "unknown"
         print(f"| {k} | `{v}` |")
     print()
 
@@ -417,6 +534,61 @@ def main() -> None:
         print(f"- reconstruction source hash: `{reconstruction.get('source_canonical_json_hash')}`")
         print(f"- reconstruction stored hash: `{reconstruction.get('stored_canonical_json_hash')}`")
     print()
+
+    print("## Compression and storage audit gates\n")
+    if not compression_audit:
+        print("- compression audit: `missing`")
+        print("- final storage-compression claim: `non-final until gzip/vlog/column/retained audits are attached`\n")
+    else:
+        frame = compression_audit.get("vlog_frame_audit") or {}
+        gzip_oracle = compression_audit.get("gzip_oracle") or {}
+        column_audit = compression_audit.get("column_section_audit") or {}
+        retained_audit = compression_audit.get("retained_payload_audit") or {}
+        retained_status = compression_audit.get("retained_payload_status_audit") or {}
+        result_compression = compression_audit.get("result_compression_summary") or {}
+
+        print(f"- final storage-compression claim: `{compression_final_status(compression_audit)}`")
+        if result_compression:
+            print(f"- result compression summary source: `{result_compression.get('path')}`")
+            print(f"- silent requested/actual none suspected: `{bool_label(result_compression.get('silent_none_suspected'))}`")
+        print(f"- retained payload status audit status: `{retained_status.get('status', 'result_json_status_fields_only')}`")
+        print(f"- retained encoding status missing: `{bool_label(retained_status.get('retained_payload_encoding_status_missing'))}`")
+        print(f"- retained encoding inactive: `{bool_label(retained_status.get('retained_payload_encoding_inactive'))}`")
+        print(f"- retained compression status missing: `{bool_label(retained_status.get('retained_payload_compression_status_missing'))}`")
+        print(f"- retained compression inactive: `{bool_label(retained_status.get('retained_payload_compression_inactive'))}`")
+        print(f"- retained payload audit status: `{retained_audit.get('status', 'unknown')}`")
+        print(f"- retained audit required for final claim: `{bool_label(retained_audit.get('required_for_final_claim'))}`")
+        print(f"- column section audit status: `{column_audit.get('status', 'unknown')}`")
+        if column_audit.get("reason"):
+            print(f"- column section audit reason: {column_audit.get('reason')}")
+        if column_audit.get("total_bytes") is not None:
+            column_ratio = column_audit.get("gzip_to_raw_ratio")
+            column_ratio_cell = f"{column_ratio:.3f}" if isinstance(column_ratio, (int, float)) else "unknown"
+            print(f"- column assets gzip headroom: `{fmt_int(column_audit.get('total_bytes'))}` raw -> `{fmt_int(column_audit.get('gzip_bytes'))}` gzip ({column_ratio_cell})")
+
+        print("\n### gzip oracle\n")
+        print("| subtree | files | raw bytes | gzip bytes | gzip/raw |")
+        print("|---|---:|---:|---:|---:|")
+        for row in gzip_oracle.get("subtrees") or []:
+            ratio = row.get("gzip_to_raw_ratio")
+            ratio_cell = f"{ratio:.3f}" if isinstance(ratio, (int, float)) else ""
+            print(f"| `{row.get('subtree')}` | {fmt_int(row.get('files'))} | {fmt_int(row.get('raw_bytes'))} | {fmt_int(row.get('gzip_bytes'))} | {ratio_cell} |")
+
+        print("\n### vlog frame audit\n")
+        print("| log | records | raw payload | stored payload | raw-mode bytes | raw-mode fraction | stored/raw |")
+        print("|---|---:|---:|---:|---:|---:|---:|")
+        for name in ("leaf_vlog", "value_vlog"):
+            row = frame.get(name) or {}
+            raw_fraction = row.get("raw_mode_payload_fraction")
+            stored_ratio = row.get("stored_to_raw_ratio")
+            raw_fraction_cell = f"{raw_fraction:.3f}" if isinstance(raw_fraction, (int, float)) else ""
+            stored_ratio_cell = f"{stored_ratio:.3f}" if isinstance(stored_ratio, (int, float)) else ""
+            print(
+                f"| `{name}` | {fmt_int(row.get('records'))} | {fmt_int(row.get('raw_payload_bytes'))} | "
+                f"{fmt_int(row.get('stored_payload_bytes'))} | {fmt_int(row.get('raw_mode_payload_bytes'))} | "
+                f"{raw_fraction_cell} | {stored_ratio_cell} |"
+            )
+        print()
 
     print("## Optimization targets\n")
     durable_categories = {k: v for k, v in categories.items() if k != "wal" and v}

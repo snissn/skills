@@ -22,10 +22,11 @@ Prefer these artifacts, in order:
 
 1. Production TreeDB JSONBench `report.json` for the headline run.
 2. Matching production TreeDB cell `result.json` when available; use it for reconstruction hashes and detailed storage categories.
-3. Optional TreeDB parity `report.json` containing row/direct/prepared rows.
-4. Optional ClickHouse JSONBench result JSON, e.g. `clickhouse/results/..._1m.json`.
-5. Optional colgranule raw comparison, e.g. `experiments/colgranule/JSONBENCH_COMPARISON_RAW.json`.
-6. gomap and JSONBench commit heads, if not already in nearby evidence summaries.
+3. Optional `compression_audit.json` from `scripts/treedb_jsonbench_storage_audit.py`.
+4. Optional TreeDB parity `report.json` containing row/direct/prepared rows.
+5. Optional ClickHouse JSONBench result JSON, e.g. `clickhouse/results/..._1m.json`.
+6. Optional colgranule raw comparison, e.g. `experiments/colgranule/JSONBENCH_COMPARISON_RAW.json`.
+7. gomap and JSONBench commit heads, if not already in nearby evidence summaries.
 
 If a critical artifact is missing, ask for it or clearly label the corresponding table cell as unavailable.
 
@@ -43,6 +44,14 @@ For the production headline row, require or explicitly report the absence of:
 - `document_scan_fallback=false`
 - reconstruction status valid via canonical JSON hash when available
 - q1-q5 run from the same loaded DB/artifact
+- compression policy/status is recorded; a headline compression claim is non-final if typed compression silently resolves to `requested=none` / `actual=none`
+- retained payload encoding/compression policy is recorded; a Template-v1 claim is non-final if `retained_payload_encoding`, `retained_payload_encoding_status`, `retained_payload_compression`, or `retained_payload_compression_status` are missing or inactive
+- compression audit artifacts are attached or explicitly marked missing/non-final:
+  - `gzip_oracle.json`
+  - `vlog_frame_audit.json`
+  - `column_section_audit.json`
+  - `retained_payload_status_audit.json`
+  - `retained_payload_audit.json`
 
 Storage comparison target:
 
@@ -60,14 +69,37 @@ Storage comparison target:
    - durable bytes excluding WAL;
    - WAL bytes excluded;
    - leaf_vlog, value_vlog, column assets, typed-column part bytes, primary index, and other categories when available.
-5. If a parity report is provided, extract row scan, full direct, and full prepared q1-q5 timings and hash parity.
-6. If ClickHouse is provided, extract `total_size`, `data_size`, `index_size`, q1-q5 attempts and best times, loaded rows, version, and machine/date.
-7. If colgranule raw data is provided, extract q1-q5 historical kernel best timings and mark them as prototype/historical.
-8. Compute ratios:
+5. If `compression_audit.json` is provided, extract gzip headroom, per-log raw/block/dict frame mix, `value_vlog` raw-mode payload bytes, `leaf_vlog` raw-mode payload bytes, retained-payload encoding/compression status, retained-payload path-audit status, and column-section audit status.
+6. If a parity report is provided, extract row scan, full direct, and full prepared q1-q5 timings and hash parity.
+7. If ClickHouse is provided, extract `total_size`, `data_size`, `index_size`, q1-q5 attempts and best times, loaded rows, version, and machine/date.
+8. If colgranule raw data is provided, extract q1-q5 historical kernel best timings and mark them as prototype/historical.
+9. Compute ratios:
    - TreeDB durable excluding WAL / ClickHouse total;
    - TreeDB production q time / ClickHouse best q time;
    - TreeDB production q time / colgranule kernel q time when present.
-9. Produce the standard report using the template in [references/breakdown-template.md](references/breakdown-template.md).
+10. Produce the standard report using the template in [references/breakdown-template.md](references/breakdown-template.md).
+
+## Compression Audit Helper
+
+For a completed TreeDB DB directory, prefer the repo helper when available:
+
+```sh
+python3 /path/to/gomap/scripts/treedb_jsonbench_storage_audit.py \
+  --db-dir /path/to/db \
+  --result-json /path/to/result.json \
+  --out-dir /tmp/treedb_jsonbench_storage_audit
+```
+
+It emits:
+
+- `compression_audit.json/md`
+- `gzip_oracle.json`
+- `vlog_frame_audit.json`
+- `column_section_audit.json`
+- `retained_payload_status_audit.json`
+- `retained_payload_audit.json`
+
+The current helper is non-mutating and filesystem/frame-level. A retained-payload path audit that only reports `not_available_from_filesystem_audit` is not sufficient for a final parity claim; it means the run is a compression/storage probe, not final retained-payload evidence.
 
 ## Regenerating Metrics From `main`
 
@@ -83,6 +115,7 @@ Default headline run:
 - `COMPACT_AFTER_LOAD=1`
 - `VALIDATE_RECONSTRUCTION=1`
 - `GOWORK=off`
+- `RUN_COMPRESSION_AUDIT=1`
 
 Local example:
 
@@ -146,6 +179,7 @@ The insights helper classifies common bottleneck signals:
 Important options:
 
 - `--rows N`: headline row count; standard is `1000000`.
+- `--compression-audit` / `--no-compression-audit`: attach or skip `scripts/treedb_jsonbench_storage_audit.py`; default is to attach it when the helper exists.
 - `--run-parity --parity-rows 100000`: also run row/full-direct/full-prepared parity.
 - `--with-profiles`: capture CPU/allocation profiles and generate profile insights.
 - `--profile-focuses LIST`: choose prepared/direct q1-q5 focuses; use `all` for both modes.
@@ -164,6 +198,7 @@ A portable parser is included for already-existing artifacts:
 python3 ~/.codex/skills/treedb-jsonbench-breakdown/scripts/treedb_jsonbench_breakdown.py \
   --treedb-report /path/to/treedb/report.json \
   --treedb-result /path/to/treedb/cell/result.json \
+  --compression-audit /path/to/compression_audit.json \
   --parity-report /path/to/100k/parity/report.json \
   --clickhouse-result /path/to/clickhouse/results/m6i.8xlarge_bluesky_1m.json \
   --colgranule-raw /path/to/experiments/colgranule/JSONBENCH_COMPARISON_RAW.json
@@ -180,6 +215,8 @@ Always include:
 - storage basis labels (`total`, `durable excluding WAL`, `WAL excluded`);
 - timing basis labels (`best`, attempts/median when available);
 - correctness/fallback gates;
+- compression audit gate status, including missing/non-final audits;
+- final storage-compression claim status derived from audit gates;
 - caveats for stale or reference-only ClickHouse/colgranule data;
 - an optimization target section naming the largest storage categories and slowest q1-q5 rows.
 
@@ -197,6 +234,10 @@ Before presenting the breakdown, verify:
 - [ ] q1-q5 are all present for the headline row.
 - [ ] Storage bytes are internally labeled and ratios use the intended basis.
 - [ ] `fallback_reason` and `document_scan_fallback` are shown.
+- [ ] Compression audit status is shown. Missing `compression_audit.json` or missing retained path audit is labeled non-final for compression/parity claims.
+- [ ] Retained payload encoding/compression status fields are shown. Missing or inactive Template-v1 retained status is labeled non-final.
+- [ ] `value_vlog` and `leaf_vlog` frame mix are reported separately when an audit is attached.
+- [ ] Dictionary/column section audit status is shown; raw dictionaries cannot be ignored in storage-parity claims.
 - [ ] If ClickHouse is included, the answer says whether it was freshly rerun or a reference artifact.
 - [ ] If colgranule is included, it is labeled historical/prototype.
 - [ ] Missing direct/full parity evidence is called out rather than inferred.

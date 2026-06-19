@@ -12,6 +12,7 @@ Use this shape for tracker comments, PR summaries, and optimization planning.
 - parity artifact: `<path or n/a>`
 - ClickHouse artifact: `<path or n/a>` (`fresh run` / `reference only`)
 - colgranule artifact: `<path or n/a>` (`historical/prototype only`)
+- compression audit: `<path or n/a>`
 - gomap head: `<sha or unknown>`
 - JSONBench head: `<sha or unknown>`
 
@@ -26,6 +27,11 @@ Use this shape for tracker comments, PR summaries, and optimization planning.
 | storage source | `typed_column_part` |
 | typed column owner | `typed_column_part` |
 | retained payload | `non-column` |
+| retained payload encoding | `template-v1` / `none` / `unknown` |
+| retained payload encoding status | `active` / `inactive` / `unknown` |
+| retained payload compression | `<policy>` |
+| retained payload compression status | `active` / `inactive` / `unknown` |
+| typed column compression | `<policy/status>` |
 | fallback | `none` |
 | document scan fallback | `false` |
 | reconstruction | `valid` / `unknown` |
@@ -73,6 +79,31 @@ If direct evidence comes from a smaller parity artifact, label the row count in 
 - reconstruction hash valid: `<yes/no/unknown>`
 - fallback reason: `<none or reason>`
 - document scan fallback: `<false/true>`
+
+## Compression and storage audit gates
+
+| gate | value | notes |
+|---|---:|---|
+| final storage-compression claim |  | `pass` or explicit `non-final: ...` |
+| compression audit attached |  | missing means non-final for compression/parity claims |
+| typed compression silent none |  | fail unless this is the named compression-off baseline |
+| retained encoding inactive/missing |  | Template-v1 claims require active encoding status |
+| retained compression inactive/missing |  | retained bodies must have explicit storage compression policy |
+| value_vlog raw-mode bytes |  | from `vlog_frame_audit` |
+| value_vlog raw-mode fraction |  | raw-mode dominance is a compression gap |
+| leaf_vlog raw-mode bytes |  | should usually be zero for grouped leaf pages |
+| column section audit status |  | raw dictionaries/locators/codes must be counted |
+| retained payload audit status |  | must be path-aware and pass before final claim |
+
+### gzip oracle
+
+| subtree | raw bytes | gzip bytes | gzip/raw |
+|---|---:|---:|---:|
+| maindb |  |  |  |
+| leaf_vlog |  |  |  |
+| value_vlog |  |  |  |
+| column_assets |  |  |  |
+| index.db |  |  |  |
 
 ## Optimization targets
 

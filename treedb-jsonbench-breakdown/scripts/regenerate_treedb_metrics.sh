@@ -28,6 +28,7 @@ KEEP_WORKTREES=0
 REMOTE_CHILD=0
 COLLECT_DIR="${COLLECT_DIR:-}"
 RUN_BREAKDOWN=1
+RUN_COMPRESSION_AUDIT="${RUN_COMPRESSION_AUDIT:-1}"
 RUN_PROFILES=0
 PROFILE_FOCUSES="${PROFILE_FOCUSES:-q1_prepared q2_prepared q3_prepared q4_prepared q5_prepared}"
 PROFILE_BENCHTIME="${PROFILE_BENCHTIME:-20x}"
@@ -60,6 +61,8 @@ Common options:
   --parity-rows N              Parity rows. Default: 100000.
   --clickhouse-result PATH     Optional ClickHouse result JSON for final breakdown.
   --colgranule-raw PATH        Optional colgranule raw JSON for final breakdown.
+  --compression-audit          Run storage compression audit after headline DB load. Default: on.
+  --no-compression-audit       Skip storage compression audit.
   --with-profiles              Also run focused TreeDB/collections pprof captures.
   --profile-focuses LIST       Space-separated profile focuses. Default: prepared q1-q5.
                                Use "all" for direct+prepared q1-q5.
@@ -129,6 +132,8 @@ while [[ $# -gt 0 ]]; do
     --parity-rows) PARITY_ROWS="$2"; shift 2 ;;
     --clickhouse-result) CLICKHOUSE_RESULT="$2"; shift 2 ;;
     --colgranule-raw) COLGRANULE_RAW="$2"; shift 2 ;;
+    --compression-audit) RUN_COMPRESSION_AUDIT=1; shift ;;
+    --no-compression-audit) RUN_COMPRESSION_AUDIT=0; shift ;;
     --collect-dir) COLLECT_DIR="$2"; shift 2 ;;
     --with-profiles) RUN_PROFILES=1; shift ;;
     --profile-focuses) PROFILE_FOCUSES="$2"; shift 2 ;;
@@ -171,6 +176,11 @@ if [[ "$MODE" == "ssh" ]]; then
   [[ -n "$JSONBENCH_REPO" ]] && remote_args+=(--jsonbench-repo "$JSONBENCH_REPO")
   [[ -n "$OUT_ROOT" ]] && remote_args+=(--out-root "$OUT_ROOT")
   [[ "$RUN_PARITY" == "1" ]] && remote_args+=(--run-parity)
+  if [[ "$RUN_COMPRESSION_AUDIT" == "1" ]]; then
+    remote_args+=(--compression-audit)
+  else
+    remote_args+=(--no-compression-audit)
+  fi
   if [[ "$RUN_PROFILES" == "1" ]]; then
     remote_args+=(--with-profiles --profile-focuses "$PROFILE_FOCUSES" --profile-benchtime "$PROFILE_BENCHTIME" --profile-count "$PROFILE_COUNT")
     [[ "$PROFILE_ALLOW_ERRORS" == "0" ]] && remote_args+=(--profile-fail-fast)
@@ -186,6 +196,7 @@ if [[ "$MODE" == "ssh" ]]; then
   remote_report=$(awk -F= '/^TREEDB_METRICS_REPORT_JSON=/{print $2}' "$tmp_log" | tail -1)
   remote_result=$(awk -F= '/^TREEDB_METRICS_RESULT_JSON=/{print $2}' "$tmp_log" | tail -1)
   remote_parity=$(awk -F= '/^TREEDB_METRICS_PARITY_REPORT_JSON=/{print $2}' "$tmp_log" | tail -1)
+  remote_compression_audit=$(awk -F= '/^TREEDB_METRICS_COMPRESSION_AUDIT_JSON=/{print $2}' "$tmp_log" | tail -1)
   remote_profiles=$(awk -F= '/^TREEDB_METRICS_PROFILES_DIR=/{print $2}' "$tmp_log" | tail -1)
   remote_gomap=$(awk -F= '/^TREEDB_METRICS_GOMAP_HEAD=/{print $2}' "$tmp_log" | tail -1)
   remote_jsonbench=$(awk -F= '/^TREEDB_METRICS_JSONBENCH_HEAD=/{print $2}' "$tmp_log" | tail -1)
@@ -193,6 +204,12 @@ if [[ "$MODE" == "ssh" ]]; then
   if [[ -n "$remote_report" ]]; then scp "$SSH_HOST:$remote_report" "$COLLECT_DIR/treedb_report.json" >/dev/null; fi
   if [[ -n "$remote_result" ]]; then scp "$SSH_HOST:$remote_result" "$COLLECT_DIR/treedb_result.json" >/dev/null; fi
   if [[ -n "$remote_parity" ]]; then scp "$SSH_HOST:$remote_parity" "$COLLECT_DIR/parity_report.json" >/dev/null; fi
+  if [[ -n "$remote_compression_audit" ]]; then
+    mkdir -p "$COLLECT_DIR/compression_audit"
+    remote_audit_dir="$(dirname "$remote_compression_audit")"
+    scp "$SSH_HOST:$remote_audit_dir"/*.json "$COLLECT_DIR/compression_audit/" >/dev/null || true
+    scp "$SSH_HOST:$remote_audit_dir"/*.md "$COLLECT_DIR/compression_audit/" >/dev/null || true
+  fi
   if [[ -n "$remote_profiles" ]]; then scp -r "$SSH_HOST:$remote_profiles" "$COLLECT_DIR/profiles" >/dev/null; fi
 
   echo "==> collected remote reports in $COLLECT_DIR"
@@ -202,6 +219,7 @@ if [[ "$MODE" == "ssh" ]]; then
     breakdown_args=(--treedb-report "$COLLECT_DIR/treedb_report.json" --gomap-head "${remote_gomap:-unknown}" --jsonbench-head "${remote_jsonbench:-unknown}")
     [[ -f "$COLLECT_DIR/treedb_result.json" ]] && breakdown_args+=(--treedb-result "$COLLECT_DIR/treedb_result.json")
     [[ -f "$COLLECT_DIR/parity_report.json" ]] && breakdown_args+=(--parity-report "$COLLECT_DIR/parity_report.json")
+    [[ -f "$COLLECT_DIR/compression_audit/compression_audit.json" ]] && breakdown_args+=(--compression-audit "$COLLECT_DIR/compression_audit/compression_audit.json")
     [[ -n "$CLICKHOUSE_RESULT" ]] && breakdown_args+=(--clickhouse-result "$CLICKHOUSE_RESULT")
     [[ -n "$COLGRANULE_RAW" ]] && breakdown_args+=(--colgranule-raw "$COLGRANULE_RAW")
     python3 "$parser" "${breakdown_args[@]}" | tee "$COLLECT_DIR/breakdown.md"
@@ -437,6 +455,32 @@ echo "    out:            $HEADLINE_OUT"
 run_matrix "$HEADLINE_OUT" "$ROWS" "$STORAGE_LAYOUTS" "$SUITE"
 HEADLINE_REPORT="$HEADLINE_OUT/report.json"
 HEADLINE_RESULT="$(find "$HEADLINE_OUT" -mindepth 2 -maxdepth 2 -name result.json | head -1 || true)"
+COMPRESSION_AUDIT_JSON=""
+COMPRESSION_AUDIT_DIR=""
+
+if [[ "$RUN_COMPRESSION_AUDIT" == "1" ]]; then
+  audit_script="$GOMAP_MAIN_DIR/scripts/treedb_jsonbench_storage_audit.py"
+  if [[ -n "$HEADLINE_RESULT" && -f "$HEADLINE_RESULT" ]]; then
+    HEADLINE_DB_DIR="$(dirname "$HEADLINE_RESULT")/db"
+  else
+    HEADLINE_DB_DIR=""
+  fi
+  if [[ -f "$audit_script" && -n "$HEADLINE_DB_DIR" && -d "$HEADLINE_DB_DIR" ]]; then
+    COMPRESSION_AUDIT_DIR="$OUT_ROOT/compression_audit"
+    echo "==> TreeDB storage compression audit"
+    echo "    db:  $HEADLINE_DB_DIR"
+    echo "    out: $COMPRESSION_AUDIT_DIR"
+    python3 "$audit_script" \
+      --db-dir "$HEADLINE_DB_DIR" \
+      --result-json "$HEADLINE_RESULT" \
+      --out-dir "$COMPRESSION_AUDIT_DIR"
+    if [[ -f "$COMPRESSION_AUDIT_DIR/compression_audit.json" ]]; then
+      COMPRESSION_AUDIT_JSON="$COMPRESSION_AUDIT_DIR/compression_audit.json"
+    fi
+  else
+    echo "warning: compression audit skipped; missing audit script, result.json, or db dir" >&2
+  fi
+fi
 
 PARITY_REPORT=""
 PROFILES_DIR=""
@@ -460,6 +504,7 @@ JSONBENCH_HEAD=$JSONBENCH_HEAD
 TREEDB_REPORT_JSON=$HEADLINE_REPORT
 TREEDB_RESULT_JSON=$HEADLINE_RESULT
 TREEDB_PARITY_REPORT_JSON=$PARITY_REPORT
+TREEDB_COMPRESSION_AUDIT_JSON=$COMPRESSION_AUDIT_JSON
 TREEDB_PROFILES_DIR=$PROFILES_DIR
 TREEDB_PROFILE_INSIGHTS_MD=$PROFILE_INSIGHTS_MD
 EOF
@@ -469,6 +514,7 @@ if [[ "$RUN_BREAKDOWN" == "1" && -x "$parser" && -f "$HEADLINE_REPORT" ]]; then
   breakdown_args=(--treedb-report "$HEADLINE_REPORT" --gomap-head "$GOMAP_HEAD" --jsonbench-head "$JSONBENCH_HEAD")
   [[ -n "$HEADLINE_RESULT" && -f "$HEADLINE_RESULT" ]] && breakdown_args+=(--treedb-result "$HEADLINE_RESULT")
   [[ -n "$PARITY_REPORT" && -f "$PARITY_REPORT" ]] && breakdown_args+=(--parity-report "$PARITY_REPORT")
+  [[ -n "$COMPRESSION_AUDIT_JSON" && -f "$COMPRESSION_AUDIT_JSON" ]] && breakdown_args+=(--compression-audit "$COMPRESSION_AUDIT_JSON")
   [[ -n "$CLICKHOUSE_RESULT" ]] && breakdown_args+=(--clickhouse-result "$CLICKHOUSE_RESULT")
   [[ -n "$COLGRANULE_RAW" ]] && breakdown_args+=(--colgranule-raw "$COLGRANULE_RAW")
   python3 "$parser" "${breakdown_args[@]}" | tee "$OUT_ROOT/breakdown.md"
@@ -492,6 +538,7 @@ echo "TREEDB_METRICS_OUT_ROOT=$OUT_ROOT"
 echo "TREEDB_METRICS_REPORT_JSON=$HEADLINE_REPORT"
 echo "TREEDB_METRICS_RESULT_JSON=$HEADLINE_RESULT"
 echo "TREEDB_METRICS_PARITY_REPORT_JSON=$PARITY_REPORT"
+echo "TREEDB_METRICS_COMPRESSION_AUDIT_JSON=$COMPRESSION_AUDIT_JSON"
 echo "TREEDB_METRICS_PROFILES_DIR=$PROFILES_DIR"
 echo "TREEDB_METRICS_PROFILE_INSIGHTS_MD=$PROFILE_INSIGHTS_MD"
 echo "TREEDB_METRICS_GOMAP_HEAD=$GOMAP_HEAD"

@@ -1,6 +1,6 @@
 # Current TreeDB JSONBench Comparison Snapshot
 
-This snapshot captures the latest known comparison discussed during the #1945 closeout. Re-run before making fresh benchmark claims.
+This snapshot captures the latest known comparison discussed during the #1945 closeout. Re-run before making fresh benchmark claims. It predates the Template-v1 retained encoding and retained value-log placement PR stack for issues #2355/#2357/#2356, so treat it as a baseline/regression anchor, not current-head storage evidence.
 
 ## Size basis
 
@@ -69,6 +69,12 @@ Known ClickHouse references:
 - 1M: `/private/tmp/jsonbench-2117/clickhouse/results/m6i.8xlarge_bluesky_1m.json`
 - 10M remote: `/home/mikers/jsonbench_runs/current_status_typedcolumn_20260531_220752/clickhouse_compare_10m/clickhouse/result.json`
 
+Known compression audit state:
+
+- formal `compression_audit.json`, `gzip_oracle.json`, `vlog_frame_audit.json`, `column_section_audit.json`, and `retained_payload_audit.json` artifacts were not present in the original 1M snapshot.
+- Current ad hoc evidence showed `value_vlog` raw payload dominance in the LZ4 probe and raw/uncompressed dictionary sections. Treat storage-parity claims as non-final until formal audits are attached.
+- Fresh comparison logs should also show retained payload encoding/compression status fields and an explicit final storage-compression claim status (`pass` or `non-final: ...`).
+
 ## Reproduction notes
 
 Fresh TreeDB 1M over SSH:
@@ -82,6 +88,7 @@ Fresh TreeDB 1M over SSH:
   --data-dir /home/mikers/data/bluesky \
   --rows 1000000 \
   --tries 1 \
+  --compression-audit \
   --run-parity \
   --with-profiles \
   --profile-focuses "q1_prepared q2_prepared q3_prepared q4_prepared q5_prepared"
