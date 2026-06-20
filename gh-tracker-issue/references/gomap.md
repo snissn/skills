@@ -41,6 +41,10 @@ For TreeDB, vector, column-store, storage, cache, decode, query, or materializat
 
 Benchmark evidence must compare before vs after for each claimed optimization or hot-path/storage change using identical commands, fixture size, hardware, and environment.
 
+For TreeDB scaling/flush/checkpoint trackers, require explicit north-star gates and path-proof counters. Example gates include effective CPU use during the target phase, worker busy ratio, fallback reason totals, ops/span, checkpoint stage wall time, write+checkpoint throughput, storage footprint, reopen/GC safety, and any issue-specific target. A TreeDB optimization milestone is not complete merely because it avoids regression; it must move the declared gate or create/link a blocker issue for the measured next limiter.
+
+For TreeDB parallel-saturation work, require an early root-cause classification matrix before architectural fixes: distinguish weak worker substrate, insufficient work shape/ops-per-span, serial reducer/publish/append fan-in, checkpoint coordination/flushMu waiting, external sync/I/O limits, and benchmark noise. Include at least one isolation harness or focused profile when the production 10MM shape cannot distinguish substrate capacity from workload shape.
+
 ## PR Requirements
 
 - Require PR start and close phases.

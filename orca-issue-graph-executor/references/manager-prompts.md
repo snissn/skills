@@ -38,11 +38,13 @@ Your tasks:
 5. Drive review/fix loops and PR readiness using github-pr-mergeable.
 6. Treat material performance regressions as blockers: profile, optimize, rerun identical before/after evidence, and do not claim mergeability unless eliminated or explicitly accepted by the coordinator/user.
 7. Do not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviews until the PR is mature: coherent code pushed, focused tests and required benchmarks run or explained, PR body/status evidence current, no known local blockers, and latest-head CI running or green.
-8. Do not merge directly unless the coordinator explicitly delegates merge authority.
-9. Return handoffs at these milestones:
+8. Treat insufficient improvement as a blocker for optimization issues. If your evidence is neutral or below the tracker threshold, do not claim completion; profile, fix, or propose a measured blocker issue/graph edge for coordinator approval.
+9. Do not merge directly unless the coordinator explicitly delegates merge authority.
+10. Return handoffs at these milestones:
    - implementation plan complete;
    - PR opened;
-   - dependency-ready candidate, if public contract is stable;
+   - gate-review candidate, with evidence ready for coordinator/evidence-reviewer inspection;
+   - dependency-ready candidate, if public contract is stable and gate review passes;
    - mergeable-candidate;
    - blocker requiring coordinator decision.
 
@@ -50,8 +52,12 @@ Dependency-ready handoff must include:
 - PR URL/number, branch, head SHA;
 - public contract surface changed;
 - tests/benchmarks run, including performance regression status;
+- node exit gate and parent north-star gate status: pass/fail/waived/not applicable;
+- if any gate failed, proposed next action: fix-loop, blocker child issue, or explicit waiver request;
 - known risks and possible contract churn;
-- whether descendants can safely start speculative work.
+- blocker classification if anything remains: none, local/non-contract, contract-blocking, benchmark-blocking, unknown;
+- whether `local_fix_pending` is appropriate;
+- whether descendants can safely start speculative work and what sync windows they should use.
 
 Final handoff must include:
 - PR URL/number, branch, latest head SHA;
@@ -84,12 +90,12 @@ Scheduling mode/pipeline window:
 - your speculative distance from merged base: <SPECULATIVE_DISTANCE>
 
 Predecessor contract snapshot:
-<For each predecessor: issue, PR, branch, head SHA, contract surface, known risks>
+<For each predecessor: issue, PR, branch, head SHA, contract surface, known risks, local_fix_pending status, blocker classification>
 
 Current base strategy:
 - Base ref/worktree: <BASE_OR_SNAPSHOT>
 - Expected final base: <FINAL_BASE>
-- Sync policy: only resync on dependency-ready snapshot, predecessor contract change, predecessor merge, pre-final-review, or stale-test/conflict trigger.
+- Sync policy: only resync on dependency-ready snapshot, predecessor contract change, predecessor merge, pre-final-review, or stale-test/conflict trigger. Do not restack for every non-contract predecessor review-fix commit; batch those until merge/pre-final-review unless tests/conflicts require earlier sync.
 
 Issue context:
 - Issue: <URL>
@@ -114,21 +120,23 @@ Your tasks:
 4. Implement against the snapshot with minimal churn.
 5. Keep PR draft/WIP or clearly marked blocked if opened before predecessors merge.
 6. Report any predecessor contract mismatch immediately.
-7. After predecessor merge, rebase/update to final base, rerun required tests/benchmarks, resolve any material performance regression by profiling/optimization or explicit coordinator/user acceptance, update PR body, and only then request AI review/final mergeability review.
+7. If the predecessor is still `local_fix_pending`, proceed only on work that does not depend on that local fix and keep your PR draft/WIP or clearly blocked. After predecessor merge, rebase/update to final base, rerun required tests/benchmarks, resolve any material performance regression or insufficient improvement by profiling/optimization, linked blocker creation, or explicit coordinator/user acceptance, update PR body, and only then request AI review/final mergeability review.
 
 Handoff requirements:
 - current blocked/unblocked state;
 - pipeline window consumed and whether it should remain open to further descendants;
-- predecessor snapshot SHAs consumed;
-- local tests/benchmarks run, regression status, and whether they rely on unmerged predecessor code;
+- predecessor snapshot SHAs consumed, including any `local_fix_pending` notes;
+- local tests/benchmarks run, regression status, gate status, and whether they rely on unmerged predecessor code;
 - files likely to conflict on final rebase;
-- what remains blocked until predecessor merge.
+- what remains blocked until predecessor merge and what can proceed without further upstream churn.
 ```
 
 ## Downstream Sync Prompt
 
 ```text
 Dependency update for your issue #<ISSUE>.
+
+Apply this sync only if it is a configured sync window: contract change, predecessor merge, pre-final-review, or stale-test/conflict trigger. Non-contract review-fix commits should normally be batched to avoid churn.
 
 Predecessor #<PRED> changed:
 - old snapshot/head: <OLD_SHA>
@@ -156,7 +164,7 @@ Blocking findings:
 
 Required response:
 - fix or explicitly reject each finding with rationale;
-- rerun required tests/benchmarks; profile and optimize any material regression before claiming mergeability;
+- rerun required tests/benchmarks; profile and optimize any material regression or insufficient improvement before claiming mergeability;
 - update PR body/comments;
 - request AI review again if meaningful code changed, but only after the PR is mature again and no known local blocker remains;
 - return a fresh mergeability handoff with latest head SHA and CI/review state.

@@ -47,6 +47,35 @@ Describe how the code works today. Separate implementation facts from assumption
 
 Describe the target architecture or workflow.
 
+## North-Star Gates
+
+For performance or scaling trackers, define the gates that must pass before the tracker can close. Do not rely on merged child PRs alone.
+
+| Gate | Current | Target | Required evidence | If the gate fails |
+| --- | ---: | ---: | --- | --- |
+| Example: effective CPU during target phase | current measured value | target threshold | exact benchmark/profile/counters | keep blocker open or create linked replacement child |
+
+Rules:
+
+- A final gate may decide not to change a default, but it may not claim the tracker goal is complete unless the north-star gates pass or explicit replacement blockers are linked and accepted.
+- Current-only measurements are not proof of improvement.
+- "No regression" is not enough for an optimization milestone unless that milestone is explicitly instrumentation-only or safety-only.
+
+## Root-Cause Classification Gate
+
+For performance/saturation trackers, require an early evidence gate that classifies why the current path misses the north-star target before broad implementation starts.
+
+| Candidate limiter | Evidence to collect | Action if confirmed |
+| --- | --- | --- |
+| insufficient work shape | ops/span, task size distribution, queue/frontier shape | coalescing/work-shaping milestone |
+| weak parallel substrate | synthetic high-work saturation harness, worker busy/idle, CPU/wall | worker-kernel/task-balance milestone |
+| serial fan-in | reducer/publish/append/commit stage wall and mutex/block profiles | fan-in polish milestone |
+| checkpoint coordination | flushMu wait, active background wait, frontier/queue ownership | checkpoint coordinator/frontier milestone |
+| external durability/I/O | backend sync/fsync/value-log sync timing with CPU idle | I/O-specific blocker or accepted external limit |
+| benchmark/harness artifact | mismatched commands, stale baseline, noisy host | rerun/fix harness before implementation claims |
+
+Do not choose an implementation lane by assumption when the evidence can distinguish these classes. The graph may branch or reorder after this classification; update child issues and edges rather than pushing a fixed stale plan.
+
 ## Scope
 
 List what belongs in this issue.
@@ -141,6 +170,11 @@ Purpose: create the smallest correct seam future PRs can build on.
 - [ ] Fail closed on unsupported/mismatched state.
 - [ ] Preserve existing behavior outside the selected path.
 
+Milestone exit gate:
+
+- [ ] The intended path/counter proves the seam is actually exercised, or this milestone is explicitly contract/instrumentation-only.
+- [ ] If a required performance/scaling gate did not move, the issue is marked blocked/fix-needed and a measured next-bottleneck child is opened or linked before successors can claim readiness.
+
 Required tests:
 
 - [ ] Selection/status test.
@@ -179,6 +213,13 @@ Purpose: remove measured local overhead introduced or exposed by the implementat
 - [ ] Rank bottlenecks by measured cost.
 - [ ] Fix local overhead without weakening correctness.
 - [ ] Defer unrelated broad tuning into follow-up tickets.
+
+Milestone exit gate:
+
+- [ ] The primary metric reaches the target threshold or improves by the tracker-defined minimum.
+- [ ] Required counters prove the intended implementation path ran, not just a fallback/smoke path.
+- [ ] An evidence reviewer has checked command identity, before/after baseline, counters, profiles, and that the PR/issue does not overclaim.
+- [ ] If the gate fails, successors remain blocked until the PR is fixed or a replacement blocker is linked and accepted.
 
 Required tests:
 
@@ -225,6 +266,8 @@ Define the standard benchmark matrix. Include:
 
 Regression gate: if the candidate is materially worse in runtime, throughput, latency, memory, allocations, storage/rebuild overhead, browser responsiveness, or relevant counters, the issue/PR remains incomplete until the team profiles and optimizes the changed path. A remaining regression needs explicit coordinator/user acceptance, a clear correctness or scope rationale, and updated evidence.
 
+Insufficient-improvement gate: if the candidate is not materially worse but also does not meet the milestone's stated improvement/saturation target, the milestone is still incomplete for optimization work. The next action must be one of: fix and rerun, explicitly re-scope the milestone as instrumentation/safety only, or open/link a blocking follow-up for the newly measured bottleneck before downstream final-gate work proceeds.
+
 ## Tests
 
 Group tests by behavior:
@@ -246,6 +289,7 @@ State evidence required before closing the tracker:
 - [ ] Required benchmarks are recorded.
 - [ ] No unaccepted material performance regression remains.
 - [ ] Current evidence proves the goal, not just a subset.
+- [ ] North-star gates are satisfied, or any failed gates have explicit user/coordinator acceptance plus linked replacement blockers that prevent false completion.
 - [ ] PRs are mergeable under the repo policy: latest-head CI green, required tests pass, benchmark evidence is posted when relevant, and AI/code-review findings are passing, resolved, or explicitly rejected with rationale.
 - [ ] Docs/examples are updated when user-facing behavior changed.
 

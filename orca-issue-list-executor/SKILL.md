@@ -52,6 +52,7 @@ Default assumption: the user wants PRs merged after they pass all mergeable/fina
 - the user has not explicitly opted out of merging for this sequence or PR;
 - the manager says the PR is mergeable under `/skill:github-pr-mergeable`;
 - no unaccepted material performance regression remains for performance-sensitive or storage/read/write-path work;
+- performance/scaling PRs meet their explicit improvement/saturation gates, or a linked blocker/explicit waiver is recorded; no-regression alone is not enough for optimization scope;
 - the coordinator independently verifies mergeability and passes final review;
 - latest-head CI/reviews/evidence are current;
 - the PR branch is still the intended head.
@@ -133,6 +134,7 @@ The manager handoff must include:
 - subagents/reviewers used;
 - exact tests and benchmarks run;
 - benchmark tables with required counters when relevant;
+- explicit gate status for optimization work: pass, fail/fix-needed, re-scoped instrumentation/safety-only, linked blocker, or explicit waiver;
 - latest-head CI status;
 - Codex/Copilot/CodeRabbit status or unavailable notes;
 - unresolved review threads, if any;
@@ -149,6 +151,7 @@ Independently verify:
 - tests cover changed behavior;
 - benchmark/allocation evidence is current and meaningful for performance-sensitive work;
 - any material regression in runtime, throughput, allocations, storage/rebuild overhead, or relevant counters has been treated as blocking, optimized, rerun, and either eliminated or explicitly accepted by the coordinator/user with rationale;
+- any insufficient improvement against the issue's explicit optimization gate has been treated as blocking, iterated on, re-scoped, or converted into a linked blocker/explicit waiver before claiming readiness;
 - storage/lifetime/fallback paths fail closed and have reopen/GC/concurrency tests where relevant;
 - PR body accurately states scope, tests, benchmarks, performance regression status, risks, CI, and AI review status;
 - GitHub latest-head checks are green or explicitly non-blocking;
@@ -180,7 +183,7 @@ orca terminal send --terminal <manager-term> --text "<blocking findings and requ
 Require the manager to:
 
 - fix or explicitly reject each finding with rationale;
-- rerun required tests/benchmarks, including identical before/after benchmarks for any performance-sensitive fix;
+- rerun required tests/benchmarks, including identical before/after benchmarks for any performance-sensitive fix, and verify improvement/saturation gates not only regression status;
 - update PR body/comments;
 - re-request AI review if meaningful code changed, but only after the PR is mature again and no known local blocker remains;
 - return a fresh mergeability handoff.
@@ -218,6 +221,7 @@ If merge fails due to new conflicts/checks/reviews, send back to the manager and
 Pause and report if:
 
 - benchmark evidence shows a material regression from the PR’s own changes and optimization/acceptance has not happened;
+- benchmark evidence is neutral or insufficient against an explicit optimization gate and no fix loop, linked blocker, re-scope, or explicit waiver has been recorded;
 - an issue needs a product decision not in scope;
 - a generic substrate issue lacks conformance/fallback evidence for impacted non-reference paths;
 - a performance PR lacks before/after evidence for the hot path it claims to improve;
@@ -226,7 +230,8 @@ Pause and report if:
 - AI review bots are unavailable and repo policy requires them;
 - the manager wants to expand scope into another issue;
 - merge conflicts require broad restacking;
-- benchmarks show a material regression with no acceptable explanation.
+- benchmarks show a material regression with no acceptable explanation;
+- an optimization sequence is drifting toward a documentation-only/insufficient closeout instead of iterating, opening blockers, or obtaining explicit user direction.
 
 ## Final Sequence Report
 

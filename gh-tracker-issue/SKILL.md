@@ -19,9 +19,10 @@ Use this skill for durable GitHub issues that are meant to coordinate multi-PR e
 8. Include checkbox milestones that can serve as a work log.
 9. Include start-phase and close-phase requirements for every PR.
 10. Include required tests and relevant benchmarks for each milestone. Performance milestones must require a before/after comparison against the pre-change baseline, not only a current benchmark snapshot, and must treat material regressions as blocking until optimized or explicitly accepted.
-11. Include branch, PR, AI review, and CI process requirements when the workstream requires mergeable PRs.
-12. Create or update the GitHub issue with `gh issue create` or `gh issue edit`.
-13. Return the issue URL, repo, labels used, parent/child relationship if any, and main scope boundaries.
+11. For performance-optimization trackers, define explicit **north-star gates** and per-milestone **exit gates** with current value, target value, required evidence, and the action if the gate fails. A milestone that merely avoids regression does not satisfy an optimization goal unless it is explicitly instrumentation-only.
+12. Include branch, PR, AI review, and CI process requirements when the workstream requires mergeable PRs.
+13. Create or update the GitHub issue with `gh issue create` or `gh issue edit`.
+14. Return the issue URL, repo, labels used, parent/child relationship if any, and main scope boundaries.
 
 ## Repo Extensions
 
@@ -44,6 +45,8 @@ Repo extensions preserve project-specific conventions without hardcoding them in
 - Require performance evidence to compare **before vs after** for each claimed optimization or hot-path/storage change, including baseline commit/branch, candidate commit/branch, delta/ratio, and whether the comparison used identical commands, fixture size, hardware, and environment. Do not accept a current-only benchmark as proof of improvement.
 - Require exact commands, hardware/context, benchmark boundaries, and domain counters for performance work.
 - State a performance regression gate: material regressions in runtime, throughput, latency, memory, allocation, storage/rebuild overhead, or relevant counters are not acceptable by default; the PR must profile and optimize before mergeability can be claimed, or document that the remaining minimized regression is correctness-required and explicitly accepted by the coordinator/user.
+- For optimization work, state an insufficient-improvement gate: if the claimed/north-star metric does not move by the tracker-defined threshold, the issue remains incomplete even when tests and CI pass. The PR or issue must either fix the gate, narrow itself to instrumentation-only, or open/link a blocking follow-up that owns the measured next bottleneck before downstream/final-gate work can claim completion. Default tracker behavior is iterative and thorough: do not close as "insufficient" unless the user explicitly stops or accepts an open-blocker outcome.
+- Require per-milestone exit gates with numeric targets or explicit qualitative pass/fail evidence. Each gate should include: intended path/counter proof, before/after command identity, success threshold, and failure action.
 - Require PR start and close phases: augment tests/benchmarks first, implement, then re-review and update evidence.
 - Require iterative Codex, Copilot, and CodeRabbit review requests until reviews pass or are explicitly resolved when the user wants mergeable PRs, but only after each PR is mature enough to avoid review-credit churn: coherent code, focused tests, required benchmark evidence or rationale, current PR body/status evidence, no known local blockers, and latest-head CI running or green.
 - If GitHub CI is backed up, include a directive to cancel stale non-head runs and keep only latest-head CI for active PRs.

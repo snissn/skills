@@ -37,7 +37,7 @@ A PR is mergeable only when current evidence proves:
 - latest-head CI is passing or explicitly non-blocking with a documented reason;
 - code has had an internal deep review for correctness, drift, complexity, and tests;
 - tests cover the behavior changed by the PR;
-- performance-sensitive changes include relevant benchmark evidence in the PR body or a PR comment, and do **not** show an unaccepted material regression;
+- performance-sensitive changes include relevant benchmark evidence in the PR body or a PR comment, do **not** show an unaccepted material regression, and meet any explicit improvement/saturation gate unless the PR is explicitly instrumentation/safety-only or a linked blocker/waiver is recorded;
 - Codex, Copilot, and CodeRabbit reviews have been requested only after the PR is mature enough to avoid review-credit churn, and after meaningful pushes where available;
 - AI review findings are fixed or explicitly rejected with rationale;
 - review threads are commented on and marked resolved where the platform supports resolution;
@@ -57,6 +57,20 @@ A regression includes worse `ns/op`, `ops/sec`, `B/op`, `allocs/op`, rebuild/sto
 4. Claim mergeability only if the regression is eliminated, or if the remaining regression is proven correctness-required/unavoidable, minimized, explicitly documented with impact and profiles, and accepted by the coordinator/user.
 
 Do not normalize regressions as “expected overhead” without this investigation and explicit acceptance.
+
+## Insufficient Improvement Gate
+
+For optimization PRs with explicit improvement, saturation, latency, throughput, allocation, or counter targets, **no regression is not enough**.
+
+If latest-head evidence is neutral or misses the stated gate:
+
+1. Mark the PR **not mergeable / gate-blocked** unless the issue is explicitly instrumentation-only or safety-only.
+2. Profile the latest head to identify the next limiter and decide whether the same PR should continue iterating.
+3. If the PR cannot reasonably meet the gate, update the tracker/PR with the measured blocker and open or link a follow-up issue that blocks downstream/final-gate completion.
+4. Include a root-cause classification for the miss before choosing the next action: weak substrate, insufficient work shape, serial fan-in, coordination/locking, external sync/I/O, or benchmark noise.
+5. Claim mergeability only after the gate passes, the PR is explicitly re-scoped, or the coordinator/user records an explicit waiver with evidence and impact.
+
+Do not close performance stacks by documenting "insufficient improvement" as the default outcome. The default loop is iterate, fix, or mutate the graph with a real blocker.
 
 ## Inventory First
 
@@ -125,7 +139,7 @@ Benchmark comments/descriptions should include domain-appropriate metrics. For G
 
 Use markdown tables. Always include `ops/sec` when reporting `ns/op`. For other domains, use metrics that match the claimed improvement, such as wall time, per-unit latency, p95/p99, memory footprint, bundle size, browser responsiveness, GPU/CPU utilization, or per-stage timing.
 
-Do not optimize unrelated upstream cost inside every PR, but do not accept local regressions from the PR’s own code. If performance drops after review fixes, identify the change that caused it, whether it was correctness-required, and whether local CPU/memcopy/allocation overhead can be removed. A PR with an unexplained or avoidable material regression is not mergeable even if CI and AI reviews are green.
+Do not optimize unrelated upstream cost inside every PR, but do not accept local regressions from the PR’s own code. If performance drops after review fixes, identify the change that caused it, whether it was correctness-required, and whether local CPU/memcopy/allocation overhead can be removed. A PR with an unexplained or avoidable material regression is not mergeable even if CI and AI reviews are green. A PR with insufficient improvement against its explicit optimization gate is likewise not mergeable until it iterates, re-scopes, or links a blocker/waiver as described above.
 
 ## CI Discipline
 
@@ -231,6 +245,7 @@ Ensure the PR body or a final status comment includes:
 - path identity and scope boundary;
 - tests run with exact commands;
 - benchmark table if relevant;
+- explicit improvement/saturation gate status for optimization PRs: pass, fail/fix-needed, re-scoped instrumentation/safety-only, linked blocker, or explicit waiver;
 - CI status for latest head;
 - AI review status for Codex, Copilot, and CodeRabbit;
 - known caveats or intentionally deferred work;

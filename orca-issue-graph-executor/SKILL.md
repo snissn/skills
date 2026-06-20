@@ -47,6 +47,8 @@ If dependency edges are ambiguous, ask a concise clarifying question before disp
 - No dependent PR may be called mergeable, moved out of draft/WIP, or merged until all predecessor PRs are merged and the dependent branch is rebased/revalidated on the final base.
 - Downstream speculative managers must know they are blocked on predecessor merge and must treat predecessor contracts as snapshots, not final facts.
 - Avoid continuous churn: propagate upstream changes to descendants only at defined sync windows or when a public contract/blocker changes.
+- Do not let minor, local, non-contract predecessor review churn idle the whole graph. If the predecessor contract is stable and its remaining blocker is local/non-contract (for example a flaky test, docs wording, small review fix, CI retry, or isolated bug not changing exposed APIs/semantics), mark it dependency-ready with a local-fix note and dispatch bounded speculative successors. Keep successors blocked from final review/merge until the predecessor merges and final revalidation passes.
+- Prefer wall-time-efficient pipelining with churn control: start useful downstream work from a stable predecessor snapshot, but do not repeatedly rebase descendants for every upstream review-fix commit. Sync only on contract change, predecessor merge, pre-final-review, or stale-test/conflict trigger.
 - Managers must keep context bounded: write long logs/diffs/review transcripts and benchmark output to artifact files and summarize them instead of pasting or streaming large terminal output into Pi context.
 - Coordinator must actively run the graph loop while any manager is `running`: poll manager terminals and git/PR state, classify progress, unstick or recover stalled managers, update the manifest, and repeat until each active node reaches `dependency-ready`, `mergeable-candidate`, `merged`, or `blocked/fix-needed`.
 - Coordinator must not treat "manager spawned/running" as a stopping condition unless the user explicitly asks to pause. A response to the user while managers remain active must state the coordinator loop is continuing and must include the next poll/recovery action.
@@ -56,6 +58,8 @@ If dependency edges are ambiguous, ask a concise clarifying question before disp
 - Before spawning managers, produce a graph/execution plan and pause for user approval unless the user has already explicitly authorized immediate execution.
 - Cross-cutting format, API, or shared-hot-path changes require a design/contract gate before parallel implementation proceeds.
 - Material performance regressions from a PR’s own changes are graph-level blockers: the node stays `fix-needed`/blocked until optimized away or explicitly accepted by the coordinator/user with evidence.
+- Insufficient improvement is also a blocker for optimization nodes: if a node's stated gate or the parent north-star metric does not move enough, the coordinator must not treat the node as complete merely because CI/reviews pass. Keep it `fix-needed`, revise the implementation, or create/link a replacement blocker before successors/final gates proceed.
+- Do not "give up" by closing a graph as insufficient unless the user explicitly asks to stop. Default behavior is iterative: diagnose the failed gate, update the manifest, dispatch fixes or new blocker nodes, and continue until the gate passes, is explicitly waived, or the user stops execution.
 
 ## Workflow
 
@@ -108,8 +112,8 @@ For each approved ready issue, spawn an isolated xhigh manager using the manager
 - Independent roots use the current intended base, usually latest `origin/main`.
 - `strict-serial`: start the next dependent only after predecessor merge.
 - `layer-parallel`: start all ready independent nodes in topological layers, subject to max parallelism.
-- `pipelined`: allow a bounded successor window, commonly one predecessor in finalization plus one speculative descendant.
-- `adaptive`: use `layer-parallel` for independent low-conflict nodes and `pipelined` for high-overlap dependency chains.
+- `pipelined`: allow a bounded successor window, commonly one predecessor in finalization plus one speculative descendant. Use this when a predecessor is in CI/review/local-fix churn but its public contract is stable.
+- `adaptive`: use `layer-parallel` for independent low-conflict nodes and `pipelined` for high-overlap dependency chains. Prefer adaptive for performance stacks where evidence/review iterations can be long but downstream planning/implementation can proceed against stable contracts.
 - Speculative dependents use the most stable predecessor contract snapshot available and are explicitly marked blocked.
 - Apply max parallelism, max speculative successors per chain, and max speculative depth from the manifest; otherwise use a conservative number and report it.
 
@@ -125,7 +129,7 @@ Prompt managers with the templates in [manager prompts](references/manager-promp
 Use this state model from [dependency execution model](references/dependency-execution.md):
 
 ```text
-pending -> running -> dependency-ready -> mergeable-candidate -> merged
+pending -> running -> gate-review -> dependency-ready -> mergeable-candidate -> merged
                        \-> blocked/fix-needed
 ```
 
@@ -134,10 +138,12 @@ A predecessor becomes **dependency-ready** only when its public contract is stab
 - PR exists and manager reports scope is substantially complete.
 - Tests/benchmarks required for the exposed contract have passed locally or in CI.
 - Manager has completed at least one implementation/review/fix loop.
+- The coordinator/evidence reviewer has completed `gate-review`: command identity, before/after baseline, intended-path counters, north-star/exit thresholds, regressions, and PR/issue claims were checked.
+- Any insufficient-improvement result has been fixed, explicitly re-scoped as instrumentation/safety-only, or converted into a linked blocker with graph edges that prevent false final completion.
 - Remaining work is expected to be review polish, CI, or non-contract-changing cleanup.
 - Handoff states changed APIs, formats, files, branch/head SHA, and known risks.
 
-Dependency-ready is not mergeable. It only permits blocked descendants to start speculative work.
+Dependency-ready is not mergeable. It only permits blocked descendants to start speculative work. If the predecessor still has a minor local blocker, record it as dependency-ready with `local_fix_pending` in the manifest notes/blockers: descendants may start, but the predecessor remains not mergeable until that local blocker is fixed.
 
 ### 6.5. Active coordinator poll loop
 
@@ -174,6 +180,27 @@ Stall handling:
 - If there is still no useful progress after the next poll window, follow Manager continuity and recovery: save facts to the manifest, then restart or replace the manager rather than letting the graph sit idle.
 - If the manager is only passively watching CI or a long benchmark and has documented the wait condition, do not treat it as stalled; poll the external condition instead.
 
+### 6.6. Gate-driven evidence review and graph mutation
+
+Before any performance/scaling node can become `dependency-ready`, run a gate review. This is separate from code review and CI.
+
+Gate review checks:
+
+- the benchmark commands match the tracker and use identical before/after dataset shape, hardware/context, durability/cache/compression settings, and measured boundary;
+- counters prove the intended path ran and fallback/smoke paths did not satisfy the milestone accidentally;
+- the node's explicit exit gate and any parent north-star gates moved by the required threshold;
+- no material regression remains unoptimized/unaccepted;
+- the PR body and issue comments do not overclaim beyond the evidence.
+
+Gate outcomes:
+
+- **pass**: transition to `dependency-ready` or `mergeable-candidate` as appropriate.
+- **fix-needed**: keep the node active and dispatch a fix/profiling loop. Do not start new dependent work if the fix may change public contracts, benchmark semantics, counters, formats, durability behavior, or files consumed by successors. If the blocker is minor/local/non-contract, allow bounded speculative successors while recording `local_fix_pending`.
+- **new-blocker**: if the implementation exposed a different bottleneck, pause dependent starts only when the blocker changes downstream assumptions. Otherwise add the blocker to the graph and continue independent or safely speculative work from the stable snapshot.
+- **waived**: only with explicit coordinator/user acceptance recorded in the manifest and PR/issue, including the impact and why continuing is acceptable.
+
+Default action on a failed gate is **continue iterating**, not close or document insufficiency. A final/docs/policy node may record a decision, but it must not close the parent graph as complete while north-star gates are unmet unless linked replacement blockers remain open and the user explicitly accepts that outcome.
+
 ### 7. Start downstream speculative work
 
 When all direct predecessors of an issue are dependency-ready, start that issue's manager even if predecessors are not merged, unless doing so would cause high churn, exceed the configured pipeline window, or require unresolved product decisions.
@@ -183,6 +210,7 @@ Pipeline controls:
 - `max_speculative_successors_per_chain`: maximum unmerged descendants that may be running behind a dependency-ready predecessor on a single chain. Use `1` for the common "one next PR while the blocker finalizes" pattern.
 - `max_speculative_depth`: how many unmerged edges may separate a speculative node from the nearest merged base. Use `1` for conservative stacks; increase only for stable contracts and low conflict risk.
 - `dependency_ready_starts_allowed`: set false to temporarily freeze downstream starts when reviews/benchmarks may still change a public contract.
+- `minor_blocker_pipeline_allowed`: default true for adaptive/pipelined execution. Allows successors to start when predecessors have only non-contract local review/CI/test-fix churn. Set false if the remaining blocker might alter APIs, storage formats, durability semantics, benchmark definitions, counters, or downstream file contracts.
 
 The downstream prompt must include:
 
@@ -214,6 +242,8 @@ Do not continuously rebase or upstream every predecessor change down the tree. S
 - when conflicts or tests show the snapshot is stale.
 
 When syncing, send a concise delta to downstream managers instead of asking them to rediscover the whole upstream diff.
+
+Minimal-churn rule: if a predecessor accumulates multiple non-contract review-fix commits while a descendant is running, do not sync each commit. Batch them and sync only after the predecessor merges or after a contract-affecting change. If the descendant must use a specific predecessor head, record that snapshot SHA and defer restacking until the final base update.
 
 ### 10. Final review and merge gates
 
@@ -263,7 +293,7 @@ Before claiming graph execution is complete or paused, verify:
 - [ ] Dependency graph and layers are recorded in the manifest.
 - [ ] No cycle or unresolved edge remains.
 - [ ] Every spawned manager has an issue, base/snapshot, state, terminal, and worktree recorded.
-- [ ] Every active `running` manager has a recent poll record or current wait condition, and the next poll/recovery action is known.
+- [ ] Every active `running` or `gate-review` manager has a recent poll record or current wait condition, and the next poll/recovery action is known.
 - [ ] No manager is silently idle/stalled without an unstick or recovery action in progress.
 - [ ] Every speculative descendant is explicitly blocked on predecessor merge.
 - [ ] No dependent PR is called mergeable before predecessors merge.
@@ -282,7 +312,8 @@ Pause and report if:
 - merge conflicts require broad restacking;
 - required CI/AI review infrastructure is unavailable and repo policy requires it;
 - a manager hits context overflow, exceeds roughly 85% context, or repeatedly auto-compacts; interrupt if needed, ask for an artifact-backed concise handoff, and if recovery is not immediate create a fresh manager instance instead of taking over the manager role;
-- benchmark or correctness evidence regresses after final predecessor merge or on the PR’s latest head.
+- benchmark or correctness evidence regresses after final predecessor merge or on the PR’s latest head;
+- a performance/scaling node is neutral or insufficient against its stated exit gate and no fix loop, blocker issue, or explicit user waiver has been recorded.
 
 ## Final Report Format
 

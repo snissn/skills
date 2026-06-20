@@ -76,8 +76,9 @@ These defaults allow exactly the common pattern: one predecessor PR is in CI/rev
 | --- | --- | --- | --- |
 | `pending` | Not started. | No | No |
 | `running` | Manager is implementing/reviewing. | No | No |
-| `dependency-ready` | Public contract is stable enough for descendants to start speculative work. | Yes | No |
-| `fix-needed` | Coordinator/review found blockers, including unaccepted material performance regressions. | No new descendants unless already safe; existing descendants may need sync. | No |
+| `gate-review` | Implementation evidence is being checked against node exit gates and parent north-star gates. | No | No |
+| `dependency-ready` | Public contract is stable enough and gate-reviewed for descendants to start speculative work. May include `local_fix_pending` notes when only non-contract cleanup/review/CI churn remains. | Yes | No |
+| `fix-needed` | Coordinator/review found blockers, including unaccepted material performance regressions or insufficient improvement against required gates. | No new descendants unless the blocker is classified local/non-contract and the pipeline window allows safe speculative work; existing descendants may need sync. | No |
 | `mergeable-candidate` | Manager believes PR is mergeable, but graph gates may still block. | Yes | Only if predecessors merged and final revalidation passes |
 | `merged` | Coordinator merged PR. | Yes | Yes, completed |
 | `blocked` | Waiting for decision, predecessor, CI, or conflicts. | No | No |
@@ -91,11 +92,37 @@ A predecessor may be marked `dependency-ready` when all are true:
 - [ ] Public contract surface is documented: APIs, formats, files, behavior, tests, benchmark expectations.
 - [ ] Required local tests/benchmarks for that contract passed, or failures are unrelated and documented.
 - [ ] No material performance regression remains unoptimized/unaccepted for the exposed contract.
+- [ ] Optimization gates are not merely neutral: the node's stated improvement/saturation target and any parent north-star gate affected by the node passed, or a linked blocker/explicit waiver prevents false completion.
 - [ ] Manager completed at least one review/fix loop or explicit self-review.
 - [ ] Remaining work is expected to be CI, review polish, docs wording, or non-contract-changing cleanup.
 - [ ] Known risks and possible contract churn are listed.
 
-Do not mark dependency-ready if unresolved review findings could change APIs, storage formats, public semantics, test harness shape, or benchmark interpretation used by descendants.
+Do not mark dependency-ready if unresolved review findings could change APIs, storage formats, public semantics, test harness shape, benchmark interpretation used by descendants, or whether the claimed performance gate actually passed.
+
+You may mark dependency-ready with a `local_fix_pending` note when all public contracts and gates are stable but the predecessor is still iterating on local, non-contract items such as a flaky test, docs wording, local cleanup, CI retry, or review nit. This is intended to preserve wall-time efficiency. Descendants started from that snapshot remain speculative and must revalidate after the predecessor merges.
+
+## Gate Review And Failed-Gate Mutation
+
+For performance/scaling graphs, insert a `gate-review` transition after implementation evidence and before `dependency-ready`/`mergeable-candidate`.
+
+Gate review must verify:
+
+- exact before/after command identity, fixture size, hardware/context, durability/cache/compression settings, and measured boundary;
+- path proof counters show the intended implementation ran and fallback counters do not explain the apparent result;
+- node exit gates and relevant parent north-star gates pass by their stated thresholds;
+- CPU/alloc/block/mutex/stage profiles support the claimed bottleneck movement;
+- root-cause classification is current: the evidence distinguishes weak parallel substrate, insufficient work shape, serial fan-in, checkpoint coordination, external I/O/sync limits, and benchmark noise well enough to justify the next graph action;
+- the PR/issue text does not normalize an insufficient win as completion.
+
+Failed gate handling is iterative by default:
+
+1. Classify the blocker as `contract-blocking` or `local/non-contract`.
+2. Mark the node `fix-needed` and dispatch profiling/fix work if the same PR can still reasonably meet the gate.
+3. If evidence shows a different blocker, create or update a child issue for that blocker, add it to the DAG, and add edges from the failed node or parent final-gate node as appropriate.
+4. Pause dependent starts/merges only when the blocker may change downstream contracts, benchmark semantics, formats, durability behavior, or counters. If the blocker is local/non-contract, continue bounded speculative work from the stable snapshot to save wall time.
+5. Record the failure, evidence, blocker classification, new issue/edge, and next action in the manifest.
+
+Do not close a graph with "insufficient improvement" as the default outcome. Stop only when the user asks to stop, an explicit waiver is recorded, or the graph has been updated with open blockers that prevent a false completion claim.
 
 ## Speculative Descendant Rules
 
@@ -116,7 +143,8 @@ Before starting a speculative descendant, verify the pipeline window:
 - unmerged descendant count on that chain is below `max_speculative_successors_per_chain`;
 - speculative distance from the nearest merged base is no greater than `max_speculative_depth`;
 - predecessor handoff says public contract churn is unlikely;
-- no open review, benchmark, or format findings are likely to invalidate the consumed contract.
+- no open review, benchmark, or format findings are likely to invalidate the consumed contract;
+- if the predecessor still has a blocker, it is classified local/non-contract and has `local_fix_pending` recorded in the manifest.
 
 If any check fails, leave the node `pending` or `blocked` and record the reason instead of starting it.
 
@@ -129,6 +157,13 @@ To minimize churn, do not continuously rebase or merge upstream changes into eve
 3. **Predecessor merged**: descendant must update to final base.
 4. **Pre-final-review**: before declaring descendant mergeable.
 5. **Conflict/test trigger**: descendant tests fail due to stale predecessor assumptions.
+
+Minimal-churn policy:
+
+- Do not restack descendants after every non-contract predecessor commit.
+- Batch non-contract review fixes and sync descendants only at merge or pre-final-review.
+- Sync immediately only when a predecessor changes a public contract, benchmark/harness meaning, storage/durability behavior, counters consumed downstream, or a file/API that the descendant is actively editing.
+- If a descendant is running from an older stable snapshot, record the snapshot SHA and expected final revalidation commands rather than churning its branch.
 
 Each sync should include a concise delta:
 
@@ -175,7 +210,7 @@ nodes:
     predecessors: [120, 121]
     successors: [130]
     layer: 2
-    state: pending|running|dependency-ready|mergeable-candidate|merged|blocked|fix-needed
+    state: pending|running|gate-review|dependency-ready|mergeable-candidate|merged|blocked|fix-needed
     manager_worktree: ...
     manager_terminal: ...
     branch: ...
@@ -183,8 +218,15 @@ nodes:
     head_sha: ...
     dependency_snapshot:
       predecessor: sha
+    local_fix_pending: true|false
+    blocker_classification: none|local_non_contract|contract_blocking|benchmark_blocking|unknown
     tests: ...
     benchmarks: ...
+    gates:
+      north_star: ...
+      exit_gate_status: pass|fail|waived|not_applicable
+      evidence_reviewer: ...
+      failed_gate_next_action: fix-loop|new-blocker|waived|none
     blockers: ...
     contract_surface: ...
     conflict_surface: ...

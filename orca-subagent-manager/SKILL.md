@@ -15,6 +15,7 @@ Use this skill when a task should be delegated to multiple Pi agents in Orca-man
 - The manager chooses the **minimum appropriate thinking level** for each subagent, not xhigh by default.
 - Managers must keep work auditable: isolated worktrees, explicit branch/issue names, exact test and benchmark commands, PR body updates, and latest-head CI evidence.
 - Managers must treat material performance regressions as blocking mergeability failures until the changed path is profiled and optimized, or the remaining minimized regression is explicitly accepted by the coordinator/user.
+- Managers must treat insufficient improvement against explicit optimization gates as blocking too. A neutral/no-regression result is not enough unless the chunk is instrumentation/safety-only; otherwise iterate, profile, or propose a linked blocker issue before claiming readiness.
 - Default user intent is to merge PRs after mergeable gates pass, but managers/subagents normally do not merge directly. The coordinator owns merge execution unless it explicitly delegates merge authority.
 
 ## Thinking-Level Policy
@@ -102,9 +103,9 @@ Use a single subtask worktree when the issue only needs one implementation chunk
    - Check current branch, base, worktree cleanliness, and dependency state.
 
 2. **Plan**
-   - Produce a chunk table: subtask ID, scope, files/packages, dependencies, tests/benchmarks, evidence, reviewer, and thinking level.
+   - Produce a chunk table: subtask ID, scope, files/packages, dependencies, tests/benchmarks, evidence, code reviewer, evidence reviewer, and thinking level.
    - Identify blockers and decision gates. Ask the coordinator/user before expanding scope or changing architecture.
-   - For performance-sensitive work, define the benchmark matrix and the regression threshold/gate up front; default is zero unaccepted material regression.
+   - For performance-sensitive work, define the benchmark matrix, improvement/saturation threshold, intended-path counters, and regression gate up front; default is zero unaccepted material regression and no false completion on insufficient improvement.
    - Keep parent tracker boundaries explicit; do not absorb unrelated follow-ups.
 
 3. **Dispatch execution**
@@ -113,8 +114,10 @@ Use a single subtask worktree when the issue only needs one implementation chunk
    - Executors should not request external review or claim mergeability.
 
 4. **Review**
-   - Assign a reviewer subagent with at least the implementation agent’s thinking level; use `high` or `xhigh` for persistence, GC, concurrency, benchmarks, and public API changes.
-   - Reviewers must inspect the diff, tests, benchmarks, issue acceptance gates, and scope drift.
+   - Assign a code reviewer subagent with at least the implementation agent’s thinking level; use `high` or `xhigh` for persistence, GC, concurrency, benchmarks, and public API changes.
+   - Assign an evidence reviewer for performance/scaling chunks. This may be the same agent only for small chunks; otherwise keep it distinct from the implementer.
+   - Code reviewers must inspect the diff, tests, issue acceptance gates, and scope drift.
+   - Evidence reviewers must inspect benchmark command identity, before/after baseline, intended-path counters, profile/stage evidence, threshold pass/fail, and whether PR/issue wording overclaims.
    - Reviewer output must be actionable: pass, blocking findings, non-blocking nits, missing evidence.
 
 5. **Resolution loop**
@@ -126,6 +129,7 @@ Use a single subtask worktree when the issue only needs one implementation chunk
    - Manager or a finalizer agent integrates accepted subtask changes into the manager branch.
    - Resolve conflicts, run focused and broad validation, update docs/issue comments/PR body, and ensure evidence is current.
    - If relevant benchmarks regress in runtime, throughput, allocations, storage/rebuild overhead, or counters, mark the PR performance-blocked, profile and optimize before mergeability, and rerun identical before/after evidence.
+   - If relevant benchmarks are neutral or below the stated improvement/saturation threshold, mark the PR gate-blocked, iterate or propose a linked blocker issue; do not claim mergeability solely from no-regression evidence.
    - If subtask branches were used, merge/cherry-pick only reviewed commits. Preserve authorship when appropriate.
 
 7. **Mergeable closeout**
@@ -143,10 +147,10 @@ A subtask review passes only when:
 - the diff is within the subtask scope;
 - issue acceptance gates are mapped to code/tests/evidence;
 - tests cover the behavior changed;
-- performance-sensitive changes have benchmark or allocation evidence and no unaccepted material regression;
+- performance-sensitive changes have benchmark or allocation evidence, no unaccepted material regression, and pass their stated improvement/saturation gate unless explicitly instrumentation/safety-only;
 - storage/lifetime changes fail closed and include reopen/GC/concurrency tests where relevant;
 - docs and issue/PR wording do not overclaim;
-- any remaining performance regression is proven unavoidable/correctness-required, minimized, explicitly accepted, and documented with profiles/evidence;
+- any remaining performance regression or insufficient-improvement outcome is proven unavoidable/correctness-required or converted into a linked blocker, explicitly accepted, and documented with profiles/evidence;
 - no private cache/lifecycle is introduced when a shared manager is required;
 - fallback and unsupported paths remain safe.
 
