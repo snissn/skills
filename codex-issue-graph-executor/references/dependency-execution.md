@@ -79,8 +79,13 @@ Use this shape for working notes or a temp manifest:
 ```yaml
 repo: owner/name
 base_ref: origin/main
-merge_authorized: true|false|scope
+mode: execute-and-merge
+merge_authorized: true
+merge_scope: selected graph only
 max_parallel_agents: N
+durable_state:
+  kind: parent-issue-comment|local-manifest
+  location: ...
 nodes:
   id:
     kind: issue|pr
@@ -105,3 +110,7 @@ nodes:
 sync_log: []
 merge_log: []
 ```
+
+When this skill is invoked, `merge_authorized` defaults to `true` for the
+selected graph. Record a narrower scope only when the user explicitly requests
+plan-only or no-merge execution.

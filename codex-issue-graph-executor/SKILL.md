@@ -1,15 +1,39 @@
 ---
 name: codex-issue-graph-executor
-description: "Execute dependency graphs of GitHub issues and PRs with Codex-native subagents: infer dependencies, dispatch minimum-reasoning workers under an xhigh coordinator, enforce mature-PR review gates, latest-head CI, performance evidence, topological merge order, and merge after gates when authorized."
+description: "Execute dependency graphs of GitHub issues and PRs with Codex-native subagents. Always dispatch workers when available, treat skill invocation as scoped merge authorization for the selected graph, enforce mature-PR review gates, latest-head CI, performance evidence, and merge in topological order after gates pass."
 ---
 
 # Codex Issue Graph Executor
 
 Use this skill when the user asks Codex to execute a dependency graph of GitHub
-issues, tickets, or PRs and drive them to mergeability and merge. This is the
-Codex-native counterpart to Orca graph execution: do not use Orca or Pi
-commands. Use Codex subagent tools when available, with this rollout acting as
-the xhigh graph coordinator.
+issues, tickets, or PRs and drive them to completion. This is the Codex-native
+counterpart to Orca graph execution: do not use Orca or Pi commands. Use Codex
+subagent tools when available, with this rollout acting as the xhigh graph
+coordinator.
+
+Invocation of this skill means `execute-and-merge`: dispatch workers when
+subagent tools are available, open/update PRs, drive each PR through readiness
+gates, and merge in topological order after gates pass. Do not stop at a plan,
+do not stop after opening PRs, and do not ask for separate merge approval unless
+the user explicitly narrowed the request to planning or no-merge execution.
+
+## Default Authorization
+
+- Merge authorization is granted by default for PRs in the selected graph.
+- Authorization is scoped to the target repo, parent tracker, child issues, and
+  PRs created or explicitly adopted during this execution.
+- The coordinator may merge after all gates pass; workers may not merge unless
+  the coordinator explicitly delegates that action for a specific PR.
+- Do not merge PRs outside the selected graph, even if they are nearby.
+- Do not merge if repo policy or branch protection requires missing human
+  approval.
+- Do not merge with stale, missing, red, or inconclusive latest-head CI unless
+  repo policy has no CI requirement and the coordinator records the rationale.
+- Do not merge with unresolved requested changes, material review findings,
+  missing required tests/benchmarks, or unaccepted material performance
+  regressions.
+- If a hard blocker prevents completion, update durable graph state with the
+  blocker, owner, and next action before reporting.
 
 ## Compose With
 
@@ -20,6 +44,10 @@ the xhigh graph coordinator.
   inspected and fixed.
 - `gh-tracker-issue` when a graph needs a durable parent tracker or issue body
   updates before implementation.
+
+At startup, verify which helper skills/tools are available and record any
+fallback in the graph state. Missing helper skills do not stop execution unless
+their absence makes a required gate impossible to verify.
 
 ## Reasoning Allocation
 
@@ -58,6 +86,9 @@ manifest. Do not pretend work was delegated.
   coordinator explicitly accepts them with evidence.
 - Keep user changes safe. Do not revert unrelated local changes. Do not use
   destructive git commands unless explicitly requested.
+- Continue until every node is merged, intentionally deferred to a linked
+  follow-up, or blocked by external state that is recorded in durable graph
+  state.
 
 ## Workflow
 
@@ -70,20 +101,23 @@ manifest. Do not pretend work was delegated.
 4. Record a conflict/contract risk table for every node:
    `contract_surface`, `conflict_surface`, `execution_mode`, and
    `contract_owner`.
-5. Present the graph and execution plan unless the user already authorized
-   immediate execution. If authorized, proceed and state the assumption.
-6. Dispatch safe independent work to Codex subagents. Keep the coordinator on
+5. Post or update durable graph state before implementation. Prefer a parent
+   issue comment with marker `<!-- codex-issue-graph-executor:state -->`;
+   otherwise use a local manifest and report the fallback.
+6. Present a concise graph snapshot and proceed immediately. Do not wait for
+   plan approval because this skill defaults to execute-and-merge.
+7. Dispatch safe independent work to Codex subagents. Keep the coordinator on
    the critical path: graph state, integration, final review, merge gates.
-7. Track node state transitions in a local manifest or concise working notes:
+8. Track node state transitions in durable graph state and any local manifest:
    `pending`, `running`, `dependency-ready`, `fix-needed`,
    `mergeable-candidate`, `merged`, or `blocked`.
-8. Use sync windows instead of constant rebasing: initial snapshot,
+9. Use sync windows instead of constant rebasing: initial snapshot,
    predecessor contract change, predecessor merge, pre-final-review, and
    conflict/test trigger.
-9. Use `github-pr-mergeable` for each PR before final merge. Merge only after
+10. Use `github-pr-mergeable` for each PR before final merge. Merge only after
    latest-head CI/reviews are acceptable, required evidence is current, and all
    predecessors are merged.
-10. Merge in topological order. After each merge, update descendants to the
+11. Merge in topological order. After each merge, update descendants to the
     final base and rerun their required checks before declaring them mergeable.
 
 ## Dependency Ready
@@ -116,6 +150,7 @@ Report:
 - Confirmation that AI reviews were requested only after mature PR heads, or not
   requested.
 - Any deferred nodes with blocker, owner, and next action.
+- Durable graph-state location and whether any fallback execution path was used.
 
 See `references/worker-prompts.md` and
 `references/dependency-execution.md` for dispatch templates and manifest

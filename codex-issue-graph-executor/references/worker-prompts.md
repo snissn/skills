@@ -23,8 +23,8 @@ Task:
 You are a Codex worker for issue #<ISSUE> in <OWNER>/<REPO>.
 
 Load and follow:
-- /home/mikers/.codex/skills/codex-issue-graph-executor/SKILL.md
-- /home/mikers/.codex/skills/github-pr-mergeable/SKILL.md
+- <CODEX_HOME>/skills/codex-issue-graph-executor/SKILL.md
+- <CODEX_HOME>/skills/github-pr-mergeable/SKILL.md
 
 Graph state:
 - This issue has no unmerged predecessors.
@@ -46,6 +46,15 @@ Rules:
 
 Return milestone handoffs for: implementation plan, PR opened, dependency-ready
 candidate, mergeable-candidate, blocker.
+
+Every handoff must include:
+- branch name;
+- PR URL, when opened;
+- changed files;
+- tests run;
+- benchmark evidence or rationale;
+- unresolved risks;
+- current node state recommendation.
 ```
 
 ## Speculative Descendant Worker
@@ -73,7 +82,7 @@ Rules:
 ```text
 You are a Codex readiness worker for PR <PR_URL>.
 
-Use /home/mikers/.codex/skills/github-pr-mergeable/SKILL.md.
+Use <CODEX_HOME>/skills/github-pr-mergeable/SKILL.md.
 
 Check only this PR:
 - latest head SHA and base;
