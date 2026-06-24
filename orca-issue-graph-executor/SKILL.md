@@ -50,7 +50,7 @@ If dependency edges are ambiguous, ask a concise clarifying question before disp
 - Do not let minor, local, non-contract predecessor review churn idle the whole graph. If the predecessor contract is stable and its remaining blocker is local/non-contract (for example a flaky test, docs wording, small review fix, CI retry, or isolated bug not changing exposed APIs/semantics), mark it dependency-ready with a local-fix note and dispatch bounded speculative successors. Keep successors blocked from final review/merge until the predecessor merges and final revalidation passes.
 - Prefer wall-time-efficient pipelining with churn control: start useful downstream work from a stable predecessor snapshot, but do not repeatedly rebase descendants for every upstream review-fix commit. Sync only on contract change, predecessor merge, pre-final-review, or stale-test/conflict trigger.
 - Managers must keep context bounded: write long logs/diffs/review transcripts and benchmark output to artifact files and summarize them instead of pasting or streaming large terminal output into Pi context.
-- Coordinator must actively run the graph loop while any manager is `running`: poll manager terminals and git/PR state, classify progress, unstick or recover stalled managers, update the manifest, and repeat until each active node reaches `dependency-ready`, `mergeable-candidate`, `merged`, or `blocked/fix-needed`.
+- Coordinator must actively run the graph loop while any manager is `running` or `gate-review`: poll manager terminals and git/PR state, classify progress, unstick or recover stalled managers, update the manifest, and repeat until each active node reaches `dependency-ready`, `mergeable-candidate`, `merged`, or `blocked/fix-needed`. Do not idle the graph while one predecessor churns on a local/non-contract fix if bounded speculative successors can safely proceed.
 - Coordinator must not treat "manager spawned/running" as a stopping condition unless the user explicitly asks to pause. A response to the user while managers remain active must state the coordinator loop is continuing and must include the next poll/recovery action.
 - Coordinator must not silently take over manager-owned implementation/finalization work. If a manager stalls, overflows, or loses context, either unstick that manager with a concise prompt or replace it with a fresh manager instance using an artifact-backed handoff.
 - Managers must not merge unless the coordinator explicitly delegates merge authority. Coordinator merge rules from `/skill:orca-issue-list-executor` still apply, with default merge intent after gates pass.
@@ -147,7 +147,7 @@ Dependency-ready is not mergeable. It only permits blocked descendants to start 
 
 ### 6.5. Active coordinator poll loop
 
-While any issue manager is in `running` state, the coordinator must run an active poll loop instead of passively waiting or ending the turn after dispatch.
+While any issue manager is in `running` or `gate-review` state, the coordinator must run an active poll loop instead of passively waiting or ending the turn after dispatch.
 
 Poll cadence:
 

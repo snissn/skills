@@ -66,9 +66,10 @@ max_parallel_managers: 2
 max_speculative_successors_per_chain: 1
 max_speculative_depth: 1
 dependency_ready_starts_allowed: true
+minor_blocker_pipeline_allowed: true
 ```
 
-These defaults allow exactly the common pattern: one predecessor PR is in CI/review/final polish while one direct successor starts implementation from a dependency-ready contract snapshot. Increase speculative depth or successor count only when contract churn risk is low and the manifest records why.
+These defaults allow exactly the common pattern: one predecessor PR is in CI/review/final polish or local/non-contract fix churn while one direct successor starts implementation from a dependency-ready contract snapshot. Increase speculative depth or successor count only when contract churn risk is low and the manifest records why.
 
 ## Node States
 
@@ -203,6 +204,7 @@ max_parallel_managers: N
 max_speculative_successors_per_chain: N
 max_speculative_depth: N
 dependency_ready_starts_allowed: true|false
+minor_blocker_pipeline_allowed: true|false
 nodes:
   123:
     title: ...
