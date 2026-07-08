@@ -39,6 +39,7 @@ A PR is mergeable only when current evidence proves:
 - tests cover the behavior changed by the PR;
 - performance-sensitive changes include relevant benchmark evidence in the PR body or a PR comment, do **not** show an unaccepted material regression, and meet any explicit improvement/saturation gate unless the PR is explicitly instrumentation/safety-only or a linked blocker/waiver is recorded;
 - Codex, Copilot, and CodeRabbit reviews have been requested only after the PR is mature enough to avoid review-credit churn, and after meaningful pushes where available;
+- any requested/acknowledged final AI review for the latest head has completed with a review/comment/check artifact tied to that head, or is explicitly unavailable before the request is accepted;
 - AI review findings are fixed or explicitly rejected with rationale;
 - review threads are commented on and marked resolved where the platform supports resolution;
 - PR description accurately states scope, tests, benchmarks, risks, and remaining caveats.
@@ -197,6 +198,16 @@ For each AI review:
 - reject incorrect findings with a PR comment explaining why;
 - mark review threads resolved after fixing or explicitly dismissing;
 - re-request review after meaningful fixes until reviews are quiet/passing or intentionally resolved.
+
+### Final AI Review Completion Gate
+
+Before posting final mergeability evidence or merging, re-inventory each requested AI reviewer against the exact latest head SHA:
+
+- If a final review was requested and the bot acknowledged it with a reaction, queued/in-progress/status comment, pending review, or check run, treat that reviewer as **pending** until it produces a completed review/comment/check artifact for the latest head SHA.
+- Do not merge while a latest-head AI review is pending, even if `mergeable=MERGEABLE`, `mergeStateStatus=CLEAN`, local validation passes, or earlier review threads have been resolved.
+- A bot is only "unavailable" when the request is rejected, rate-limited, not installed/configured, or produces no acknowledgement after a documented retry/window. An acknowledged request is not unavailable; it is pending.
+- For Codex-style review comments, require the review's `commit.oid` or explicit "Reviewed commit" SHA to match the current head, and require all resulting review threads to be resolved.
+- If a requested final review completes after the PR was merged and reports findings, treat that as a process miss: open or push a follow-up fix PR, resolve the late threads, and update this skill/process before doing more merges.
 
 ## Review Thread Resolution
 
