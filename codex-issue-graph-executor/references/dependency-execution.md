@@ -57,6 +57,22 @@ Predecessor #A changed since snapshot:
 - required downstream actions: rebase/rerun/update docs/etc.
 ```
 
+## Parallelism Rules
+
+- Keep agent depth at one. The coordinator owns all fan-out and follow-up
+  routing.
+- Prefer parallel inventory, exploration, test runs, CI triage, and independent
+  review because their outputs are easy to reconcile.
+- Parallelize implementation only when workers have isolated worktrees or
+  disjoint ownership boundaries and no shared contract decision remains.
+- Serialize nodes that touch the same public API, storage format, migration,
+  benchmark interpretation, hot-loop helper, or frequently conflicting files.
+- Set the active worker count to the minimum of the runtime limit, the number of
+  safely independent tasks, and the machine/repository resource limit. Preserve
+  coordinator capacity.
+- Stop or steer a worker when its base SHA, ownership boundary, or predecessor
+  contract becomes stale; do not let it continue accumulating speculative work.
+
 ## Merge Gate
 
 A node can be declared mergeable only when:
@@ -83,6 +99,14 @@ mode: execute-and-merge
 merge_authorized: true
 merge_scope: selected graph only
 max_parallel_agents: N
+max_agent_depth: 1
+coordinator:
+  agent_role: graph-coordinator
+  requested_model: gpt-5.6-sol
+  requested_effort: xhigh
+  actual_model: ...
+  actual_effort: ...
+  routing_fallback: ...
 durable_state:
   kind: parent-issue-comment|local-manifest
   location: ...
@@ -96,6 +120,13 @@ nodes:
     layer: 0
     state: pending
     agent: ...
+    agent_role: inventory|implementation|high-risk-specialist|readiness-review
+    requested_model: gpt-5.6-luna|gpt-5.6-terra|gpt-5.6-sol
+    requested_effort: low|medium|high|xhigh
+    actual_model: ...
+    actual_effort: ...
+    routing_rationale: ...
+    routing_fallback: ...
     worktree: ...
     branch: ...
     pr: ...

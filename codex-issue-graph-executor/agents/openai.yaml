@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Issue Graph Executor"
+  short_description: "Execute and merge dependency-aware issue graphs"
+  default_prompt: "Use $codex-issue-graph-executor to execute and merge this issue graph with risk-routed Codex subagents."
