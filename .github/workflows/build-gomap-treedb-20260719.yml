@@ -1,0 +1,107 @@
+name: Build pinned GoMap TreeDB
+
+on:
+  push:
+    branches:
+      - build/gomap-treedb-20260719
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-treedb:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out pinned GoMap source
+        uses: actions/checkout@v4
+        with:
+          repository: snissn/gomap
+          ref: 4c00c886a9d7059f143e1d564aa602ed583a6cc5
+          path: gomap
+
+      - name: Set up Go 1.26.0
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.26.0'
+          cache: true
+          cache-dependency-path: gomap/go.sum
+
+      - name: Record source and build environment
+        working-directory: gomap
+        shell: bash
+        env:
+          CGO_ENABLED: '1'
+          GOFLAGS: '-p=1'
+          GOMAXPROCS: '2'
+          GOTOOLCHAIN: local
+        run: |
+          set -euo pipefail
+          mkdir -p logs artifacts
+          {
+            printf 'repository=%s\n' 'https://github.com/snissn/gomap'
+            printf 'commit=%s\n' '4c00c886a9d7059f143e1d564aa602ed583a6cc5'
+            printf 'module-version=%s\n' 'v0.6.2-0.20260719170055-4c00c886a9d7'
+            go version
+            go env GOVERSION GOOS GOARCH CGO_ENABLED GOFLAGS GOMAXPROCS GOTOOLCHAIN
+            gcc --version | sed -n '1p'
+          } | tee logs/environment.log
+
+      - name: Build TreeDB binaries
+        working-directory: gomap
+        shell: bash
+        env:
+          CGO_ENABLED: '1'
+          GOFLAGS: '-p=1'
+          GOMAXPROCS: '2'
+          GOTOOLCHAIN: local
+        run: |
+          set -euo pipefail
+          set -o pipefail
+          make build-treedb 2>&1 | tee logs/build-treedb.log
+
+      - name: Verify and package TreeDB binaries
+        working-directory: gomap
+        shell: bash
+        env:
+          CGO_ENABLED: '1'
+          GOFLAGS: '-p=1'
+          GOMAXPROCS: '2'
+          GOTOOLCHAIN: local
+        run: |
+          set -euo pipefail
+          binaries=(treedb-stress treedb-verify treemap)
+          : > logs/verification.log
+          for name in "${binaries[@]}"; do
+            test -s "bin/$name"
+            test -x "bin/$name"
+            {
+              stat --printf='%n %s bytes\n' "bin/$name"
+              file "bin/$name"
+              go version -m "bin/$name"
+            } | tee -a logs/verification.log
+          done
+          (
+            cd bin
+            sha256sum "${binaries[@]}" > ../artifacts/SHA256SUMS
+          )
+          tar -C bin -czf artifacts/gomap-treedb-linux-amd64.tar.gz "${binaries[@]}"
+          sha256sum artifacts/gomap-treedb-linux-amd64.tar.gz > artifacts/gomap-treedb-linux-amd64.tar.gz.sha256
+          cp logs/environment.log artifacts/BUILD-ENVIRONMENT.txt
+          cp logs/verification.log artifacts/VERIFICATION.txt
+
+      - name: Upload TreeDB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gomap-treedb-linux-amd64-4c00c886
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+          path: |
+            gomap/bin/treedb-stress
+            gomap/bin/treedb-verify
+            gomap/bin/treemap
+            gomap/artifacts/
+            gomap/logs/
