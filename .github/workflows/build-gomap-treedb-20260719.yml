@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - build/gomap-treedb-20260719
+    paths-ignore:
+      - build-results/**
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-treedb:
@@ -15,6 +17,13 @@ jobs:
     timeout-minutes: 30
 
     steps:
+      - name: Check out build control branch
+        uses: actions/checkout@v4
+        with:
+          ref: build/gomap-treedb-20260719
+          path: control
+          fetch-depth: 0
+
       - name: Check out pinned GoMap source
         uses: actions/checkout@v4
         with:
@@ -93,6 +102,7 @@ jobs:
           cp logs/verification.log artifacts/VERIFICATION.txt
 
       - name: Upload TreeDB artifact
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: gomap-treedb-linux-amd64-4c00c886
@@ -105,3 +115,42 @@ jobs:
             gomap/bin/treemap
             gomap/artifacts/
             gomap/logs/
+
+      - name: Publish build run metadata
+        if: always()
+        working-directory: control
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          WORKFLOW_SHA: ${{ github.sha }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          set -euo pipefail
+          mkdir -p build-results
+          result=build-results/gomap-treedb-20260719.txt
+          {
+            printf 'job_status=%s\n' "$JOB_STATUS"
+            printf 'run_id=%s\n' "$RUN_ID"
+            printf 'run_attempt=%s\n' "$RUN_ATTEMPT"
+            printf 'workflow_sha=%s\n' "$WORKFLOW_SHA"
+            printf 'artifact_id=%s\n' "$ARTIFACT_ID"
+            printf 'artifact_url=%s\n' "$ARTIFACT_URL"
+            printf 'source_commit=%s\n' '4c00c886a9d7059f143e1d564aa602ed583a6cc5'
+            printf 'source_module_version=%s\n' 'v0.6.2-0.20260719170055-4c00c886a9d7'
+            if [[ -f ../gomap/artifacts/SHA256SUMS ]]; then
+              printf '%s\n' 'binary_sha256_begin'
+              cat ../gomap/artifacts/SHA256SUMS
+              printf '%s\n' 'binary_sha256_end'
+            fi
+            if [[ -f ../gomap/artifacts/gomap-treedb-linux-amd64.tar.gz.sha256 ]]; then
+              cat ../gomap/artifacts/gomap-treedb-linux-amd64.tar.gz.sha256
+            fi
+          } > "$result"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add "$result"
+          git commit -m "build: record GoMap TreeDB run $RUN_ID"
+          git push origin HEAD:build/gomap-treedb-20260719
