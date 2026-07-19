@@ -14,7 +14,8 @@ Artifacts:
 Independent review:
 - reviewer: <agent or human identity>
 - reviewed base: `<sha>`
-- reviewed artifact set: <paths or manifest/hash>
+- candidate manifest: `<manifest sha256>`
+- reviewed artifact set: <paths and file hashes>
 - disposition: <ACCEPT/BLOCK/FAIL and decisive reason>
 
 Validation:

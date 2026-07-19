@@ -22,13 +22,23 @@ or repository has explicitly chosen them over a PR loop.
 ## Before committing
 
 - Construction is no longer a first draft.
+- The mutable design review resolved every scientific blocker.
+- Substantive local validation completed before final exact-byte acceptance.
+- A deterministic candidate manifest records the reviewed base, exact path set,
+  file SHA-256 values, and manifest hash.
 - Independent review says `ACCEPT` for the exact base, changed-path set, and
-  candidate artifact hashes being integrated.
+  candidate manifest and validation evidence being integrated.
+- The current candidate bytes still match the accepted manifest; any
+  scientific change received renewed review.
 - Every blocking finding was repaired before freeze/integration.
 - No scientific byte changed after the accepted review; if one did, renewed
   review accepted the revised candidate.
 - Dedicated and inherited validators pass.
 - Exact formulas were independently recomputed where practical.
+- Builder and validator do not share an unreviewed hard-coded expected table,
+  dependency allowlist, or sign convention.
+- Load-bearing maps, inverses, reactions, and source bindings are explicit
+  formulas or executable symbolic data, not prose placeholders.
 - Large generated registries are backed by a reviewed template theorem and
   exact expansion check rather than repetitive row-by-row prose.
 - Representation-invariance and semantic-sensitivity checks pass.

@@ -10,6 +10,8 @@ the artifact is primarily prose.
 - Does the review identify the exact candidate paths and hashes it covers?
 - Are all frozen source files and hashes identified?
 - Does the candidate preserve frozen theorem identities?
+- Does it avoid modifying a frozen aggregate or source-bound file merely to
+  advertise the new result?
 - Are declared inputs separated from derived relations?
 - Is execution-only engineering clearly separated from scientific identity?
 - Is analogous or deprecated material clearly non-authoritative?
@@ -35,6 +37,8 @@ the artifact is primarily prose.
 - Does every inverse or projection use the complete relevant space rather than
   a convenient subset?
 - Are exact identities recomputed independently?
+- Are expected values derived independently from frozen source data rather than
+  copied from the constructor's allowlist or table?
 - Are approximate claims supplied with prospectively defined bounds?
 - Are denominators, lower eigenvalue bounds, and nonempty domains proved
   positive?
@@ -46,6 +50,8 @@ the artifact is primarily prose.
 - Is the law local at its declared level?
 - Is gauge covariance or invariance proved?
 - Are conserved quantities and reciprocal reactions retained?
+- Are load-bearing maps, inverses, seam reactions, and source substitutions
+  explicit mathematical data rather than prose assertions?
 - Are inactive, losing, radiative, exhaust, seam, and archive sectors kept in
   the complete state?
 - Does a proposed detector actually capture, amplify, commit, persist, and
@@ -101,11 +107,16 @@ the artifact is primarily prose.
 ## Controls and validation
 
 - Does every decision predicate have at least one genuine semantic mutation?
+- Can mutations detect omitted or duplicate objects, sign reversals,
+  nonpositive bounds, incomplete reactions, invalid support transport, and
+  false dependency expansion when those predicates are in scope?
 - Are representation-only changes accepted?
 - Are matched negative controls scientifically relevant?
 - Can the validator catch missing coordinates, wrong signs, omitted faults,
   changed supports, postselection, and target-table injection?
 - Are exact scalar types serialized deterministically?
+- Does the validator avoid circular agreement with the builder by recomputing
+  decisive expectations through an independent route?
 - Are local checks supplemented by the inherited theorem-spine validators?
 - Are validator and mutation counts described as process evidence rather than
   theorem strength?
