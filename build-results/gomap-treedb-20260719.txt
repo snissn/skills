@@ -1,0 +1,14 @@
+job_status=success
+run_id=29703633021
+run_attempt=1
+workflow_sha=0e551d1e3e84418c29596f06e442e434c1fce2dd
+artifact_id=8447213403
+artifact_url=https://github.com/snissn/skills/actions/runs/29703633021/artifacts/8447213403
+source_commit=4c00c886a9d7059f143e1d564aa602ed583a6cc5
+source_module_version=v0.6.2-0.20260719170055-4c00c886a9d7
+binary_sha256_begin
+accc577fa8fda77608d9019d56a4cd714716dd5bc3146f9e511472369b3718c7  treedb-stress
+fbab352856337fe6aaa52c142bc933ae9b274c13c2a6bbd154777d25a320ce1f  treedb-verify
+0c529ead393f65fead1e7c3807ca0e817d77fbb965a5bcb1655798608e53ca27  treemap
+binary_sha256_end
+172ae38e8742b501f6faf9058990301abd5256b10c8b447d36ad90dc01d25dfa  artifacts/gomap-treedb-linux-amd64.tar.gz
