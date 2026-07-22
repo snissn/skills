@@ -1,4 +1,4 @@
 interface:
   display_name: "Scientific Mainline Workflow"
-  short_description: "Audit, validate, and push scientific work to main"
-  default_prompt: "Use $scientific-mainline-workflow to construct this scientific result mutably, bind an independent audit to the exact candidate, validate it locally, and integrate one coherent disposition directly onto synchronized main without PR churn."
+  short_description: "Iterate on branches, freeze reviewed science to main"
+  default_prompt: "Use $scientific-mainline-workflow to develop this scientific candidate on a pushed issue-scoped feature branch, bind independent review to exact candidate bytes, validate it locally, and integrate only the reviewed freeze onto synchronized main without PR churn."

@@ -15,13 +15,29 @@ or repository has explicitly chosen them over a PR loop.
   engineering, or exposition.
 - Name the single load-bearing question and separate blockers, parallel
   controls, polish, and deferred extensions.
-- Use an isolated worktree if the main checkout is dirty or context-specific.
+- Create an issue-scoped feature branch and isolated worktree for mutable
+  scientific construction. Keep the main checkout as an integration surface.
 - Leave live frozen executions and their source-hashed artifacts untouched
   unless their disposition is explicitly in scope.
 
-## Before committing
+## Mutable branch cadence
+
+- Commit and push each coherent derivation, definition, audit, source
+  inventory, or non-decisive engineering utility.
+- Mark every pre-freeze scientific artifact mutable, non-authoritative, and
+  incapable of emitting a protocol verdict.
+- Bind design reviews to exact pushed commits or deterministic manifests.
+- Treat every scientific revision as a new candidate SHA requiring renewed
+  review.
+- Do not leave source or provenance untracked through a context switch, long
+  calculation, review request, or end of session.
+- Write generated matrices, caches, logs, and resumable outputs to a bound
+  external scratch location rather than the source tree.
+
+## Before freeze and mainline integration
 
 - Construction is no longer a first draft.
+- The candidate worktree is clean and its exact commit is pushed.
 - The mutable design review resolved every scientific blocker.
 - Substantive local validation completed before final exact-byte acceptance.
 - A deterministic candidate manifest records the reviewed base, exact path set,
@@ -53,25 +69,30 @@ or repository has explicitly chosen them over a PR loop.
 - If a steering note was applied, the issue comment or closure is already part
   of the plan rather than an afterthought.
 
-## Commit and push
+## Freeze, integrate, and push
 
-1. Reconfirm `main` has not moved.
-2. If it moved, determine whether frozen inputs, dependencies, source hashes,
+1. Create the freeze commit with the reviewed definition, decision code when
+   applicable, source bindings, and review record.
+2. Reconfirm `main` has not moved.
+3. If it moved, determine whether frozen inputs, dependencies, source hashes,
    or reviewed paths changed; renew review when they did.
-3. Integrate only the reviewed files and verify their hashes or semantic diff
+4. Integrate only the reviewed files and verify their hashes or semantic diff
    against the accepted candidate.
-4. Rerun every validation affected by the synchronized base.
-5. Commit one coherent scientific result.
-6. Inspect the commit diff, source bindings, and hashes.
-7. Push normally to `main`.
-8. Verify the remote head equals the pushed commit.
+5. If history is squashed or transplanted, verify every scientific file hash
+   against the accepted manifest.
+6. Rerun every validation affected by the synchronized base.
+7. Inspect the mainline commit diff, source bindings, and hashes.
+8. Push normally to `main` and verify the remote head.
+9. Retain the pushed mutable branch as non-authoritative development
+   provenance according to repository retention policy.
 
 Never:
 
 - force-push;
 - reset destructively;
 - rewrite frozen history;
-- commit a decisive first draft and review it afterward;
+- commit a decisive first draft directly to main and review it afterward;
+- confuse a mutable feature-branch commit with a frozen candidate or verdict;
 - split one scientific disposition into authorization/status/review-of-review
   commits;
 - use a PR loop merely to obtain code-centric review for direct-main theorem

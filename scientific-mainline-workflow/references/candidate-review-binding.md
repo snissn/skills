@@ -1,7 +1,7 @@
 # Candidate Review Binding
 
-Use this contract when an independent scientific review must authorize a
-direct-main integration.
+Use this contract when an independent scientific review must authorize the
+freeze and mainline integration of a pushed mutable-branch candidate.
 
 ## Candidate manifest
 
@@ -25,6 +25,10 @@ The manifest binds:
 - the corresponding base and `HEAD` Git blob when present;
 - one hash of the canonical manifest payload.
 
+Generate it from a clean pushed feature-branch commit. Mutable commits before
+that point are durable development provenance, not scientific authority. A
+review bound to one branch commit does not cover a later scientific edit.
+
 Pass the manifest, source paths, frozen inputs, and acceptance predicates to the
 reviewer. The reviewer must return `ACCEPT`, `BLOCK`, or a scoped failure bound
 to the manifest hash and candidate base.
@@ -44,15 +48,17 @@ ask an independent reviewer for the integration disposition on:
 - every previously blocking finding;
 - the issue exit gate and forbidden inferences.
 
-Only this final exact-candidate `ACCEPT` authorizes direct-main integration.
+Only this final exact-candidate `ACCEPT` authorizes the freeze and mainline
+integration.
 Validation does not replace scientific review, and review does not replace
 validation.
 
 ## Change rule
 
 Any change to a scientific byte, formula, source binding, predicate, tolerance,
-control, or inference invalidates the prior acceptance. Regenerate the
-manifest and obtain a new review.
+control, or inference invalidates the prior acceptance. Commit and push the
+revision on the mutable branch, regenerate the manifest, and obtain a new
+review.
 
 A representation-only or execution-only repair may use a focused semantic
 review, but the repair must still demonstrate that all scientific values and
@@ -72,9 +78,9 @@ with current `main`.
 
 Do not infer that a clean textual merge proves scientific compatibility.
 
-## Commit verification
+## Freeze and mainline verification
 
-After committing and before pushing:
+After creating the freeze commit and before mainline execution:
 
 1. verify the committed path set is exactly the reviewed set;
 2. verify every committed blob reproduces the accepted candidate SHA-256;
@@ -82,7 +88,14 @@ After committing and before pushing:
 4. rerun any check whose input is the committed tree rather than the mutable
    worktree;
 5. confirm the remote has not advanced;
-6. push without force and verify remote `main` equals the new commit.
+6. merge, squash, or transplant only under repository history policy;
+7. if the commit identity changes, verify every scientific file hash against
+   the accepted manifest;
+8. push without force and verify remote `main` equals the integrated freeze.
+
+Retain the pushed mutable branch as non-authoritative provenance. Its history
+does not acquire scientific authority merely because its reviewed freeze was
+integrated.
 
 The manifest is provenance evidence, not a scientific theorem. Independent
 formula derivation and substantive validation remain mandatory.
@@ -90,9 +103,10 @@ formula derivation and substantive validation remain mandatory.
 ## Reviewer request template
 
 ```text
-Review this scientific candidate for direct-main integration.
+Review this pushed scientific candidate for freeze and mainline integration.
 
 Base: <sha>
+Candidate branch and HEAD: <branch> <sha>
 Manifest: <sha256>
 Candidate paths: <exact list>
 Frozen inputs: <exact files and hashes>

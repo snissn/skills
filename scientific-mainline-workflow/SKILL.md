@@ -1,6 +1,6 @@
 ---
 name: scientific-mainline-workflow
-description: Execute and govern theorem, model-integration, physics, manuscript-claim, or other scientific repository work by committing and pushing directly to main without PR or code-review churn when that workflow is authorized. Use for mutable pre-freeze construction, independent adversarial review bound to exact candidate bytes, local exact or quantitative validation, frozen scientific executions, scoped dispositions and inference, GitHub issue-graph progression, and strict separation of execution-only engineering defects from scientific results.
+description: Execute and govern theorem, model-integration, physics, manuscript-claim, or other scientific repository work using pushed issue-scoped feature branches for mutable pre-freeze construction and reviewed freeze integration to main without PR churn when authorized. Use for durable scientific iteration, exact-candidate adversarial review, local validation, frozen executions, scoped dispositions and inference, issue-graph progression, and strict separation of engineering defects from scientific results.
 ---
 
 # Scientific Mainline Workflow
@@ -20,10 +20,11 @@ or more of:
 Do not use it to bypass a repository's required PR policy, to merge ordinary
 software changes without review, or to treat prose assertions as proofs.
 
-When this workflow is authorized, do not open a PR merely as a staging surface
-and do not wait for code-centric automated review. Obtain the scientific review
-and validation locally, then integrate the accepted artifact directly onto
-synchronized `main`.
+When this workflow is authorized, use a dedicated feature branch as the durable
+mutable staging surface; do not open a PR merely for code-centric review.
+Commit and push coherent pre-freeze work there, obtain scientific review and
+validation, then integrate only the accepted frozen artifact onto synchronized
+`main`.
 
 ## Non-Goals
 
@@ -36,18 +37,25 @@ gate, or import analogous/deprecated work as authority rather than idea input.
 
 Apply this discipline:
 
-> Construct mutably. Review independently. Repair before freeze. Validate
-> locally. Commit one coherent result directly to synchronized `main`.
-> Execute a frozen decision only when a substantive scientific comparator
-> requires it. Report engineering status, execution validity, protocol
-> verdict, and scientific inference separately.
+> Construct mutably on a dedicated feature branch. Commit and push coherent
+> iterations as non-authoritative provenance. Review exact pushed bytes.
+> Repair before freeze. Validate locally. Integrate only the reviewed freeze
+> onto synchronized `main`. Execute a frozen decision only when a substantive
+> comparator requires it. Report engineering status, execution validity,
+> protocol verdict, and scientific inference separately.
 
 Direct-to-main removes PR ceremony, not scientific scrutiny.
 
-Treat the reviewed scientific disposition—not a PR and not an arbitrary
-intermediate commit—as the unit of integration. The direct-main commit records
-an already reviewed result; it must not be the first durable surface on which
-the candidate becomes inspectable.
+Treat commits, freeze, and authority as distinct:
+
+- a pushed mutable-branch commit is durable development provenance;
+- a reviewed freeze commit binds the scientific identity;
+- mainline integration and a reviewed tag confer checkpoint authority; and
+- a qualified frozen execution may produce a protocol verdict.
+
+The reviewed scientific disposition—not a PR and not an arbitrary intermediate
+commit—is the unit of mainline integration. The feature branch must be the
+first durable surface on which the candidate becomes inspectable.
 
 For execution-bearing work, apply the companion rule:
 
@@ -61,15 +69,18 @@ repair does not create a new scientific candidate when a focused semantic diff
 shows that no scientific input, value, comparator, tolerance, decision rule, or
 inference changed.
 
-Use the smallest honest commit cadence:
+Use the smallest honest cadence at each layer:
 
-- an analytic theorem or integration result normally needs one reviewed result
-  commit;
-- an execution-bearing result normally needs one reviewed freeze commit and one
-  later result/disposition commit;
-- execution-only repairs may use ordinary engineering commits, but they must
-  remain visibly separate from scientific definitions and outcomes;
-- do not manufacture authorization, inspection, or review-of-review commits.
+- on the mutable feature branch, commit and push every coherent derivation,
+  definition, audit, source inventory, or non-decisive utility;
+- do not leave source or provenance untracked through a context switch, long
+  calculation, review request, or end of session;
+- mark pre-freeze artifacts as mutable and non-authoritative with a null
+  protocol verdict;
+- on `main`, integrate one reviewed analytic freeze/result or the smallest
+  freeze/result pair required for a genuine execution; and
+- keep execution-only repairs visibly separate from scientific definitions and
+  outcomes; do not manufacture authorization or review-of-review commits.
 
 Use the governing GitHub issue and maintained repository artifacts as the
 durable coordination surface. A PR is not required to make internal review
@@ -83,9 +94,9 @@ the PR.
 
 Before acting, establish the repository and current `main`, local instructions,
 goal and dependency graph, frozen inputs and claim boundaries, active issue exit
-rules, analytic-versus-execution classification, direct-main authority, any
-protected live execution, intended path set, reviewer ownership, and local
-acceptance checks.
+rules, analytic-versus-execution classification, feature branch and worktree,
+mainline-integration authority, any protected live execution, intended path
+set, reviewer ownership, and local acceptance checks.
 
 If direct-main authority or a protected scientific scope boundary is unclear,
 ask before committing. Ordinary technical choices inside an authorized
@@ -96,50 +107,21 @@ required execution/disposition separation.
 
 ## Critical-Path Discipline
 
-Before constructing, name the single load-bearing scientific question and
-classify surrounding work as:
-
-- a prerequisite that blocks the active exit gate;
-- an independent control or audit that may proceed in parallel;
-- nonblocking strengthening or exposition;
-- a deferred provider, calibration, or deeper-theory question.
-
-Select the smallest theorem, construction, or scoped obstruction that honestly
-satisfies the active exit gate. Prefer analytic structure, symmetry, exact
-reduction, or proof compression over brute-force certification when they prove
-the same predicate without weakening it. Stop deepening the artifact once the
-declared gate is met. Do not let desirable local polish displace an authorized
-breadth-first program unless a dependency theorem makes that polish
-load-bearing.
+Name the single load-bearing question. Separate blockers, parallel controls,
+nonblocking strengthening, and deferred extensions. Select the smallest honest
+theorem, construction, or obstruction that satisfies the exit gate; prefer
+analytic reduction to brute-force certification when it proves the same
+predicate. Stop deepening the artifact once the gate is met.
 
 ## Roles And Delegation
 
-When delegation is authorized, use one bounded layer:
-
-1. a constructor owns the mutable scientific artifact;
-2. an independent reviewer attacks the construction;
-3. a validation engineer is separate when substantive code or execution is
-   involved;
-4. the primary agent integrates the result and owns the final disposition.
-
-The constructor must not be the sole reviewer of its own theorem. Subagents do
-not decide the program disposition or recursively delegate unless explicitly
-authorized.
-
-Bind review to evidence rather than conversation state: give the reviewer the
-exact base, changed paths, candidate artifacts, frozen inputs, acceptance
-predicates, evidence standard, stop rule, and forbidden changes. The reviewer
-must inspect the actual artifact and return a disposition bound to its identity;
-a review of an earlier draft does not authorize a later scientific edit.
-
-Use an adversarial design review while the draft is mutable and, when the result
-is load-bearing, a final exact-candidate acceptance after validation. Review may
-occur against an isolated worktree or manifest and does not need a PR. Do not
-add a reviewer merely to review another review unless a concrete scientific
-disagreement remains. Use [candidate review
-binding](references/candidate-review-binding.md) for the exact-byte contract and
-manifest tool. Treat subagent reports as evidence to integrate, not decisions
-to concatenate.
+When delegation is authorized, separate constructor, independent reviewer, and
+validation engineer roles; the primary agent owns integration and disposition.
+The constructor must not be the sole reviewer. Bind review to the exact base,
+pushed commit, path set, frozen inputs, predicates, evidence standard, stop
+rule, and forbidden changes. Use an adversarial mutable-stage review and final
+exact-candidate acceptance. See [candidate review
+binding](references/candidate-review-binding.md).
 
 ## Workflow
 
@@ -150,8 +132,11 @@ to concatenate.
 3. Read the active issue, parent tracker, recent steering comments, frozen
    definitions, ledgers, validators, reviews, and claim boundaries.
 4. Build the smallest dependency map needed for the active question.
-5. Preserve unrelated user work and use an isolated worktree when appropriate.
-6. Identify the load-bearing question, blockers, parallel controls, polish, and
+5. Keep the main checkout as an integration surface. Create or reuse one
+   issue-scoped feature branch and isolated worktree for mutable construction.
+6. Preserve unrelated user work; never absorb an existing dirty checkout into
+   the candidate branch merely to make status clean.
+7. Identify the load-bearing question, blockers, parallel controls, polish, and
    deferred extensions before assigning work.
 
 During every planning round between substantive commits, refresh relevant
@@ -195,7 +180,8 @@ Apply a proportional gate:
   identity.
 - **Scientific analytic result:** require adversarial design review, local
   substantive validation, and final independent acceptance bound to the exact
-  candidate before one coherent mainline commit.
+  candidate before one coherent mainline freeze/result integration. Mutable
+  feature-branch commits remain allowed and non-authoritative.
 - **Scientific execution:** review and commit the frozen definition first,
   qualify mutable execution software separately, execute the frozen decision
   once, and commit the durable result or disposition separately.
@@ -211,8 +197,22 @@ change to any of these is scientific even when implemented in a file named
 
 ### 3. Construct mutably
 
-Keep equations, interfaces, fixtures, tolerances, code, and prose uncommitted
-while the candidate is being designed and reviewed.
+Keep equations, interfaces, fixtures, tolerances, code, and prose mutable on the
+dedicated feature branch while the candidate is being designed and reviewed.
+Commit and push each coherent step. Use explicit status fields such as:
+
+```text
+authority: MUTABLE_NONAUTHORITATIVE
+engineering_status: DEVELOPMENT
+execution_validity: NOT_A_SCIENTIFIC_EXECUTION
+protocol_verdict: null
+scientific_inference: none
+```
+
+These commits preserve work and enable exact review; they do not freeze a
+candidate, authorize execution, or establish a scientific result. Generated
+matrices, caches, and resumable run products should go to a bound external
+scratch directory rather than becoming untracked source-tree debris.
 
 The draft must state:
 
@@ -232,7 +232,10 @@ review-of-review documents.
 
 Treat artifact mutability explicitly:
 
-- mutable drafts may be rewritten freely before review acceptance and freeze;
+- mutable drafts may be revised through ordinary pushed branch commits before
+  review acceptance and freeze;
+- every scientific edit creates a new candidate SHA and supersedes review of
+  the prior mutable SHA;
 - frozen definitions, frozen decision rules, and historical dispositions are
   immutable scientific provenance;
 - later interpretation corrections belong in maintained synthesis files,
@@ -275,12 +278,13 @@ mathematical evidence.
 Resolve every blocking finding in the mutable draft. Repeat the design review
 until no scientific blocker remains; do not freeze a merely promising draft.
 
-The acceptance must identify the reviewed base and artifact set. Any later
-change to a scientific definition, theorem statement, formula, source binding,
-predicate, tolerance, control, or inference invalidates that acceptance and
-requires renewed review. A representation-only or execution-only change may
-use a focused semantic review, but it must still establish that the reviewed
-scientific values and decision surfaces are unchanged.
+The acceptance must identify the reviewed base, pushed feature-branch commit,
+and artifact set. Any later change to a scientific definition, theorem
+statement, formula, source binding, predicate, tolerance, control, or inference
+invalidates that acceptance and requires a new pushed commit and renewed
+review. A representation-only or execution-only change may use a focused
+semantic review, but it must still establish that the reviewed scientific
+values and decision surfaces are unchanged.
 
 Do not let construction and validation share an unexamined source of truth. A
 validator that reproduces the builder's hard-coded allowlist, expected table,
@@ -322,10 +326,11 @@ Prefer deterministic validators whose outputs can be reproduced from the
 committed sources. A prose statement that checks were run is not equivalent to
 validation evidence.
 
-After substantive validation passes, generate the exact candidate manifest and
-obtain the independent reviewer's final `ACCEPT` on those bytes and that
-evidence. If review or validation causes a scientific edit, regenerate,
-revalidate, and renew acceptance.
+After substantive validation passes, require a clean candidate worktree, push
+the candidate commit, generate the exact manifest, and obtain the independent
+reviewer's final `ACCEPT` on those bytes and that evidence. If review or
+validation causes a scientific edit, commit and push it, regenerate the
+manifest, revalidate, and renew acceptance.
 
 Every load-bearing predicate needs a mutation that would fail if its meaning
 were corrupted. Include omissions, duplications, sign or orientation reversals,
@@ -346,7 +351,7 @@ the scientific trial. Synthetic, non-decisive, fault-injection, schema,
 serializer, persistence, and deterministic smoke tests do not consume the
 scientific trial.
 
-### 6. Integrate directly to main
+### 6. Freeze and integrate to main
 
 Use direct-to-main only when it is authorized and:
 
@@ -357,12 +362,17 @@ Use direct-to-main only when it is authorized and:
 - no active frozen execution is invalidated;
 - no unrelated user changes are included.
 
-Treat these as hard integration gates. If any gate is missing, keep the
-candidate mutable and do not create a placeholder mainline commit.
+Treat these as hard integration gates. If any gate is missing, keep committing
+and pushing on the mutable feature branch; do not create a placeholder
+mainline commit.
 
-Commit one coherent analytic result, or the smallest freeze/result pair needed
-for a genuine execution. Avoid separate commits that merely authorize
-implementation, restate unchanged scope, or review a review.
+Create one freeze commit containing the reviewed definition, decision code when
+applicable, exact source bindings, and review record. For mainline integration,
+either merge the reviewed freeze branch under repository history policy or
+transplant/squash only the reviewed artifact set into one mainline freeze
+commit. When commit identity changes, verify that every scientific file hash
+matches the accepted manifest. Preserve the pushed mutable branch as
+development provenance; its earlier commits do not become frozen authority.
 
 Immediately before integration, fetch the remote and compare the reviewed base
 with current `main`. If `main` moved, integrate the new base, inspect the
@@ -376,9 +386,10 @@ dependency audit and obtain renewed review. If the movement is provably
 unrelated, transplant only the reviewed files and rerun the affected local
 gates.
 
-When construction occurred in an isolated worktree, transfer only the reviewed
+When construction occurred in an isolated worktree, integrate only the reviewed
 artifact set onto synchronized `main`; do not merge unrelated worktree history
-or temporary execution artifacts.
+or temporary execution artifacts. Do not delete the mutable branch until its
+provenance and any external artifacts are durably recoverable.
 
 Push normally. Verify the remote head after the push. Never force-push,
 destructively reset, or overwrite unrelated work.
@@ -426,61 +437,30 @@ improve a scientific outcome.
 
 ### 8. Close the issue and progress the graph
 
-After a valid analytic or executed disposition:
-
-1. push the reviewed commit;
-2. comment on the issue with the exact commit, reviewed base and artifact set,
-   independent disposition, validation commands and outcomes, scientific
-   disposition, inference boundary, and surviving obligations;
-3. close the issue only when its exit or stop rule is satisfied;
-4. refresh the parent tracker and all newly relevant issues;
-5. repair dependency edges if the result exposed a real prerequisite;
-6. select the highest-priority newly unblocked issue.
-
-A failed selected realization is not a family no-go. Perform one bounded
-architecture review and open a new scientific identity only when the repair
-changes a load-bearing scientific choice. Do not reopen frozen dependencies
-without a demonstrated contradiction.
-
-The normal cadence is:
-
-1. close the current issue only when its exit rule is actually satisfied;
-2. spend a turn refreshing the parent graph and newly relevant issues;
-3. repair graph edges if the new result exposed a real dependency;
-4. choose the highest-priority newly unblocked issue;
-5. repeat without reopening settled scope.
+Push the reviewed result, report its exact commit, artifacts, review,
+validations, inference boundary, and surviving obligations, and close the issue
+only when its exit or stop rule is satisfied. Refresh the parent graph, repair
+real dependency edges, and choose the highest-priority newly unblocked issue.
+A failed selected realization is not a family no-go; do not reopen frozen
+dependencies without a demonstrated contradiction.
 
 ## Failure Handling
 
-Stop and request a user-level decision only when work would change a protected
-boundary such as:
-
-- the frozen substrate or theorem identity;
-- the program north star;
-- actuality or ontology;
-- protected preparation or measurement independence;
-- a declared stage pass burden;
-- a finite versus relativistic endpoint;
-- a family-level closure rule.
-
-Handle these without escalation:
-
-- ordinary mathematical iteration before freeze;
-- execution-only defects;
-- serializer and exact-type support;
-- proof-method changes;
-- stronger equivalent lemmas;
-- candidate replacement before freeze;
-- scoped selected-realization failures;
-- issue-graph repairs that preserve the authorized program.
-
-If a candidate fails, preserve positive lemmas and exact obstructions. State
-whether the failure is selected-provider, selected-realization, class-level,
-or execution-invalid. Never use `KILL FAMILY` without a theorem covering the
-declared class.
+Request a user-level decision only when work would change a frozen identity,
+program north star, ontology, protected independence assumption, declared pass
+burden, endpoint regime, or family-level closure rule. Handle ordinary
+pre-freeze iteration, proof-method changes, execution-only defects, candidate
+replacement, scoped realization failures, and compatible graph repairs without
+escalation. Preserve positive lemmas and exact obstructions; never claim a
+family no-go without a theorem covering the declared class.
 
 ## Anti-Churn Rules
 
+- Use the feature branch, not a late preservation lane, as the normal recovery
+  surface for mutable scientific source and provenance.
+- Commit and push coherent mutable steps; do not accumulate a large untracked
+  candidate in any checkout.
+- Keep `main` as the reviewed integration surface and merge only after freeze.
 - Do not create a PR merely to obtain code-centric review of theorem work.
 - Do not wait for automated code review after scientific review and local gates
   cover the artifact, or split direct-main work into PR-ready/merge-ready phases.
