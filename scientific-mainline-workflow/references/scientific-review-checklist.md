@@ -212,7 +212,9 @@ Do not return `BLOCK` merely because a stronger, broader, more elegant, or more
 fundamental result would be desirable.
 
 State surviving positive lemmas even when the overall candidate fails. Bind the
-disposition to the reviewed base commit, candidate artifact set, evidence level,
-NEED set, and manifest. If a blocking repair changes any scientific byte,
-prepared domain, NEED predicate, or inference, inspect the revised artifact and
-issue a new disposition rather than carrying forward the old acceptance.
+disposition to the reviewed base commit, candidate artifact bytes and hashes,
+manifest, evidence level, quantifier level, stability level, NEED set and
+predicates, assumptions, validation, prepared domain, and inference. Any change
+to one of those binding identities invalidates the disposition. Inspect the
+revised artifact and issue a new disposition rather than carrying forward the
+old acceptance.

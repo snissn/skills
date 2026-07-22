@@ -22,9 +22,13 @@ software changes without review, or to treat prose assertions as proofs.
 
 When this workflow is authorized, use a dedicated feature branch as the durable
 mutable staging surface; do not open a PR merely for code-centric review.
-Commit and push coherent pre-freeze work there, obtain scientific review and
-validation, then integrate only the accepted frozen artifact onto synchronized
-`main`.
+Commit and push coherent non-decisive pre-freeze work there, obtain scientific
+review and validation, then integrate only the accepted frozen artifact onto
+synchronized `main`. When a packet or script will emit a pass/fail scientific
+decision, keep its decision-bearing definition, predicates, tolerances,
+comparator code, fixtures, and source bindings uncommitted until adversarial
+review accepts those exact mutable bytes. Their first commit is the joint freeze
+commit containing the reviewed definition, decision code, and review record.
 
 ## Non-Goals
 
@@ -38,9 +42,11 @@ gate, or import analogous/deprecated work as authority rather than idea input.
 Apply this discipline:
 
 > Construct mutably on a dedicated feature branch. Commit and push coherent
-> iterations as non-authoritative provenance. Review exact pushed bytes.
-> Repair before freeze. Validate locally. Integrate only the reviewed freeze
-> onto synchronized `main`. Execute a frozen decision only when a substantive
+> non-decisive iterations as non-authoritative provenance. Review exact candidate
+> bytes. For a decision-bearing candidate, review the uncommitted definition and
+> decision code and make their first commit the joint freeze commit. Repair
+> before freeze. Validate locally. Integrate only the reviewed freeze onto
+> synchronized `main`. Execute a frozen decision only when a substantive
 > comparator requires it. Report engineering status, execution validity,
 > protocol verdict, and scientific inference separately.
 
@@ -72,7 +78,10 @@ inference changed.
 Use the smallest honest cadence at each layer:
 
 - on the mutable feature branch, commit and push every coherent derivation,
-  definition, audit, source inventory, or non-decisive utility;
+  analytic note, audit, source inventory, or non-decisive utility;
+- keep files that define a pass/fail scientific decision uncommitted until their
+  exact mutable bytes pass adversarial review, then commit them first in the
+  joint freeze commit;
 - do not leave source or provenance untracked through a context switch, long
   calculation, review request, or end of session;
 - mark pre-freeze artifacts as mutable and non-authoritative with a null
@@ -118,9 +127,11 @@ predicate. Stop deepening the artifact once the gate is met.
 When delegation is authorized, separate constructor, independent reviewer, and
 validation engineer roles; the primary agent owns integration and disposition.
 The constructor must not be the sole reviewer. Bind review to the exact base,
-pushed commit, path set, frozen inputs, predicates, evidence standard, stop
-rule, and forbidden changes. Use an adversarial mutable-stage review and final
-exact-candidate acceptance. See [candidate review
+candidate byte manifest, path set, frozen inputs, predicates, evidence standard,
+stop rule, and forbidden changes. A non-decisive analytic candidate may bind a
+pushed commit; a decision-bearing candidate must bind its uncommitted mutable
+bytes before their first freeze commit. Use an adversarial mutable-stage review
+and final exact-candidate acceptance. See [candidate review
 binding](references/candidate-review-binding.md).
 
 ## Workflow
@@ -199,7 +210,8 @@ change to any of these is scientific even when implemented in a file named
 
 Keep equations, interfaces, fixtures, tolerances, code, and prose mutable on the
 dedicated feature branch while the candidate is being designed and reviewed.
-Commit and push each coherent step. Use explicit status fields such as:
+Commit and push each coherent non-decisive step. Use explicit status fields such
+as:
 
 ```text
 authority: MUTABLE_NONAUTHORITATIVE
@@ -213,6 +225,16 @@ These commits preserve work and enable exact review; they do not freeze a
 candidate, authorize execution, or establish a scientific result. Generated
 matrices, caches, and resumable run products should go to a bound external
 scratch directory rather than becoming untracked source-tree debris.
+
+Apply a stricter first-commit rule to decision-bearing artifacts. If a script or
+packet can emit a pass/fail scientific decision, draft its scientific identity
+uncommitted in the feature worktree: definition, state space, fixtures,
+predicates, tolerances, initial boxes, comparators, decision surfaces, runner,
+and source bindings. Review and revise those exact working-tree bytes until all
+blocking findings close. Their first commit must be the joint freeze commit with
+the review record. Ordinary derivations, source inventories, preservation
+manifests, and utilities that cannot emit a scientific verdict remain eligible
+for incremental commits and pushes.
 
 The draft must state:
 
@@ -232,8 +254,10 @@ review-of-review documents.
 
 Treat artifact mutability explicitly:
 
-- mutable drafts may be revised through ordinary pushed branch commits before
-  review acceptance and freeze;
+- non-decisive mutable drafts may be revised through ordinary pushed branch
+  commits before review acceptance and freeze;
+- decision-bearing scientific files remain uncommitted until reviewed and enter
+  history first in the joint freeze commit;
 - every scientific edit creates a new candidate SHA and supersedes review of
   the prior mutable SHA;
 - frozen definitions, frozen decision rules, and historical dispositions are
@@ -278,13 +302,16 @@ mathematical evidence.
 Resolve every blocking finding in the mutable draft. Repeat the design review
 until no scientific blocker remains; do not freeze a merely promising draft.
 
-The acceptance must identify the reviewed base, pushed feature-branch commit,
-and artifact set. Any later change to a scientific definition, theorem
-statement, formula, source binding, predicate, tolerance, control, or inference
-invalidates that acceptance and requires a new pushed commit and renewed
-review. A representation-only or execution-only change may use a focused
-semantic review, but it must still establish that the reviewed scientific
-values and decision surfaces are unchanged.
+The acceptance must identify the reviewed base, exact candidate-byte manifest,
+and artifact set. For a non-decisive analytic candidate it may also identify a
+pushed feature-branch commit. For a decision-bearing candidate it must identify
+the uncommitted working-tree manifest that will be reproduced by the first
+freeze commit. Any later change to a scientific definition, theorem statement,
+formula, source binding, predicate, tolerance, control, or inference invalidates
+that acceptance and requires renewed exact-byte review. A representation-only
+or execution-only change may use a focused semantic review, but it must still
+establish that the reviewed scientific values and decision surfaces are
+unchanged.
 
 Do not let construction and validation share an unexamined source of truth. A
 validator that reproduces the builder's hard-coded allowlist, expected table,
@@ -326,11 +353,14 @@ Prefer deterministic validators whose outputs can be reproduced from the
 committed sources. A prose statement that checks were run is not equivalent to
 validation evidence.
 
-After substantive validation passes, require a clean candidate worktree, push
-the candidate commit, generate the exact manifest, and obtain the independent
-reviewer's final `ACCEPT` on those bytes and that evidence. If review or
-validation causes a scientific edit, commit and push it, regenerate the
-manifest, revalidate, and renew acceptance.
+After substantive validation passes, generate the exact candidate manifest and
+obtain the independent reviewer's final `ACCEPT` on those bytes and that
+evidence. For a non-decisive analytic candidate, use a clean pushed candidate
+commit. For a decision-bearing candidate, use the uncommitted working-tree
+bytes; if review or validation causes a scientific edit, revise them without
+committing, regenerate the manifest, revalidate, and renew acceptance. Only
+after acceptance may those decision-bearing files be committed for the first
+time in the joint freeze commit.
 
 Every load-bearing predicate needs a mutation that would fail if its meaning
 were corrupted. Include omissions, duplications, sign or orientation reversals,
@@ -362,9 +392,10 @@ Use direct-to-main only when it is authorized and:
 - no active frozen execution is invalidated;
 - no unrelated user changes are included.
 
-Treat these as hard integration gates. If any gate is missing, keep committing
-and pushing on the mutable feature branch; do not create a placeholder
-mainline commit.
+Treat these as hard integration gates. If any gate is missing, keep the work on
+the mutable feature branch and continue normal commits for non-decisive
+artifacts, but do not commit a reviewed-decision candidate early and do not
+create a placeholder mainline commit.
 
 Create one freeze commit containing the reviewed definition, decision code when
 applicable, exact source bindings, and review record. For mainline integration,
@@ -458,8 +489,10 @@ family no-go without a theorem covering the declared class.
 
 - Use the feature branch, not a late preservation lane, as the normal recovery
   surface for mutable scientific source and provenance.
-- Commit and push coherent mutable steps; do not accumulate a large untracked
-  candidate in any checkout.
+- Commit and push coherent non-decisive mutable steps; do not accumulate a large
+  untracked workbench in any checkout.
+- Keep only the bounded decision-bearing candidate set uncommitted during exact
+  adversarial review, and make its first commit the joint freeze commit.
 - Keep `main` as the reviewed integration surface and merge only after freeze.
 - Do not create a PR merely to obtain code-centric review of theorem work.
 - Do not wait for automated code review after scientific review and local gates

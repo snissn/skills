@@ -233,7 +233,8 @@ A reviewer may return `BLOCK` for:
 - a circular definition or target-table injection;
 - a vacuous or unproved nonempty domain;
 - a hidden change to a protected assumption;
-- an inference stronger than the selected evidence and quantifier level;
+- an inference stronger than the selected evidence, quantifier, or stability
+  level;
 - a validation path that cannot detect corruption of a NEED predicate.
 
 A reviewer should record, but not block on:

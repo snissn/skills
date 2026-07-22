@@ -29,11 +29,16 @@ does not silently promote SHOULD or COULD work into a broader theorem.
 
 ## Mutable branch cadence
 
-- Commit and push each coherent derivation, definition, audit, source inventory,
-  or non-decisive engineering utility.
+- Commit and push each coherent derivation, analytic note, audit, source
+  inventory, or non-decisive engineering utility.
+- If a packet or script will emit a pass/fail scientific decision, keep its
+  predicates, tolerances, comparator code, fixtures, runner, and source bindings
+  uncommitted until adversarial review accepts those exact mutable bytes. Their
+  first commit is the joint freeze commit with the review record.
 - Mark every pre-freeze scientific artifact mutable, non-authoritative, and
   incapable of emitting a protocol verdict.
-- Bind design reviews to exact pushed commits or deterministic manifests.
+- Bind design reviews to exact pushed commits for non-decisive analytic work or
+  deterministic working-tree manifests for decision-bearing candidates.
 - Treat every scientific revision as a new candidate SHA requiring renewed
   review.
 - Do not leave source or provenance untracked through a context switch, long
@@ -52,7 +57,9 @@ does not silently promote SHOULD or COULD work into a broader theorem.
 - Effective assumptions and nonclaims are visible in the candidate.
 - SHOULD and COULD items are recorded as nonblocking deferrals unless formally
   promoted.
-- The candidate worktree is clean and its exact commit is pushed.
+- A non-decisive analytic candidate has a clean worktree and pushed exact commit.
+- A decision-bearing candidate remains uncommitted, is bound by an exact
+  working-tree manifest, and has not appeared in any earlier commit.
 - The mutable design review resolved every blocking NEED finding.
 - Substantive local validation completed before final exact-byte acceptance.
 - Validation is proportional to the NEED set rather than to every possible
@@ -60,8 +67,8 @@ does not silently promote SHOULD or COULD work into a broader theorem.
 - A deterministic candidate manifest records the reviewed base, exact path set,
   file SHA-256 values, and manifest hash.
 - Independent review says `ACCEPT` for the exact base, changed-path set,
-  candidate manifest, selected evidence levels, NEED set, and validation evidence
-  being integrated.
+  candidate manifest, selected evidence, quantifier, and stability levels, NEED
+  set, and validation evidence being integrated.
 - The current candidate bytes still match the accepted manifest; any scientific
   change received renewed review.
 - Every contradiction, circularity, vacuity, protected-boundary violation, and
@@ -98,11 +105,13 @@ does not silently promote SHOULD or COULD work into a broader theorem.
 ## Freeze, integrate, and push
 
 1. Create the freeze commit with the reviewed definition, decision code when
-   applicable, source bindings, review record, evidence levels, NEED set,
-   effective assumptions, and deferrals.
+   applicable, source bindings, review record, evidence level, quantifier level,
+   stability level, NEED set, effective assumptions, and deferrals. For a
+   decision-bearing candidate, verify this is the first commit containing those
+   files.
 2. Reconfirm `main` has not moved.
-3. If it moved, determine whether frozen inputs, NEED dependencies, source
-   hashes, or reviewed paths changed; renew review when they did.
+3. If it moved, determine whether frozen inputs, theorem dependencies, any NEED
+   premise, source hashes, or reviewed paths changed; renew review when they did.
 4. Integrate only the reviewed files and verify their hashes or semantic diff
    against the accepted candidate.
 5. If history is squashed or transplanted, verify every scientific file hash
@@ -131,8 +140,9 @@ Never:
 
 ## After push
 
-- Comment the active issue with commit, artifacts, validations, evidence levels,
-  NEED set, effective assumptions, deferrals, and exact disposition.
+- Comment the active issue with commit, artifacts, validations, evidence level,
+  quantifier level, stability level, NEED set, effective assumptions, deferrals,
+  and exact disposition.
 - Close only if the issue's pass or stop rule is satisfied.
 - Update the parent dependency graph when the result changes readiness.
 - Refresh all related issues for steering notes.

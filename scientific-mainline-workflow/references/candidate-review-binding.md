@@ -1,7 +1,10 @@
 # Candidate Review Binding
 
 Use this contract when an independent scientific review must authorize the
-freeze and mainline integration of a pushed mutable-branch candidate.
+freeze and mainline integration of a mutable-branch candidate. Non-decisive
+analytic candidates may be reviewed at an exact pushed commit. Decision-bearing
+candidates must be reviewed as exact uncommitted bytes before their first joint
+freeze commit.
 
 Read [the evidence scope ladder](evidence-scope-ladder.md) before defining the
 review burden. The reviewer must evaluate the checkpoint that was actually
@@ -61,12 +64,17 @@ The manifest binds:
 - the worktree `HEAD`;
 - the exact sorted path set;
 - each file's byte count and SHA-256;
-- the corresponding base and `HEAD` Git blob when present;
+- the corresponding base and `HEAD` Git blob when present; and
 - one hash of the canonical manifest payload.
 
-Generate it from a clean pushed feature-branch commit. Mutable commits before
-that point are durable development provenance, not scientific authority. A
-review bound to one branch commit does not cover a later scientific edit.
+For a non-decisive analytic candidate, generate it from a clean pushed
+feature-branch commit. For a decision-bearing candidate, generate it from the
+uncommitted working tree after confirming that its definition, predicates,
+tolerances, comparator code, runner, fixtures, and source bindings have never
+appeared in an earlier commit. In that case `head_sha` records the branch base,
+the per-file SHA-256 values bind the mutable candidate bytes, and a missing or
+different `head_blob` is expected. Mutable commits before that point are durable
+development provenance, not scientific authority.
 
 Pass the manifest, source paths, frozen inputs, review-scope declaration, and
 acceptance predicates to the reviewer. The reviewer must return `ACCEPT`,
@@ -87,6 +95,17 @@ Review the candidate at its declared evidence level.
   actually claimed.
 - **E4/Q3:** apply global/all-data burdens only when the candidate explicitly
   claims them.
+
+Apply the declared stability level independently of E/Q:
+
+- **S0:** verify existence of the selected solution or equilibrium.
+- **S1:** verify survival through the declared finite observation horizon.
+- **S2:** verify a nonempty collar remains in the selected regime through that
+  horizon.
+- **S3:** verify the claimed local energetic, spectral, or orbital stability on
+  the correct reduced space and symmetry quotient.
+- **S4:** verify the claimed all-data or all-time stability; lower-level
+  existence or local control cannot satisfy an S4 claim.
 
 A reviewer should report attractive strengthening separately. Preference for a
 larger domain, stronger stability, broader fault alphabet, or deeper derivation
@@ -152,10 +171,12 @@ Nonblocking findings belong in the deferral ledger. They do not prevent
 
 ## Change rule
 
-Any change to a scientific byte, formula, source binding, NEED predicate,
-tolerance, control, prepared domain, or inference invalidates the prior
-acceptance. Commit and push the revision on the mutable branch, regenerate the
-manifest, and obtain a new review.
+Any change to a scientific byte, formula, source binding, selected E/Q/S level,
+NEED predicate, tolerance, control, prepared domain, or inference invalidates
+the prior acceptance. For a non-decisive analytic candidate, commit and push the
+revision on the mutable branch. For a decision-bearing candidate, revise the
+uncommitted draft. In both cases regenerate the manifest and obtain a new
+review.
 
 Changing a SHOULD or COULD note without changing the scientific identity may
 use a focused exposition review. Promoting a SHOULD or COULD item into NEED is a
@@ -206,10 +227,11 @@ level.
 ## Reviewer request template
 
 ```text
-Review this pushed scientific candidate for freeze and mainline integration.
+Review this scientific candidate for freeze and mainline integration.
 
 Base: <sha>
 Candidate branch and HEAD: <branch> <sha>
+Candidate state: <pushed non-decisive commit / uncommitted decision-bearing draft>
 Manifest: <sha256>
 Candidate paths: <exact list>
 Frozen inputs: <exact files and hashes>

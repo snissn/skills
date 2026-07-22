@@ -30,8 +30,12 @@ Independent review:
 - disposition: <ACCEPT/BLOCK/FAIL and decisive reason>
 
 Validation:
-- `<command>` — PASS: <exact result>
-- `<command>` — PASS: <exact result>
+- NEED predicate: <predicate>
+  - validation/control/recomputation: `<command or artifact>`
+  - exact PASS output: <result, count, interval, or hash>
+- NEED predicate: <predicate>
+  - validation/control/recomputation: `<command or artifact>`
+  - exact PASS output: <result, count, interval, or hash>
 
 Scientific inference:
 <what is established at the declared level>
@@ -93,12 +97,16 @@ Nonblocking strengthening:
 
 No stronger inference:
 - <global regularity, family no-go, empirical completion, etc.>
+
+Stop rule:
+<why this execution's inference stops at the selected scope>
 ```
 
 ## Scoped failure
 
 ```markdown
-Disposition: FAIL <stage or provider> — SELECTED REALIZATION ONLY
+Disposition: FAIL SELECTED REALIZATION
+Stage or provider: <stage or provider>
 
 Evidence scope:
 - level: <E0-E4>
@@ -124,6 +132,9 @@ Nonblocking items:
 
 Architecture review:
 <smallest concrete repair, new identity if required, and graph edge>
+
+Stop rule:
+<why the failure does not authorize a broader no-go or automatic redesign>
 ```
 
 ## GitHub issue closure comment
@@ -170,4 +181,8 @@ Closed by `<sha>` with:
 ### Graph handoff
 
 <next dependency or bounded architecture repair>
+
+### Stop rule
+
+<why closure stops at this scope and what is not automatically activated>
 ```
