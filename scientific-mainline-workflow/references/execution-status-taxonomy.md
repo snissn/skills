@@ -48,8 +48,12 @@ a valid execution.
 Typical statuses:
 
 - `PASS <stage>`
-- `FAIL <stage> REALIZATION`
+- `FAIL SELECTED REALIZATION`
 - `INCONCLUSIVE`
+
+Record the stage or provider in a separate field rather than embedding it in
+the failure token. This keeps the selected-realization disposition canonical
+and machine-comparable.
 
 Never use an engineering defect as a protocol verdict.
 
