@@ -61,7 +61,10 @@ does not silently promote SHOULD or COULD work into a broader theorem.
 - A decision-bearing candidate remains uncommitted, is bound by an exact
   working-tree manifest, and has not appeared in any earlier commit.
 - The mutable design review resolved every blocking NEED finding.
-- Substantive local validation completed before final exact-byte acceptance.
+- Substantive validation completed locally, or through the exact-commit GitHub
+  Actions fallback in
+  [github-actions-python-fallback.md](github-actions-python-fallback.md) when the
+  local runtime was unavailable or blocked.
 - Validation is proportional to the NEED set rather than to every possible
   stronger theorem.
 - A deterministic candidate manifest records the reviewed base, exact path set,
@@ -95,12 +98,27 @@ does not silently promote SHOULD or COULD work into a broader theorem.
 - Source hashes are current.
 - Exact validation commands, exit statuses, decisive counts, and artifact hashes
   are captured for the issue disposition.
+- For CI fallback validation, the tested commit SHA, workflow path and revision,
+  run ID and attempt, event, Python version, runner image, logs, and retained
+  artifacts are captured. A green job is recorded as process evidence only.
 - The changed-file list is exactly the intended artifact set.
 - No unrelated user work or live artifact is included.
 - If a steering note was applied, the issue comment or closure is already part
   of the plan rather than an afterthought.
 - The stop rule is satisfied; no post-gate depth work was added merely because it
   was attractive.
+
+## GitHub Actions validation fallback
+
+When a required deterministic Python check cannot run locally, use the
+repository-owned GitHub Actions workflow as a bound substitute environment.
+Follow [github-actions-python-fallback.md](github-actions-python-fallback.md).
+The fallback must test an exact pushed commit, propagate validator failures,
+and preserve enough logs to reproduce the disposition.
+
+Do not treat CI as a scientific reviewer. Do not move a decision-bearing frozen
+trial into CI without satisfying the scientific execution rules. Infrastructure
+failure is `ENGINEERING DEFECT — NO SCIENTIFIC VERDICT`.
 
 ## Freeze, integrate, and push
 
@@ -116,7 +134,8 @@ does not silently promote SHOULD or COULD work into a broader theorem.
    against the accepted candidate.
 5. If history is squashed or transplanted, verify every scientific file hash
    against the accepted manifest.
-6. Rerun every validation affected by the synchronized base.
+6. Rerun every validation affected by the synchronized base, locally or through
+   the bound CI fallback when local execution is blocked.
 7. Inspect the mainline commit diff, source bindings, evidence scope, and hashes.
 8. Push normally to `main` and verify the remote head.
 9. Retain the pushed mutable branch as non-authoritative development provenance
