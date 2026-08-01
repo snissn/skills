@@ -83,6 +83,9 @@ A node can be declared mergeable only when:
 - required tests/benchmarks were rerun after that update;
 - PR body and comments no longer rely on speculative predecessor facts;
 - latest-head CI and review state are acceptable;
+- the shared `github-pr-mergeable/scripts/codex_review_gate.py --check`
+  classifier reports clean for the exact head; a clean Codex issue comment is
+  sufficient, while any later unresolved Codex thread blocks;
 - AI reviews, if used, were requested only after the PR was mature;
 - coordinator final review passes.
 

@@ -38,7 +38,8 @@ explicitly narrowed the request to planning or no-merge execution.
 ## Compose With
 
 - `github-pr-mergeable` for PR readiness, review, latest-head CI, and merge
-  execution.
+  execution. Use its bundled `scripts/codex_review_gate.py` for Codex state;
+  never infer Codex completion from formal reviews alone.
 - `github:gh-fix-ci` when GitHub Actions failures need targeted diagnosis.
 - `github:gh-address-comments` when unresolved PR review threads must be
   inspected and fixed.
@@ -138,6 +139,11 @@ execute locally and record why. Do not pretend work was delegated.
   tests and required benchmarks run or explicitly justified, PR body/status is
   current, no known local blockers remain, and latest-head CI is running or
   green.
+- Before every `@codex review`, run the `github-pr-mergeable` Codex gate
+  classifier. An exact-head no-findings issue comment is a completed clean
+  result even without a formal review object. Stop requesting immediately when
+  clean; any later unresolved Codex finding supersedes it. Default to no more
+  than three total requests per exact head, at least ten minutes apart.
 - Treat material performance regressions as blockers unless the user or
   coordinator explicitly accepts them with evidence.
 - Keep user changes safe. Do not revert unrelated local changes. Do not use
@@ -177,9 +183,10 @@ execute locally and record why. Do not pretend work was delegated.
    predecessor contract change, predecessor merge, pre-final-review, and
    conflict/test trigger. Poll remote CI locally at coarse intervals while
    doing other work; do not dedicate an agent to waiting.
-10. Use `github-pr-mergeable` for each PR before final merge. Merge only after
-   latest-head CI/reviews are acceptable, required evidence is current, and all
-   predecessors are merged.
+10. Use `github-pr-mergeable` for each PR before final merge, including its
+   deterministic Codex classifier across issue comments, formal reviews, and
+   threads. Merge only after latest-head CI/reviews are acceptable, required
+   evidence is current, and all predecessors are merged.
 11. Merge in topological order. After each merge, update descendants to the
     final base and rerun their required checks before declaring them mergeable.
 

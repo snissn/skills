@@ -39,7 +39,11 @@ A PR is mergeable only when current evidence proves:
 - tests cover the behavior changed by the PR;
 - performance-sensitive changes include relevant benchmark evidence in the PR body or a PR comment, do **not** show an unaccepted material regression, and meet any explicit improvement/saturation gate unless the PR is explicitly instrumentation/safety-only or a linked blocker/waiver is recorded;
 - Codex review has been requested only after the PR is mature enough to avoid review-credit churn, and after meaningful pushes where available;
-- the required Codex latest-head review has completed with a review/comment artifact tied to the exact head SHA, or Codex is explicitly unavailable after a documented retry/window and the user/repo policy permits proceeding without it;
+- the required Codex latest-head review has completed cleanly as either an
+  explicit no-findings issue comment or an approved/clean review tied to the
+  exact head SHA, with no unresolved Codex threads, or Codex is explicitly
+  unavailable after a documented bounded retry window and the user/repo policy
+  permits proceeding without it;
 - optional reviewers such as CodeRabbit and Copilot have either produced no usable response, are rate-limited/unavailable, or had every actual finding/check/thread resolved; optional acknowledgement reactions alone do not block mergeability;
 - AI review findings are fixed or explicitly rejected with rationale;
 - review threads are commented on and marked resolved where the platform supports resolution;
@@ -96,6 +100,19 @@ git log --oneline --decorate -n 8
 ```
 
 If the worktree is dirty, preserve unrelated user edits. Use a detached worktree per PR or stack branch when that keeps changes auditable.
+
+For Codex review state, use the bundled classifier instead of inspecting only
+the pull-request `reviews` array:
+
+```sh
+python "${CODEX_HOME:-${HOME}/.codex}/skills/github-pr-mergeable/scripts/codex_review_gate.py" \
+  --repo <OWNER>/<REPO> --pr <PR> --check
+```
+
+The classifier inventories paginated issue comments, formal reviews, and
+review threads. Exit `0` means the Codex-specific gate is clean; exit `2` means
+its JSON result names the pending request, findings, unresolved threads, or
+retry exhaustion. CI and the other merge gates remain separate.
 
 ## Internal Deep Review
 
@@ -189,6 +206,17 @@ gh pr comment <PR> --repo <OWNER>/<REPO> --body "@copilot review"
 gh pr comment <PR> --repo <OWNER>/<REPO> --body "@coderabbitai review"
 ```
 
+Before every Codex trigger, run `scripts/codex_review_gate.py`. Do not trigger
+when it reports `clean`, `findings`, or `should_request=false`. A clean result
+is terminal for the unchanged head; a later duplicate trigger does not make it
+pending again. A later Codex findings review or unresolved Codex thread does
+supersede the earlier clean result.
+
+Default to one initial request and at most two retries for the same head, with
+at least ten minutes between triggers. After that, record Codex as unavailable
+instead of spamming the PR. A user may explicitly raise the retry cap, but may
+not bypass re-inventory before each trigger or the stop-on-clean rule.
+
 If one of those bots uses a different repo-specific trigger, follow the repo convention. If a bot is unavailable, say so explicitly and do not claim it passed.
 
 For each AI review that produces comments, checks, review threads, or findings:
@@ -204,11 +232,27 @@ For each AI review that produces comments, checks, review threads, or findings:
 
 Before posting final mergeability evidence or merging, re-inventory each requested AI reviewer against the exact latest head SHA:
 
-- Codex is required by default. If Codex acknowledged or started a latest-head review, treat it as **pending** until it produces a completed review/comment artifact for the exact latest head SHA.
+- Codex is required by default. Run the bundled classifier for the final
+  decision; do not infer state from `reviews` alone.
+- Codex commonly emits a clean result as an issue comment from
+  `chatgpt-codex-connector[bot]` containing both `Codex Review: Didn't find any
+  major issues` and `Reviewed commit: <sha>`. That exact-head comment is a
+  completed clean artifact even when no formal review object exists. Stop
+  requesting reviews for that head immediately.
+- Codex emits findings as formal `COMMENTED` reviews and inline review threads.
+  Any unresolved Codex thread blocks. If several artifacts exist for one head,
+  the latest substantive Codex artifact wins; trigger comments are requests,
+  not review artifacts.
+- Match the `Reviewed commit` prefix or formal review `commit_id` to the full
+  current head. Never use a clean artifact from an older head.
+- If Codex acknowledged or started a latest-head review but the classifier has
+  no exact-head artifact, treat it as **pending** until the bounded retry policy
+  completes.
 - Do not merge while the required Codex latest-head review is pending, even if `mergeable=MERGEABLE`, `mergeStateStatus=CLEAN`, local validation passes, or earlier review threads have been resolved.
 - CodeRabbit and Copilot are optional/conditional by default. If either returns a completed review, check, inline comment, or review thread, fix real findings or explicitly reject them with rationale and resolve threads. If either is rate-limited, unavailable, acknowledgement-only, or silent after a documented retry/window, record that disposition and proceed when the required gates are clean.
 - If an optional reviewer has an active required status check under branch protection, treat that check as CI and wait for it or document why it is non-blocking. Do not treat a plain acknowledgement reaction from an optional reviewer as a pending merge blocker.
-- For Codex-style review comments, require the review's `commit.oid` or explicit "Reviewed commit" SHA to match the current head, and require all resulting review threads to be resolved.
+- A reaction alone is not a clean artifact. Require an explicit exact-head
+  clean comment/review plus zero unresolved Codex threads.
 - If an optional review completes after the PR was merged and reports real findings, open or push a follow-up fix PR and resolve the late threads.
 
 ## Review Thread Resolution

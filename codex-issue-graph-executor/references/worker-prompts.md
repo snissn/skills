@@ -141,6 +141,10 @@ Time box: 10 minutes. Check only this PR:
 - PR body accuracy;
 - whether AI reviews were requested only after a mature head.
 
+Use `github-pr-mergeable/scripts/codex_review_gate.py --check` for Codex state.
+Do not inspect only formal reviews, and do not request another review when an
+exact-head clean issue comment already exists.
+
 Run only bounded tests tied to a concrete risk; do not repeat a broad suite that
 already has exact-head evidence. Do not edit, spawn subagents, request reviews,
 or merge. Return blockers first, then concise evidence and a mergeability
