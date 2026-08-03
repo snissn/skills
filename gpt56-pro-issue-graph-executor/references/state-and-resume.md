@@ -133,7 +133,9 @@ Use issue numbers as string keys under `nodes`.
 | `blocked` | External or design blocker with owner and next action. |
 | `deferred` | Explicitly moved to another issue/owner and non-blocking for this graph. |
 
-Do not use `running` merely because a PR is open. Set optional `active_lane` explicitly when a node's state is ambiguous; the validator otherwise treats `running` and `testing` as active.
+Do not use `running` merely because a PR is open. Set optional `active_lane`
+explicitly when a node's state is ambiguous; the validator otherwise treats
+`running` and `testing` as active.
 
 ## Run Lease
 
@@ -260,7 +262,7 @@ Update the fenced JSON and validate it.
 Save the JSON portion to a file and run:
 
 ```sh
-python scripts/validate_graph_state.py state.json
+python3 scripts/validate_graph_state.py state.json
 ```
 
 The validator checks:
