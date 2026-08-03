@@ -216,6 +216,7 @@ def validate(data: dict[str, Any]) -> Validation:
             f"active lanes {active} exceed max_active_lanes={max_lanes}"
         )
 
+    # Cycle detection over predecessor -> successor edges.
     color: dict[str, int] = {node_id: 0 for node_id in normalized}
     stack: list[str] = []
 
@@ -257,8 +258,19 @@ def validate(data: dict[str, Any]) -> Validation:
                 f"found {node.get('state')!r}"
             )
         for pred_raw in node.get("predecessors", []):
-            pred = as_issue_id(pred_raw)
-            pred_state = normalized[pred].get("state")
+            try:
+                pred = as_issue_id(pred_raw)
+            except ValueError:
+                # The node-level predecessor pass already records the detailed
+                # validation error. Keep dispatchability validation total and
+                # avoid turning malformed handoff state into a traceback.
+                continue
+            pred_node = normalized.get(pred)
+            if pred_node is None:
+                # Missing predecessors are likewise reported during the first
+                # node pass. They cannot establish dispatchability.
+                continue
+            pred_state = pred_node.get("state")
             if pred_state != "merged":
                 v.error(
                     f"dispatchable node {node_id} predecessor {pred} "
