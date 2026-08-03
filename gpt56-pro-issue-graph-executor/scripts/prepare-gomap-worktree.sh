@@ -10,11 +10,14 @@ Usage:
     --repo /path/to/gomap \
     --issue 4053 \
     --slug compat-diff \
-    [--base origin/main] \
+    --base-sha <adapter-resolved-40-or-64-hex-commit> \
+    [--fetch-ref main] \
     [--work-root /path/to/work] \
     [--branch gpt56/issue-4053-compat-diff] \
     [--no-fetch] [--build] [--smoke]
 
+The immutable --base-sha is required. --fetch-ref controls only which remote ref
+is fetched before resolving that SHA; it never replaces or relabels the base.
 The script does not install packages, run go mod tidy, push, or open a PR.
 EOF
 }
@@ -22,7 +25,8 @@ EOF
 REPO=""
 ISSUE=""
 SLUG=""
-BASE_REF="origin/main"
+EXPECTED_BASE_SHA=""
+FETCH_REF=""
 WORK_ROOT=""
 BRANCH=""
 DO_FETCH=1
@@ -43,8 +47,12 @@ while (($#)); do
       SLUG="${2:?missing value for --slug}"
       shift 2
       ;;
-    --base)
-      BASE_REF="${2:?missing value for --base}"
+    --base-sha)
+      EXPECTED_BASE_SHA="${2:?missing value for --base-sha}"
+      shift 2
+      ;;
+    --fetch-ref)
+      FETCH_REF="${2:?missing value for --fetch-ref}"
       shift 2
       ;;
     --work-root)
@@ -79,7 +87,7 @@ while (($#)); do
   esac
 done
 
-if [[ -z "$REPO" || -z "$ISSUE" || -z "$SLUG" ]]; then
+if [[ -z "$REPO" || -z "$ISSUE" || -z "$SLUG" || -z "$EXPECTED_BASE_SHA" ]]; then
   usage >&2
   exit 2
 fi
@@ -93,6 +101,13 @@ if ! [[ "$SLUG" =~ ^[a-z0-9]+([a-z0-9-]*[a-z0-9])?$ ]]; then
   printf 'slug must use lowercase letters, numbers, and hyphens: %s\n' "$SLUG" >&2
   exit 2
 fi
+
+if ! [[ "$EXPECTED_BASE_SHA" =~ ^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$ ]]; then
+  printf 'base SHA must be an exact 40- or 64-character hexadecimal commit: %s\n' \
+    "$EXPECTED_BASE_SHA" >&2
+  exit 2
+fi
+EXPECTED_BASE_SHA="${EXPECTED_BASE_SHA,,}"
 
 REPO="${REPO/#\~/$HOME}"
 REPO="$(python3 - "$REPO" <<'PY'
@@ -117,12 +132,18 @@ if [[ -z "$BRANCH" ]]; then
   BRANCH="gpt56/issue-${ISSUE}-${SLUG}"
 fi
 
-for command in git go make gcc python3; do
+for command in git go make python3; do
   command -v "$command" >/dev/null || {
     printf 'missing required command: %s\n' "$command" >&2
     exit 10
   }
 done
+
+CC_BIN="${CC:-cc}"
+command -v "$CC_BIN" >/dev/null || {
+  printf 'missing configured C compiler: %s\n' "$CC_BIN" >&2
+  exit 10
+}
 
 if ! git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   if [[ -e "$REPO" && -n "$(find "$REPO" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
@@ -144,17 +165,35 @@ if [[ "$(git -C "$REPO" config --get remote.origin.url || true)" != *"snissn/gom
 fi
 
 if ((DO_FETCH)); then
-  if ! git -C "$REPO" fetch --prune origin; then
-    if git -C "$REPO" rev-parse --verify "$BASE_REF^{commit}" >/dev/null 2>&1; then
-      printf 'warning: fetch failed; using already available base ref %s\n' "$BASE_REF" >&2
+  if [[ -n "$FETCH_REF" ]]; then
+    FETCH_COMMAND=(git -C "$REPO" fetch --prune origin "$FETCH_REF")
+  else
+    FETCH_COMMAND=(git -C "$REPO" fetch --prune origin)
+  fi
+  if ! "${FETCH_COMMAND[@]}"; then
+    if git -C "$REPO" cat-file -e "${EXPECTED_BASE_SHA}^{commit}" 2>/dev/null; then
+      printf 'warning: fetch failed; using already available immutable base %s\n' \
+        "$EXPECTED_BASE_SHA" >&2
     else
-      printf 'fetch failed and base ref is unavailable: %s\n' "$BASE_REF" >&2
+      printf 'fetch failed and immutable base is unavailable: %s\n' \
+        "$EXPECTED_BASE_SHA" >&2
       exit 20
     fi
   fi
 fi
 
-BASE_SHA="$(git -C "$REPO" rev-parse --verify "$BASE_REF^{commit}")"
+if ! BASE_SHA="$(git -C "$REPO" rev-parse --verify "${EXPECTED_BASE_SHA}^{commit}" 2>/dev/null)"; then
+  printf 'immutable base commit is unavailable locally: %s\n' "$EXPECTED_BASE_SHA" >&2
+  printf '%s\n' 'Fetch the recorded ref or use the build-gomap pinned-source fallback, then retry.' >&2
+  exit 20
+fi
+BASE_SHA="${BASE_SHA,,}"
+if [[ "$BASE_SHA" != "$EXPECTED_BASE_SHA" ]]; then
+  printf 'resolved base %s does not exactly match requested base %s\n' \
+    "$BASE_SHA" "$EXPECTED_BASE_SHA" >&2
+  exit 20
+fi
+
 WORKTREE="$WORK_ROOT/worktrees/issue-$ISSUE"
 CACHE_ROOT="$WORK_ROOT/cache"
 LOG_DIR="$WORK_ROOT/logs/issue-$ISSUE"
@@ -177,7 +216,12 @@ if [[ -d "$WORKTREE/.git" || -f "$WORKTREE/.git" ]]; then
     exit 30
   fi
 else
-  rm -rf "$WORKTREE"
+  if [[ -e "$WORKTREE" ]]; then
+    printf 'worktree path exists but is not the expected git worktree: %s\n' \
+      "$WORKTREE" >&2
+    printf '%s\n' 'Inspect and clean or relocate it explicitly before retrying.' >&2
+    exit 30
+  fi
   if git -C "$REPO" show-ref --verify --quiet "refs/heads/$BRANCH"; then
     git -C "$REPO" worktree add "$WORKTREE" "$BRANCH"
   elif git -C "$REPO" show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
@@ -189,8 +233,8 @@ fi
 
 CURRENT_HEAD="$(git -C "$WORKTREE" rev-parse HEAD)"
 if ! git -C "$WORKTREE" merge-base --is-ancestor "$BASE_SHA" "$CURRENT_HEAD"; then
-  printf 'issue branch %s at %s does not contain requested base %s (%s)\n' \
-    "$BRANCH" "$CURRENT_HEAD" "$BASE_REF" "$BASE_SHA" >&2
+  printf 'issue branch %s at %s does not contain requested base %s\n' \
+    "$BRANCH" "$CURRENT_HEAD" "$BASE_SHA" >&2
   printf '%s\n' 'Synchronize the branch explicitly, rerun affected tests, then invoke this helper again.' >&2
   exit 31
 fi
@@ -222,7 +266,7 @@ cat >"$ENV_FILE" <<EOF
 export GOMAP_REPO_DIR=$(printf '%q' "$REPO")
 export GOMAP_WORK_ROOT=$(printf '%q' "$WORK_ROOT")
 export GOMAP_WORKTREE=$(printf '%q' "$WORKTREE")
-export GOMAP_BASE_REF=$(printf '%q' "$BASE_REF")
+export GOMAP_FETCH_REF=$(printf '%q' "$FETCH_REF")
 export GOMAP_BASE_SHA=$(printf '%q' "$BASE_SHA")
 export GOMAP_ISSUE=$(printf '%q' "$ISSUE")
 export GOMAP_BRANCH=$(printf '%q' "$BRANCH")
@@ -230,6 +274,7 @@ export GOMODCACHE=$(printf '%q' "$CACHE_ROOT/go-mod")
 export GOCACHE=$(printf '%q' "$CACHE_ROOT/go-build")
 export TMPDIR=$(printf '%q' "$TMP_DIR")
 export CGO_ENABLED=1
+export CC=$(printf '%q' "$CC_BIN")
 export GOFLAGS=-p=1
 export GOMAXPROCS=2
 export GOWORK=off
@@ -257,16 +302,18 @@ fi
 
 HEAD_SHA="$(git -C "$WORKTREE" rev-parse HEAD)"
 STATUS="$(git -C "$WORKTREE" status --short)"
+FETCH_LABEL="${FETCH_REF:-all origin refs}"
 
 cat <<EOF
 gomap issue worktree ready
   issue:       $ISSUE
   branch:      $BRANCH
   worktree:    $WORKTREE
-  base ref:    $BASE_REF
+  fetch ref:   $FETCH_LABEL
   base sha:    $BASE_SHA
   current sha: $HEAD_SHA
   Go:          $GO_VERSION
+  CC:          $CC_BIN
   env file:    $ENV_FILE
   logs:        $LOG_DIR
   artifacts:   $ARTIFACT_DIR
