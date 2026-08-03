@@ -194,6 +194,43 @@ if [[ "$BASE_SHA" != "$EXPECTED_BASE_SHA" ]]; then
   exit 20
 fi
 
+verify_local_branch_against_remote() {
+  local local_ref="refs/heads/$BRANCH"
+  local remote_ref="refs/remotes/origin/$BRANCH"
+  local local_tip remote_tip
+
+  if ! git -C "$REPO" show-ref --verify --quiet "$local_ref" || \
+     ! git -C "$REPO" show-ref --verify --quiet "$remote_ref"; then
+    return 0
+  fi
+
+  local_tip="$(git -C "$REPO" rev-parse "$local_ref")"
+  remote_tip="$(git -C "$REPO" rev-parse "$remote_ref")"
+  if [[ "$local_tip" == "$remote_tip" ]]; then
+    return 0
+  fi
+
+  if git -C "$REPO" merge-base --is-ancestor "$local_tip" "$remote_tip"; then
+    printf 'local issue branch %s is behind fetched origin/%s: local=%s remote=%s\n' \
+      "$BRANCH" "$BRANCH" "$local_tip" "$remote_tip" >&2
+    printf '%s\n' 'Fast-forward or otherwise synchronize the local branch explicitly, then retry.' >&2
+    exit 32
+  fi
+
+  if git -C "$REPO" merge-base --is-ancestor "$remote_tip" "$local_tip"; then
+    printf 'warning: local issue branch %s is ahead of origin/%s: local=%s remote=%s\n' \
+      "$BRANCH" "$BRANCH" "$local_tip" "$remote_tip" >&2
+    return 0
+  fi
+
+  printf 'local issue branch %s has diverged from fetched origin/%s: local=%s remote=%s\n' \
+    "$BRANCH" "$BRANCH" "$local_tip" "$remote_tip" >&2
+  printf '%s\n' 'Reconcile the branch explicitly without discarding either side, then retry.' >&2
+  exit 32
+}
+
+verify_local_branch_against_remote
+
 WORKTREE="$WORK_ROOT/worktrees/issue-$ISSUE"
 CACHE_ROOT="$WORK_ROOT/cache"
 LOG_DIR="$WORK_ROOT/logs/issue-$ISSUE"
