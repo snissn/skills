@@ -34,6 +34,11 @@ STATES = {
 }
 
 ACTIVE_STATES = {"running", "testing"}
+FULL_SHA_RE = re.compile(r"[0-9a-fA-F]{40}|[0-9a-fA-F]{64}")
+
+
+def is_full_sha(value: Any) -> bool:
+    return isinstance(value, str) and FULL_SHA_RE.fullmatch(value) is not None
 
 
 class Validation:
@@ -206,11 +211,23 @@ def validate(data: dict[str, Any]) -> Validation:
             validated_predecessors[node_id].append(pred)
             graph[pred].append(node_id)
 
+        for field in ("base_sha", "head_sha", "merge_sha"):
+            value = node.get(field)
+            if value is not None and not is_full_sha(value):
+                v.error(
+                    f"node {node_id}: {field} must be an exact 40- or "
+                    "64-character hexadecimal commit SHA"
+                )
+
         if state == "merged":
-            for field in ("pr", "head_sha", "merge_sha"):
-                if not node.get(field):
-                    v.error(f"node {node_id}: merged node missing {field}")
-        elif node.get("merge_sha"):
+            if pr is None:
+                v.error(f"node {node_id}: merged node missing pr")
+            for field in ("head_sha", "merge_sha"):
+                if not is_full_sha(node.get(field)):
+                    v.error(
+                        f"node {node_id}: merged node missing valid {field}"
+                    )
+        elif node.get("merge_sha") is not None:
             v.warn(f"node {node_id}: non-merged node has merge_sha")
 
         node_head = node.get("head_sha")
