@@ -57,9 +57,9 @@ Use JSON for machine-readable validation. The comment may include prose followed
       "successors": [4053, 4054, 4055],
       "branch": "gpt56/issue-4052-capability-metadata",
       "pr": 4100,
-      "base_sha": "aaa",
-      "head_sha": "bbb",
-      "merge_sha": "ccc",
+      "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "merge_sha": "cccccccccccccccccccccccccccccccccccccccc",
       "contract_surface": ["mongo capability manifest"],
       "conflict_surface": ["TreeDB/mongo_gateway compatibility docs"],
       "performance_class": "not-relevant",
@@ -67,15 +67,15 @@ Use JSON for machine-readable validation. The comment may include prose followed
         {
           "command": "GOWORK=off go test ./TreeDB/mongo_gateway -count=1",
           "result": "pass",
-          "head_sha": "bbb"
+          "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         }
       ],
       "ci": {
-        "head_sha": "bbb",
+        "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "status": "success"
       },
       "review": {
-        "head_sha": "bbb",
+        "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "status": "clean"
       },
       "blocker": null,
@@ -89,19 +89,19 @@ Use JSON for machine-readable validation. The comment may include prose followed
       "successors": [],
       "branch": "gpt56/issue-4053-compat-diff",
       "pr": 4101,
-      "base_sha": "ccc",
-      "head_sha": "ddd",
+      "base_sha": "cccccccccccccccccccccccccccccccccccccccc",
+      "head_sha": "dddddddddddddddddddddddddddddddddddddddd",
       "merge_sha": null,
       "contract_surface": ["fixture and result schema"],
       "conflict_surface": ["compatibility manifest integration"],
       "performance_class": "not-relevant",
       "tests": [],
       "ci": {
-        "head_sha": "ddd",
+        "head_sha": "dddddddddddddddddddddddddddddddddddddddd",
         "status": "pending"
       },
       "review": {
-        "head_sha": "ddd",
+        "head_sha": "dddddddddddddddddddddddddddddddddddddddd",
         "status": "not-requested"
       },
       "blocker": null,
