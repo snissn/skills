@@ -73,9 +73,14 @@ def as_issue_id(value: Any) -> str:
     if isinstance(value, bool):
         raise ValueError("boolean is not an issue id")
     if isinstance(value, int):
+        if value <= 0:
+            raise ValueError("issue id must be a positive integer")
         return str(value)
     if isinstance(value, str) and value.isdigit():
-        return str(int(value))
+        issue_id = int(value)
+        if issue_id <= 0:
+            raise ValueError("issue id must be a positive integer")
+        return str(issue_id)
     raise ValueError(f"invalid issue id: {value!r}")
 
 
