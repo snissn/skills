@@ -171,7 +171,7 @@ bash <skill-dir>/scripts/prepare-gomap-worktree.sh \
 
 The helper:
 
-- fetches all normal `origin` refs unless `--no-fetch` is set, so an existing issue branch is refreshed before resume;
+- fetches all remote branch heads with an explicit refspec unless `--no-fetch` is set, independent of a checkout’s configured `remote.origin.fetch`, so an existing issue branch is refreshed before resume;
 - accepts a primary checkout or an existing linked Git worktree as `--repo`;
 - reuses an existing issue worktree;
 - adopts an existing local or remote branch only when it contains the requested exact base SHA;
