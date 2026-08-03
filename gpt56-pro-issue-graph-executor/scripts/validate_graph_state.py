@@ -251,10 +251,10 @@ def validate(data: dict[str, Any]) -> Validation:
         if node is None:
             v.error(f"dispatchable node {node_id} is missing from nodes")
             continue
-        if node.get("state") in {"merged", "blocked", "deferred"}:
+        if node.get("state") != "ready":
             v.error(
-                f"dispatchable node {node_id} has non-dispatchable state "
-                f"{node.get('state')!r}"
+                f"dispatchable node {node_id} must have state 'ready', "
+                f"found {node.get('state')!r}"
             )
         for pred_raw in node.get("predecessors", []):
             pred = as_issue_id(pred_raw)
