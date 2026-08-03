@@ -124,9 +124,9 @@ for command in git go make gcc python3; do
   }
 done
 
-if [[ ! -d "$REPO/.git" ]]; then
+if ! git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   if [[ -e "$REPO" && -n "$(find "$REPO" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]; then
-    printf 'repo path exists but is not a git checkout: %s\n' "$REPO" >&2
+    printf 'repo path exists but is not a git worktree: %s\n' "$REPO" >&2
     printf '%s\n' 'Use the build-gomap archive fallback for testing, or choose an empty path for clone.' >&2
     exit 20
   fi
@@ -185,6 +185,14 @@ else
   else
     git -C "$REPO" worktree add -b "$BRANCH" "$WORKTREE" "$BASE_SHA"
   fi
+fi
+
+CURRENT_HEAD="$(git -C "$WORKTREE" rev-parse HEAD)"
+if ! git -C "$WORKTREE" merge-base --is-ancestor "$BASE_SHA" "$CURRENT_HEAD"; then
+  printf 'issue branch %s at %s does not contain requested base %s (%s)\n' \
+    "$BRANCH" "$CURRENT_HEAD" "$BASE_REF" "$BASE_SHA" >&2
+  printf '%s\n' 'Synchronize the branch explicitly, rerun affected tests, then invoke this helper again.' >&2
+  exit 31
 fi
 
 if [[ ! -f "$WORKTREE/go.mod" || ! -f "$WORKTREE/Makefile" ]]; then
