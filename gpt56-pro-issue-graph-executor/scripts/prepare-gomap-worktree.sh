@@ -126,7 +126,7 @@ if [[ -z "$BRANCH" ]]; then
   BRANCH="gpt56/issue-${ISSUE}-${SLUG}"
 fi
 
-for command in git go make python3; do
+for command in git go make python3 awk; do
   command -v "$command" >/dev/null || {
     printf 'missing required command: %s\n' "$command" >&2
     exit 10
@@ -220,7 +220,24 @@ verify_local_branch_against_remote() {
 
 verify_local_branch_against_remote
 
-WORKTREE="$WORK_ROOT/worktrees/issue-$ISSUE"
+CANONICAL_WORKTREE="$WORK_ROOT/worktrees/issue-$ISSUE"
+EXISTING_BRANCH_WORKTREE="$(
+  git -C "$REPO" worktree list --porcelain |
+    awk -v target="refs/heads/$BRANCH" '
+      /^worktree / { path = substr($0, 10) }
+      $0 == "branch " target { print path; exit }
+    '
+)"
+if [[ -n "$EXISTING_BRANCH_WORKTREE" ]]; then
+  WORKTREE="$EXISTING_BRANCH_WORKTREE"
+  if [[ "$WORKTREE" != "$CANONICAL_WORKTREE" ]]; then
+    printf 'warning: reusing existing worktree for branch %s: %s\n' \
+      "$BRANCH" "$WORKTREE" >&2
+  fi
+else
+  WORKTREE="$CANONICAL_WORKTREE"
+fi
+
 CACHE_ROOT="$WORK_ROOT/cache"
 LOG_DIR="$WORK_ROOT/logs/issue-$ISSUE"
 ARTIFACT_DIR="$WORK_ROOT/artifacts/issue-$ISSUE"
