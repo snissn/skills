@@ -134,6 +134,8 @@ for command in git go make python3 awk; do
 done
 
 CC_BIN="${CC:-cc}"
+GOFLAGS_VALUE="${GOFLAGS:--p=1}"
+GOMAXPROCS_VALUE="${GOMAXPROCS:-2}"
 command -v "$CC_BIN" >/dev/null || {
   printf 'missing configured C compiler: %s\n' "$CC_BIN" >&2
   exit 10
@@ -312,8 +314,8 @@ export GOCACHE=$(printf '%q' "$CACHE_ROOT/go-build")
 export TMPDIR=$(printf '%q' "$TMP_DIR")
 export CGO_ENABLED=1
 export CC=$(printf '%q' "$CC_BIN")
-export GOFLAGS=-p=1
-export GOMAXPROCS=2
+export GOFLAGS=$(printf '%q' "$GOFLAGS_VALUE")
+export GOMAXPROCS=$(printf '%q' "$GOMAXPROCS_VALUE")
 export GOWORK=off
 EOF
 
