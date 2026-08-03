@@ -150,6 +150,9 @@ def validate(data: dict[str, Any]) -> Validation:
     branch_owner: dict[str, str] = {}
     pr_owner: dict[int, str] = {}
     graph: dict[str, list[str]] = {node_id: [] for node_id in normalized}
+    validated_predecessors: dict[str, list[str]] = {
+        node_id: [] for node_id in normalized
+    }
     active: list[str] = []
 
     for node_id, node in normalized.items():
@@ -200,6 +203,7 @@ def validate(data: dict[str, Any]) -> Validation:
                     "include completed/external graph nodes in state"
                 )
                 continue
+            validated_predecessors[node_id].append(pred)
             graph[pred].append(node_id)
 
         if state == "merged":
@@ -285,16 +289,8 @@ def validate(data: dict[str, Any]) -> Validation:
     for node_id, node in normalized.items():
         if node.get("state") != "ready":
             continue
-        for pred_raw in node.get("predecessors", []):
-            try:
-                pred = as_issue_id(pred_raw)
-            except ValueError:
-                # The first node pass already records malformed predecessor IDs.
-                continue
-            predecessor = normalized.get(pred)
-            if predecessor is None:
-                # The first node pass already records missing predecessor nodes.
-                continue
+        for pred in validated_predecessors[node_id]:
+            predecessor = normalized[pred]
             pred_state = predecessor.get("state")
             if pred_state != "merged":
                 v.error(
