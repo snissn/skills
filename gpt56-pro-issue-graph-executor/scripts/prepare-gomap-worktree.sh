@@ -159,7 +159,7 @@ if [[ "$(git -C "$REPO" config --get remote.origin.url || true)" != *"snissn/gom
 fi
 
 if ((DO_FETCH)); then
-  if ! git -C "$REPO" fetch --prune origin; then
+  if ! git -C "$REPO" fetch --prune origin "+refs/heads/*:refs/remotes/origin/*"; then
     printf '%s\n' 'fetch failed; remote branch freshness is unverified.' >&2
     printf '%s\n' 'Retry with working remote access, or use --no-fetch only after separately verifying the recorded base and issue-branch objects.' >&2
     exit 20
