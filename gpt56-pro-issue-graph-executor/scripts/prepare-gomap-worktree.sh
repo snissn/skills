@@ -11,13 +11,12 @@ Usage:
     --issue 4053 \
     --slug compat-diff \
     --base-sha <adapter-resolved-40-or-64-hex-commit> \
-    [--fetch-ref main] \
     [--work-root /path/to/work] \
     [--branch gpt56/issue-4053-compat-diff] \
     [--no-fetch] [--build] [--smoke]
 
-The immutable --base-sha is required. --fetch-ref controls only which remote ref
-is fetched before resolving that SHA; it never replaces or relabels the base.
+The immutable --base-sha is required. Unless --no-fetch is used, the helper
+refreshes all normal origin refs before branch reconciliation.
 The script does not install packages, run go mod tidy, push, or open a PR.
 EOF
 }
@@ -26,7 +25,6 @@ REPO=""
 ISSUE=""
 SLUG=""
 EXPECTED_BASE_SHA=""
-FETCH_REF=""
 WORK_ROOT=""
 BRANCH=""
 DO_FETCH=1
@@ -49,10 +47,6 @@ while (($#)); do
       ;;
     --base-sha)
       EXPECTED_BASE_SHA="${2:?missing value for --base-sha}"
-      shift 2
-      ;;
-    --fetch-ref)
-      FETCH_REF="${2:?missing value for --fetch-ref}"
       shift 2
       ;;
     --work-root)
@@ -165,12 +159,7 @@ if [[ "$(git -C "$REPO" config --get remote.origin.url || true)" != *"snissn/gom
 fi
 
 if ((DO_FETCH)); then
-  if [[ -n "$FETCH_REF" ]]; then
-    FETCH_COMMAND=(git -C "$REPO" fetch --prune origin "$FETCH_REF")
-  else
-    FETCH_COMMAND=(git -C "$REPO" fetch --prune origin)
-  fi
-  if ! "${FETCH_COMMAND[@]}"; then
+  if ! git -C "$REPO" fetch --prune origin; then
     if git -C "$REPO" cat-file -e "${EXPECTED_BASE_SHA}^{commit}" 2>/dev/null; then
       printf 'warning: fetch failed; using already available immutable base %s\n' \
         "$EXPECTED_BASE_SHA" >&2
@@ -303,7 +292,6 @@ cat >"$ENV_FILE" <<EOF
 export GOMAP_REPO_DIR=$(printf '%q' "$REPO")
 export GOMAP_WORK_ROOT=$(printf '%q' "$WORK_ROOT")
 export GOMAP_WORKTREE=$(printf '%q' "$WORKTREE")
-export GOMAP_FETCH_REF=$(printf '%q' "$FETCH_REF")
 export GOMAP_BASE_SHA=$(printf '%q' "$BASE_SHA")
 export GOMAP_ISSUE=$(printf '%q' "$ISSUE")
 export GOMAP_BRANCH=$(printf '%q' "$BRANCH")
@@ -339,14 +327,11 @@ fi
 
 HEAD_SHA="$(git -C "$WORKTREE" rev-parse HEAD)"
 STATUS="$(git -C "$WORKTREE" status --short)"
-FETCH_LABEL="${FETCH_REF:-all origin refs}"
-
 cat <<EOF
 gomap issue worktree ready
   issue:       $ISSUE
   branch:      $BRANCH
   worktree:    $WORKTREE
-  fetch ref:   $FETCH_LABEL
   base sha:    $BASE_SHA
   current sha: $HEAD_SHA
   Go:          $GO_VERSION
