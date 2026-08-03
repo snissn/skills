@@ -166,12 +166,12 @@ bash <skill-dir>/scripts/prepare-gomap-worktree.sh \
   --issue 4053 \
   --slug compat-diff \
   --base-sha "$GOMAP_BASE_SHA" \
-  --fetch-ref main \
   --work-root "$GOMAP_WORK_ROOT"
 ```
 
 The helper:
 
+- fetches all normal `origin` refs by default so an existing issue branch is refreshed before resume;
 - accepts a primary checkout or an existing linked Git worktree as `--repo`;
 - reuses an existing issue worktree;
 - adopts an existing local or remote branch only when it contains the requested exact base SHA;
@@ -179,6 +179,8 @@ The helper:
 - otherwise creates `gpt56/issue-4053-compat-diff`;
 - prints exact base, branch, worktree, and environment paths;
 - optionally runs build/smoke checks.
+
+Do not pass `--fetch-ref` in the normal resume path. A restricted fetch can leave the local `origin/<issue-branch>` tracking ref stale. Use it only for a brand-new lane after the GitHub adapter confirms no remote issue branch exists, or after explicitly fetching the recorded remote issue branch separately.
 
 Always inspect:
 
