@@ -24,7 +24,7 @@ base SHA: exact current commit
 issue branch/PR: existing ownership if any
 ```
 
-Record the SHA in graph state before creating a worktree. Do not silently build a moving `main`.
+Record the full adapter-resolved SHA in graph state and export it as `GOMAP_BASE_SHA` before creating a worktree. Pass that immutable SHA to the helper separately from any optional fetch ref; do not silently build a moving `main`.
 
 ## Preferred Source Path
 
@@ -87,12 +87,18 @@ Check:
 ```sh
 set -euo pipefail
 
-for command in go make gcc python3; do
+for command in git go make python3; do
   command -v "$command" >/dev/null || {
     printf 'missing required command: %s\n' "$command" >&2
     exit 1
   }
 done
+
+export CC="${CC:-cc}"
+command -v "$CC" >/dev/null || {
+  printf 'missing configured C compiler: %s\n' "$CC" >&2
+  exit 1
+}
 
 go version
 go env GOVERSION GOOS GOARCH CGO_ENABLED
@@ -135,6 +141,7 @@ Use conservative defaults from `build-gomap`:
 
 ```sh
 export CGO_ENABLED=1
+export CC="${CC:-cc}"
 export GOFLAGS="${GOFLAGS:--p=1}"
 export GOMAXPROCS="${GOMAXPROCS:-2}"
 export GOWORK=off
@@ -158,14 +165,17 @@ bash <skill-dir>/scripts/prepare-gomap-worktree.sh \
   --repo "$GOMAP_REPO_DIR" \
   --issue 4053 \
   --slug compat-diff \
-  --base origin/main \
+  --base-sha "$GOMAP_BASE_SHA" \
+  --fetch-ref main \
   --work-root "$GOMAP_WORK_ROOT"
 ```
 
 The helper:
 
+- accepts a primary checkout or an existing linked Git worktree as `--repo`;
 - reuses an existing issue worktree;
-- adopts an existing local or remote branch where safe;
+- adopts an existing local or remote branch only when it contains the requested exact base SHA;
+- refuses stale-base adoption and requires an explicit branch synchronization plus test rerun instead of silently relabeling the lane;
 - otherwise creates `gpt56/issue-4053-compat-diff`;
 - prints exact base, branch, worktree, and environment paths;
 - optionally runs build/smoke checks.
@@ -349,7 +359,7 @@ Classify failures accurately:
 | --- | --- |
 | DNS, proxy timeout, missing module download | dependency/source acquisition |
 | missing Go 1.26 toolchain | environment |
-| missing gcc/CGO library | environment |
+| missing configured C compiler or CGO library | environment |
 | Go compiler/type error in repository source | compile failure |
 | test assertion failure | behavior/correctness |
 | benchmark regression | performance blocker |
