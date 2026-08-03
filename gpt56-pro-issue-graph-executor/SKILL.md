@@ -269,7 +269,7 @@ Before ending every invocation:
 7. Validate a saved state file with:
 
    ```sh
-   python scripts/validate_graph_state.py <state.json>
+   python3 scripts/validate_graph_state.py <state.json>
    ```
 
 A later invocation should be able to continue using GitHub alone even if the previous local worktrees no longer exist.
