@@ -44,7 +44,7 @@ Use JSON for machine-readable validation. The comment may include prose followed
     "max_active_lanes": 3,
     "max_heavy_processes": 2
   },
-  "dispatchable_now": [4053, 4054, 4055],
+  "dispatchable_now": [],
   "review_or_ci_pending": [],
   "fix_needed": [],
   "blocked": [],
