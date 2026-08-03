@@ -107,8 +107,11 @@ def validate(data: dict[str, Any]) -> Validation:
         v.error("mode must be execute-and-merge, readiness-only, or no-merge")
 
     base_sha = data.get("base_sha")
-    if not isinstance(base_sha, str) or len(base_sha) < 7:
-        v.error("base_sha must be a commit SHA or unambiguous prefix")
+    if (
+        not isinstance(base_sha, str)
+        or re.fullmatch(r"[0-9a-fA-F]{7,64}", base_sha) is None
+    ):
+        v.error("base_sha must be a hexadecimal commit SHA or unambiguous prefix")
 
     limits = data.get("limits")
     if not isinstance(limits, dict):
@@ -206,10 +209,52 @@ def validate(data: dict[str, Any]) -> Validation:
         elif node.get("merge_sha"):
             v.warn(f"node {node_id}: non-merged node has merge_sha")
 
+        node_head = node.get("head_sha")
         for evidence_name in ("ci", "review"):
             evidence = node.get(evidence_name)
-            if evidence is not None and not isinstance(evidence, dict):
+            if evidence is None:
+                continue
+            if not isinstance(evidence, dict):
                 v.error(f"node {node_id}: {evidence_name} must be an object or null")
+                continue
+            evidence_head = evidence.get("head_sha")
+            if not isinstance(evidence_head, str) or not evidence_head:
+                v.error(
+                    f"node {node_id}: {evidence_name} evidence must record head_sha"
+                )
+            elif not isinstance(node_head, str) or not node_head:
+                v.error(
+                    f"node {node_id}: {evidence_name} evidence exists but node head_sha is missing"
+                )
+            elif evidence_head != node_head:
+                v.error(
+                    f"node {node_id}: stale {evidence_name} evidence for {evidence_head}; "
+                    f"current head is {node_head}"
+                )
+
+        tests = node.get("tests")
+        if tests is not None:
+            if not isinstance(tests, list):
+                v.error(f"node {node_id}: tests must be an array when present")
+            else:
+                for index, test in enumerate(tests):
+                    if not isinstance(test, dict):
+                        v.error(f"node {node_id}: tests[{index}] must be an object")
+                        continue
+                    test_head = test.get("head_sha")
+                    if not isinstance(test_head, str) or not test_head:
+                        v.error(
+                            f"node {node_id}: tests[{index}] must record head_sha"
+                        )
+                    elif not isinstance(node_head, str) or not node_head:
+                        v.error(
+                            f"node {node_id}: test evidence exists but node head_sha is missing"
+                        )
+                    elif test_head != node_head:
+                        v.error(
+                            f"node {node_id}: stale tests[{index}] evidence for {test_head}; "
+                            f"current head is {node_head}"
+                        )
 
     if max_lanes and len(active) > max_lanes:
         v.error(
@@ -237,6 +282,26 @@ def validate(data: dict[str, Any]) -> Validation:
         if color[node_id] == 0:
             visit(node_id)
 
+    for node_id, node in normalized.items():
+        if node.get("state") != "ready":
+            continue
+        for pred_raw in node.get("predecessors", []):
+            try:
+                pred = as_issue_id(pred_raw)
+            except ValueError:
+                # The first node pass already records malformed predecessor IDs.
+                continue
+            predecessor = normalized.get(pred)
+            if predecessor is None:
+                # The first node pass already records missing predecessor nodes.
+                continue
+            pred_state = predecessor.get("state")
+            if pred_state != "merged":
+                v.error(
+                    f"ready node {node_id} predecessor {pred} "
+                    f"is {pred_state!r}, not merged"
+                )
+
     dispatchable = data.get("dispatchable_now", [])
     if not isinstance(dispatchable, list):
         v.error("dispatchable_now must be an array")
@@ -257,25 +322,6 @@ def validate(data: dict[str, Any]) -> Validation:
                 f"dispatchable node {node_id} must have state 'ready', "
                 f"found {node.get('state')!r}"
             )
-        for pred_raw in node.get("predecessors", []):
-            try:
-                pred = as_issue_id(pred_raw)
-            except ValueError:
-                # The node-level predecessor pass already records the detailed
-                # validation error. Keep dispatchability validation total and
-                # avoid turning malformed handoff state into a traceback.
-                continue
-            pred_node = normalized.get(pred)
-            if pred_node is None:
-                # Missing predecessors are likewise reported during the first
-                # node pass. They cannot establish dispatchability.
-                continue
-            pred_state = pred_node.get("state")
-            if pred_state != "merged":
-                v.error(
-                    f"dispatchable node {node_id} predecessor {pred} "
-                    f"is {pred_state!r}, not merged"
-                )
 
     for list_name in ("review_or_ci_pending", "fix_needed", "blocked"):
         value = data.get(list_name, [])
