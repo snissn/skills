@@ -24,7 +24,7 @@ base SHA: exact current commit
 issue branch/PR: existing ownership if any
 ```
 
-Record the full adapter-resolved SHA in graph state and export it as `GOMAP_BASE_SHA` before creating a worktree. Pass that immutable SHA to the helper separately from any optional fetch ref; do not silently build a moving `main`.
+Record the full adapter-resolved SHA in graph state and export it as `GOMAP_BASE_SHA` before creating a worktree. Pass that immutable SHA to the helper; do not silently build a moving `main`.
 
 ## Preferred Source Path
 
@@ -171,7 +171,7 @@ bash <skill-dir>/scripts/prepare-gomap-worktree.sh \
 
 The helper:
 
-- fetches all normal `origin` refs by default so an existing issue branch is refreshed before resume;
+- fetches all normal `origin` refs unless `--no-fetch` is set, so an existing issue branch is refreshed before resume;
 - accepts a primary checkout or an existing linked Git worktree as `--repo`;
 - reuses an existing issue worktree;
 - adopts an existing local or remote branch only when it contains the requested exact base SHA;
@@ -180,7 +180,7 @@ The helper:
 - prints exact base, branch, worktree, and environment paths;
 - optionally runs build/smoke checks.
 
-Do not pass `--fetch-ref` in the normal resume path. A restricted fetch can leave the local `origin/<issue-branch>` tracking ref stale. Use it only for a brand-new lane after the GitHub adapter confirms no remote issue branch exists, or after explicitly fetching the recorded remote issue branch separately.
+Use `--no-fetch` only when the recorded base and issue-branch objects were acquired through an approved restricted-network fallback and their identities were verified separately.
 
 Always inspect:
 
