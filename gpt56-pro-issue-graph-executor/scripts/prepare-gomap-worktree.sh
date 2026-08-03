@@ -160,14 +160,9 @@ fi
 
 if ((DO_FETCH)); then
   if ! git -C "$REPO" fetch --prune origin; then
-    if git -C "$REPO" cat-file -e "${EXPECTED_BASE_SHA}^{commit}" 2>/dev/null; then
-      printf 'warning: fetch failed; using already available immutable base %s\n' \
-        "$EXPECTED_BASE_SHA" >&2
-    else
-      printf 'fetch failed and immutable base is unavailable: %s\n' \
-        "$EXPECTED_BASE_SHA" >&2
-      exit 20
-    fi
+    printf '%s\n' 'fetch failed; remote branch freshness is unverified.' >&2
+    printf '%s\n' 'Retry with working remote access, or use --no-fetch only after separately verifying the recorded base and issue-branch objects.' >&2
+    exit 20
   fi
 fi
 
