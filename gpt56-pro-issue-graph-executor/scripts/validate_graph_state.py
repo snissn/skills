@@ -108,7 +108,12 @@ def validate(data: dict[str, Any]) -> Validation:
     except ValueError as exc:
         v.error(f"parent_issue: {exc}")
 
-    if data.get("mode") not in {"execute-and-merge", "readiness-only", "no-merge"}:
+    mode = data.get("mode")
+    if not isinstance(mode, str) or mode not in {
+        "execute-and-merge",
+        "readiness-only",
+        "no-merge",
+    }:
         v.error("mode must be execute-and-merge, readiness-only, or no-merge")
 
     base_sha = data.get("base_sha")
@@ -162,10 +167,11 @@ def validate(data: dict[str, Any]) -> Validation:
 
     for node_id, node in normalized.items():
         state = node.get("state")
-        if state not in STATES:
+        if not isinstance(state, str) or state not in STATES:
             v.error(f"node {node_id}: unrecognized state {state!r}")
 
-        is_active = node.get("active_lane", state in ACTIVE_STATES)
+        state_is_active = isinstance(state, str) and state in ACTIVE_STATES
+        is_active = node.get("active_lane", state_is_active)
         if not isinstance(is_active, bool):
             v.error(f"node {node_id}: active_lane must be boolean when present")
         elif is_active:
