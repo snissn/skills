@@ -21,6 +21,8 @@ Before merge-related action, inspect repo-local policy when available:
 
 Repo-local rules override this skill. If policy and user instructions conflict, follow the stricter/no-merge interpretation unless the user explicitly authorizes a documented exception.
 
+Audit policy from the actual checkout/worktree for **each** adopted PR, not only the coordinator's current directory. If no checkout exists, inspect policy at the PR head with `git show <head>:AGENTS.md` or the GitHub contents API. Record any review-round cap, proportionality rule, scientific acceptance path, or stop condition before requesting a reviewer. A repository-local review stop is merge policy, not an optional suggestion.
+
 ## Operating Modes
 
 - `readiness-only`: make the PR or stack objectively mergeable, but do not merge.
@@ -38,12 +40,9 @@ A PR is mergeable only when current evidence proves:
 - code has had an internal deep review for correctness, drift, complexity, and tests;
 - tests cover the behavior changed by the PR;
 - performance-sensitive changes include relevant benchmark evidence in the PR body or a PR comment, do **not** show an unaccepted material regression, and meet any explicit improvement/saturation gate unless the PR is explicitly instrumentation/safety-only or a linked blocker/waiver is recorded;
-- Codex review has been requested only after the PR is mature enough to avoid review-credit churn, and after meaningful pushes where available;
-- the required Codex latest-head review has completed cleanly as either an
-  explicit no-findings issue comment or an approved/clean review tied to the
-  exact head SHA, with no unresolved Codex threads, or Codex is explicitly
-  unavailable after a documented bounded retry window and the user/repo policy
-  permits proceeding without it;
+- Codex review, when required by the effective repository/workstream policy, has been requested only after the PR is mature enough to avoid review-credit churn, and after meaningful pushes where available;
+- when Codex remains required, the latest-head review has completed cleanly as either an explicit no-findings issue comment or an approved/clean review tied to the exact head SHA, with no unresolved Codex threads, or Codex is explicitly unavailable after a documented bounded retry window and the user/repo policy permits proceeding without it;
+- when repository-local proportionality or scientific stop rules replace the default Codex gate, the PR records that policy, the bounded review disposition, and the acceptance evidence required by that policy; every existing thread is still fixed or explicitly rejected with rationale;
 - optional reviewers such as CodeRabbit and Copilot have either produced no usable response, are rate-limited/unavailable, or had every actual finding/check/thread resolved; optional acknowledgement reactions alone do not block mergeability;
 - AI review findings are fixed or explicitly rejected with rationale;
 - review threads are commented on and marked resolved where the platform supports resolution;
@@ -109,10 +108,7 @@ python "${CODEX_HOME:-${HOME}/.codex}/skills/github-pr-mergeable/scripts/codex_r
   --repo <OWNER>/<REPO> --pr <PR> --check
 ```
 
-The classifier inventories paginated issue comments, formal reviews, and
-review threads. Exit `0` means the Codex-specific gate is clean; exit `2` means
-its JSON result names the pending request, findings, unresolved threads, or
-retry exhaustion. CI and the other merge gates remain separate.
+The classifier inventories paginated issue comments, formal reviews, and review threads. Exit `0` means the Codex-specific gate is clean; exit `2` means its JSON result names the pending request, findings, unresolved threads, retry exhaustion, or PR-lifetime churn stop. A churn-stop result is an action boundary, not permission to ignore threads. If repository policy supplies a bounded alternative scientific acceptance path, evaluate and record that path separately. CI and the other merge gates remain separate.
 
 ## Internal Deep Review
 
@@ -180,9 +176,30 @@ gh run watch <RUN_ID> --repo <OWNER>/<REPO>
 
 Cancel only stale/non-head runs unless the user explicitly authorizes broader cleanup. Do not cancel the only active CI for a PR head unless you are about to push or have already pushed a newer head.
 
+## Cross-Head Review Churn Breaker
+
+Review budgets apply across the lifetime of the PR, not only to one head SHA. A repair commit does not erase earlier finding-bearing review rounds.
+
+Before every new Codex request:
+
+1. inventory total PR-lifetime review requests, distinct finding-bearing heads, and review threads;
+2. apply any lower repository-local review-round cap;
+3. classify findings as claim/contract blockers, implementation defects inside the declared scope, claim/authority mismatches, nonblocking hardening, or incorrect findings;
+4. batch all current fixes and audit sibling invariants before asking for another review.
+
+Absent a lower repository rule, stop automatically after either **three finding-bearing heads** or **six total Codex requests** across the PR. Run the classifier with `--max-finding-heads` and `--max-total-requests` when local policy specifies lower limits. When it reports `review_churn_blocked`, or reports unresolved findings with `review_churn_exhausted=true`:
+
+- disposition the current threads, but do not request another review;
+- transition the PR to an architecture/claim/scope reset;
+- prefer rejecting an incorrect finding, narrowing emitted authority, splitting the PR, or deferring nonblocking hardening over expanding the implementation for every counterexample;
+- update the PR/tracker with the stop reason and next decision;
+- obtain explicit project-owner authorization before using `--allow-after-churn`.
+
+A clean exact-head result remains terminal even when the historical budget was exceeded. The churn breaker prevents another request; it does not permit unresolved findings to be ignored.
+
 ## Mature PR Before AI Review
 
-Do not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviewers merely because a PR exists. Codex is the required final AI reviewer by default; CodeRabbit and Copilot are optional unless repo policy makes their checks required. First make the PR mature enough that the requested review is likely to inspect the intended final shape:
+Do not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviewers merely because a PR exists. Codex is the required final AI reviewer by default only when repository/workstream policy does not define a different proportional review or scientific acceptance gate; CodeRabbit and Copilot are optional unless repo policy makes their checks required. First make the PR mature enough that the requested review is likely to inspect the intended final shape:
 
 - coherent code for the scoped issue is pushed;
 - focused tests and required benchmarks have run, or the PR body states why a required benchmark is not yet applicable;
@@ -196,7 +213,7 @@ If a later meaningful push changes code, benchmarks, or review-relevant behavior
 
 After meaningful pushes, after the maturity gate above is satisfied, and before final mergeable claim, request reviews from configured AI reviewers.
 
-Default assumption: Codex should be requested and must complete on the latest head unless explicitly unavailable. CodeRabbit and Copilot may be requested when useful, but they are opportunistic reviewers: rate limits, non-response, or acknowledgement-only reactions are documented and do not block mergeability unless repo policy or branch protection makes their check required.
+Default assumption for ordinary code PRs without a contrary local rule: Codex should be requested and must complete on the latest head unless explicitly unavailable. For scientific/analytic work, apply repository proportionality and review-stop rules before this default. CodeRabbit and Copilot may be requested when useful, but they are opportunistic reviewers: rate limits, non-response, or acknowledgement-only reactions are documented and do not block mergeability unless repo policy or branch protection makes their check required.
 
 Use the repo’s established commands when known. Common pattern:
 
@@ -212,10 +229,7 @@ is terminal for the unchanged head; a later duplicate trigger does not make it
 pending again. A later Codex findings review or unresolved Codex thread does
 supersede the earlier clean result.
 
-Default to one initial request and at most two retries for the same head, with
-at least ten minutes between triggers. After that, record Codex as unavailable
-instead of spamming the PR. A user may explicitly raise the retry cap, but may
-not bypass re-inventory before each trigger or the stop-on-clean rule.
+Default to one initial request and at most two retries for the same head, with at least ten minutes between triggers, subject to the stricter PR-lifetime churn budget above. After that, record Codex as unavailable instead of spamming the PR. A user may explicitly raise a cap, but may not bypass re-inventory, a repository-local stop rule, the cross-head churn reset, or the stop-on-clean rule without explicit authorization for that exception.
 
 If one of those bots uses a different repo-specific trigger, follow the repo convention. If a bot is unavailable, say so explicitly and do not claim it passed.
 
@@ -223,17 +237,19 @@ For each AI review that produces comments, checks, review threads, or findings:
 
 - read all findings, not just summaries;
 - verify each suggested patch before applying;
-- fix real issues with minimal, scoped changes;
+- classify whether each finding affects the declared claim/contract and authority;
+- fix real in-scope blockers with minimal, scoped changes;
 - reject incorrect findings with a PR comment explaining why;
+- narrow claims or defer nonblocking hardening instead of silently expanding scope;
 - mark review threads resolved after fixing or explicitly dismissing;
-- re-request review after meaningful fixes until reviews are quiet/passing or intentionally resolved.
+- run a sibling-invariant/internal review over the whole batch;
+- re-request at most once for the mature batch when both local and PR-lifetime review budgets permit it.
 
 ### Final AI Review Completion Gate
 
 Before posting final mergeability evidence or merging, re-inventory each requested AI reviewer against the exact latest head SHA:
 
-- Codex is required by default. Run the bundled classifier for the final
-  decision; do not infer state from `reviews` alone.
+- When Codex is required by the effective policy, run the bundled classifier for the final decision; do not infer state from `reviews` alone. When a repository-local proportional scientific gate supersedes Codex, record the policy and its exact acceptance evidence instead.
 - Codex commonly emits a clean result as an issue comment from
   `chatgpt-codex-connector[bot]` containing both `Codex Review: Didn't find any
   major issues` and `Reviewed commit: <sha>`. That exact-head comment is a
@@ -248,7 +264,7 @@ Before posting final mergeability evidence or merging, re-inventory each request
 - If Codex acknowledged or started a latest-head review but the classifier has
   no exact-head artifact, treat it as **pending** until the bounded retry policy
   completes.
-- Do not merge while the required Codex latest-head review is pending, even if `mergeable=MERGEABLE`, `mergeStateStatus=CLEAN`, local validation passes, or earlier review threads have been resolved.
+- Do not merge while a policy-required Codex latest-head review is pending, even if `mergeable=MERGEABLE`, `mergeStateStatus=CLEAN`, local validation passes, or earlier review threads have been resolved. Do not manufacture a Codex requirement when repository-local policy explicitly uses a bounded scientific acceptance path.
 - CodeRabbit and Copilot are optional/conditional by default. If either returns a completed review, check, inline comment, or review thread, fix real findings or explicitly reject them with rationale and resolve threads. If either is rate-limited, unavailable, acknowledgement-only, or silent after a documented retry/window, record that disposition and proceed when the required gates are clean.
 - If an optional reviewer has an active required status check under branch protection, treat that check as CI and wait for it or document why it is non-blocking. Do not treat a plain acknowledgement reaction from an optional reviewer as a pending merge blocker.
 - A reaction alone is not a clean artifact. Require an explicit exact-head

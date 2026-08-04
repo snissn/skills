@@ -107,9 +107,19 @@ rules, analytic-versus-execution classification, feature branch and worktree,
 mainline-integration authority, any protected live execution, intended path
 set, reviewer ownership, and local acceptance checks.
 
-If direct-main authority or a protected scientific scope boundary is unclear,
-ask before committing. Ordinary technical choices inside an authorized
-scientific identity do not require repeated approval.
+If direct-main authority or a protected scientific scope boundary is unclear, ask before committing. Ordinary technical choices inside an authorized scientific identity do not require repeated approval.
+
+## Composition And Review Precedence
+
+When this workflow is composed with `github-pr-mergeable`, an issue-graph executor, or an automated reviewer:
+
+- repository-local scientific proportionality and review-stop rules govern review cadence;
+- inspect those rules from the scientific worktree or exact candidate head, not only the coordinator checkout;
+- use PR tooling for final integration inventory, CI, and thread disposition, not to add an unbounded code-review loop after the scientific gate is satisfied;
+- an exact-head Codex clean artifact is required only when effective repository/workstream policy requires it;
+- a repair commit does not reset a repository-wide review-round cap.
+
+Absent a repository-specific cap, a non-execution analytic candidate gets one independent review and one batched repair by default. After two finding-bearing candidate heads, stop and reassess the claim, authority, or artifact split before any further review. Continue only for a concrete finding that changes the scientific claim or with explicit project-owner authorization.
 
 See [the status taxonomy](references/execution-status-taxonomy.md) for the
 required execution/disposition separation.
@@ -139,9 +149,8 @@ binding](references/candidate-review-binding.md).
 ### 1. Refresh and orient
 
 1. Sync or fetch the real repository state and verify current `main`.
-2. Inspect dirty paths, worktrees, running processes, and active artifacts.
-3. Read the active issue, parent tracker, recent steering comments, frozen
-   definitions, ledgers, validators, reviews, and claim boundaries.
+2. Inspect dirty paths, worktrees, running processes, and active artifacts. Load policy from the actual scientific worktree/candidate head and record its review-round cap.
+3. Read the active issue, parent tracker, recent steering comments, frozen definitions, ledgers, validators, reviews, and claim boundaries.
 4. Build the smallest dependency map needed for the active question.
 5. Keep the main checkout as an integration surface. Create or reuse one
    issue-scoped feature branch and isolated worktree for mutable construction.
@@ -299,8 +308,15 @@ row. Do not replace a missing template theorem with thousands of repetitive
 prose checks, and do not treat a large mutation count as independent
 mathematical evidence.
 
-Resolve every blocking finding in the mutable draft. Repeat the design review
-until no scientific blocker remains; do not freeze a merely promising draft.
+Classify each finding before changing the candidate:
+
+- **claim-changing scientific blocker:** fix before freeze and renew review within the review budget;
+- **evidence-path engineering blocker:** fix if it can invalidate evidence for the declared claim;
+- **claim/authority mismatch:** narrow the claim or emitted authority rather than expanding the validator by default;
+- **nonblocking parser hardening, redundant mutation, unsupported-input behavior, or alternate representation:** defer or split once the claimed mathematics and a direct check are covered;
+- **incorrect finding:** reject with rationale.
+
+Resolve every blocking finding in the mutable draft. Batch sibling-invariant fixes before renewed review. Repeat only while a scientific blocker remains and the effective repository/PR-lifetime review budget permits it; do not freeze a merely promising draft, but do not deepen a scoped result merely to obtain a quiet automated reviewer.
 
 The acceptance must identify the reviewed base, exact candidate-byte manifest,
 and artifact set. For a non-decisive analytic candidate it may also identify a
@@ -362,12 +378,7 @@ committing, regenerate the manifest, revalidate, and renew acceptance. Only
 after acceptance may those decision-bearing files be committed for the first
 time in the joint freeze commit.
 
-Every load-bearing predicate needs a mutation that would fail if its meaning
-were corrupted. Include omissions, duplications, sign or orientation reversals,
-nonpositive bounds, incomplete reactions, invalid support transport, false
-dependency expansion, and changed inference boundaries when those predicates
-are in scope. Do not accept a mutation suite that only perturbs serialization
-or builder bytes.
+Every predicate load-bearing for the **declared scientific claim and authority** needs a mutation that would fail if its meaning were corrupted. This obligation does not extend to unsupported custom inputs, fields outside the claimed authority, or hypothetical future profiles. Prefer narrowing or explicitly rejecting unsupported modes over turning one validator into a universal certifier. Include omissions, duplications, sign or orientation reversals, nonpositive bounds, incomplete reactions, invalid support transport, false dependency expansion, and changed inference boundaries when those predicates are in scope. Do not accept a mutation suite that only perturbs serialization or builder bytes.
 
 Never use exact floating-point equality for a derived real result unless bit
 identity is the theorem. Prefer exact arithmetic, symbolic identities, interval
@@ -495,13 +506,13 @@ family no-go without a theorem covering the declared class.
   adversarial review, and make its first commit the joint freeze commit.
 - Keep `main` as the reviewed integration surface and merge only after freeze.
 - Do not create a PR merely to obtain code-centric review of theorem work.
-- Do not wait for automated code review after scientific review and local gates
-  cover the artifact, or split direct-main work into PR-ready/merge-ready phases.
+- Do not wait for automated code review after scientific review and local gates cover the artifact, or split direct-main work into PR-ready/merge-ready phases. If PR policy requires automated review, apply its PR-lifetime churn breaker and the lower repository scientific round cap.
 - Do not create authorization packets for obvious implementation or governance
   commits for ordinary runner qualification defects.
 - Do not freeze drafts before adversarial review is complete.
 - Do not build an execution harness for paperwork-only predicates.
 - Do not count review/mutation volume as scientific depth.
+- A new candidate SHA does not reset a review-round cap. After the cap, stop at a claim/architecture/scope reset; do not post another review trigger without explicit authorization.
 - Do not deepen a narrow certificate past a breadth-first program gate.
 - Use deprecated or analogous work as idea input, not authority.
 - Do not let downstream failures retroactively weaken frozen results.

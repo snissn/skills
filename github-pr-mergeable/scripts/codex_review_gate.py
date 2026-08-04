@@ -2,8 +2,8 @@
 """Classify the Codex review gate for one GitHub pull request.
 
 Codex emits clean results as issue comments and findings as pull-request
-reviews with inline threads.  This helper inventories both surfaces so callers
-do not mistake a missing formal review object for a pending review.
+reviews with inline threads. This helper inventories both surfaces, enforces
+exact-head retry limits, and stops cross-head PR-lifetime review churn.
 """
 
 from __future__ import annotations
@@ -72,12 +72,26 @@ def _artifact(kind: str, timestamp: str, url: str, body: str, state: str = "") -
     }
 
 
+def _is_clean_review(review: dict[str, Any]) -> bool:
+    return (review.get("state") or "").upper() == "APPROVED" or bool(CLEAN_RE.search(review.get("body", "")))
+
+
+def _request_artifact(comment: dict[str, Any]) -> dict[str, str]:
+    return {
+        "timestamp": comment.get("created_at", ""),
+        "url": comment.get("html_url", ""),
+    }
+
+
 def classify(
     data: dict[str, Any],
     *,
     codex_logins: set[str] | None = None,
     retry_after_minutes: int = 10,
     max_requests: int = 3,
+    max_total_requests: int = 6,
+    max_finding_heads: int = 3,
+    allow_after_churn: bool = False,
     now: dt.datetime | None = None,
 ) -> dict[str, Any]:
     configured = {_normalized_login(value) for value in (codex_logins or DEFAULT_CODEX_LOGINS)}
@@ -110,7 +124,7 @@ def classify(
         if not _head_matches(head, commit):
             continue
         state = (review.get("state") or "").upper()
-        clean = state == "APPROVED" or bool(CLEAN_RE.search(body))
+        clean = _is_clean_review(review)
         kind = "clean_review" if clean else "findings_review"
         item = _artifact(kind, review.get("submitted_at", ""), review.get("html_url", ""), body, state)
         exact_artifacts.append(item)
@@ -120,10 +134,24 @@ def classify(
     exact_artifacts.sort(key=lambda item: item["timestamp"])
     clean_artifacts.sort(key=lambda item: item["timestamp"])
 
+    all_requests = [
+        _request_artifact(comment)
+        for comment in data.get("comments", [])
+        if "@codex review" in (comment.get("body") or "").lower()
+        and not _is_codex_login(_login(comment.get("user")), configured)
+    ]
+    all_requests.sort(key=lambda item: item["timestamp"])
+    finding_heads = {
+        str(review.get("commit_id") or _reviewed_commit(review.get("body", ""))).lower()
+        for review in data.get("reviews", [])
+        if _is_codex_login(_login(review.get("user")), configured)
+        and not _is_clean_review(review)
+        and (review.get("commit_id") or _reviewed_commit(review.get("body", "")))
+    }
+    total_codex_threads = 0
+
     unresolved_threads = []
     for thread in data.get("threads", []):
-        if thread.get("isResolved"):
-            continue
         thread_comments = thread.get("comments") or []
         if isinstance(thread_comments, dict):
             thread_comments = thread_comments.get("nodes") or []
@@ -133,7 +161,10 @@ def classify(
             if isinstance(comment, dict)
             and _is_codex_login(_login(comment.get("author")), configured)
         ]
-        if codex_comments:
+        if not codex_comments:
+            continue
+        total_codex_threads += 1
+        if not thread.get("isResolved"):
             unresolved_threads.append(
                 {
                     "id": thread.get("id", ""),
@@ -155,29 +186,39 @@ def classify(
         explicit_match = any(_head_matches(head, value) for value in SHA_RE.findall(body))
         created = _parse_time(comment.get("created_at"))
         if explicit_match or (created and head_time and created >= head_time):
-            requests.append(
-                {
-                    "timestamp": comment.get("created_at", ""),
-                    "url": comment.get("html_url", ""),
-                }
-            )
+            requests.append(_request_artifact(comment))
     requests.sort(key=lambda item: item["timestamp"])
 
     latest = exact_artifacts[-1] if exact_artifacts else None
     latest_clean = clean_artifacts[-1] if clean_artifacts else None
     request_count = len(requests)
     latest_request = requests[-1] if requests else None
+    churn_reasons = []
+    if max_total_requests > 0 and len(all_requests) >= max_total_requests:
+        churn_reasons.append(f"total review requests {len(all_requests)} reached limit {max_total_requests}")
+    if max_finding_heads > 0 and len(finding_heads) >= max_finding_heads:
+        churn_reasons.append(f"finding-bearing heads {len(finding_heads)} reached limit {max_finding_heads}")
+    churn_exhausted = bool(churn_reasons)
 
     if unresolved_threads:
         state = "findings"
         clean = False
         should_request = False
-        action = "resolve every Codex finding before requesting another review"
+        action = (
+            "resolve or disposition current findings, then stop for an architecture/scope reset; do not request another review"
+            if churn_exhausted and not allow_after_churn
+            else "resolve every Codex finding before requesting another review"
+        )
     elif latest and latest["kind"] in {"clean_comment", "clean_review"}:
         state = "clean"
         clean = True
         should_request = False
         action = "stop requesting Codex reviews for this head"
+    elif churn_exhausted and not allow_after_churn:
+        state = "review_churn_blocked"
+        clean = False
+        should_request = False
+        action = "stop review requests; perform a claim/architecture/scope reset and obtain explicit approval before resuming"
     elif latest:
         state = "resolved_findings"
         clean = False
@@ -223,6 +264,16 @@ def classify(
         "latest_clean_artifact": latest_clean,
         "exact_head_artifact_count": len(exact_artifacts),
         "request_count_for_head": request_count,
+        "total_request_count": len(all_requests),
+        "finding_head_count": len(finding_heads),
+        "total_codex_thread_count": total_codex_threads,
+        "review_churn_exhausted": churn_exhausted,
+        "review_churn_reasons": churn_reasons,
+        "review_churn_override_applied": churn_exhausted and allow_after_churn,
+        "review_churn_limits": {
+            "max_total_requests": max_total_requests,
+            "max_finding_heads": max_finding_heads,
+        },
         "latest_request": latest_request,
         "unresolved_codex_threads": unresolved_threads,
     }
@@ -352,6 +403,42 @@ def self_test() -> None:
     result = classify(_fixture(head=head, comments=requests), now=dt.datetime(2026, 1, 1, 1, 0, tzinfo=dt.timezone.utc))
     assert result["state"] == "pending_exhausted" and not result["should_request"]
 
+    historical_requests = [
+        {**trigger, "body": "@codex review", "created_at": f"2025-12-0{index}T00:00:00Z", "html_url": f"historical-{index}"}
+        for index in range(1, 4)
+    ]
+    historical_reviews = [
+        {**finding_review, "commit_id": character * 40, "submitted_at": f"2025-12-0{index}T01:00:00Z"}
+        for index, character in enumerate(("b", "c", "d"), start=1)
+    ]
+    churn_fixture = _fixture(head=head, comments=historical_requests, reviews=historical_reviews)
+    result = classify(churn_fixture)
+    assert result["state"] == "review_churn_blocked" and not result["should_request"]
+    assert result["finding_head_count"] == 3 and result["total_request_count"] == 3
+
+    result = classify(churn_fixture, allow_after_churn=True)
+    assert result["state"] == "not_requested" and result["should_request"]
+    assert result["review_churn_override_applied"]
+
+    request_only_churn = _fixture(
+        head=head,
+        comments=[
+            {**trigger, "body": "@codex review", "created_at": f"2025-11-0{index}T00:00:00Z", "html_url": f"request-only-{index}"}
+            for index in range(1, 7)
+        ],
+    )
+    result = classify(request_only_churn)
+    assert result["state"] == "review_churn_blocked"
+    assert result["review_churn_reasons"] == ["total review requests 6 reached limit 6"]
+
+    result = classify(churn_fixture, max_finding_heads=2)
+    assert result["review_churn_limits"]["max_finding_heads"] == 2
+    assert result["state"] == "review_churn_blocked"
+
+    churn_with_clean = _fixture(head=head, comments=[*historical_requests, clean_comment], reviews=historical_reviews)
+    result = classify(churn_with_clean)
+    assert result["state"] == "clean" and result["review_churn_exhausted"]
+
     print("codex_review_gate self-test: PASS")
 
 
@@ -361,7 +448,14 @@ def main() -> int:
     parser.add_argument("--pr", type=int, help="pull request number")
     parser.add_argument("--codex-login", action="append", default=[])
     parser.add_argument("--retry-after-minutes", type=int, default=10)
-    parser.add_argument("--max-requests", type=int, default=3)
+    parser.add_argument("--max-requests", type=int, default=3, help="maximum requests attributed to one exact head")
+    parser.add_argument("--max-total-requests", type=int, default=6, help="PR-lifetime review-request churn limit; 0 disables")
+    parser.add_argument("--max-finding-heads", type=int, default=3, help="PR-lifetime finding-bearing-head churn limit; 0 disables")
+    parser.add_argument(
+        "--allow-after-churn",
+        action="store_true",
+        help="override the lifetime churn stop only after explicit user/repository authorization",
+    )
     parser.add_argument("--check", action="store_true", help="exit 2 unless the review gate is clean")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
@@ -379,6 +473,9 @@ def main() -> int:
             codex_logins=configured,
             retry_after_minutes=args.retry_after_minutes,
             max_requests=args.max_requests,
+            max_total_requests=args.max_total_requests,
+            max_finding_heads=args.max_finding_heads,
+            allow_after_churn=args.allow_after_churn,
         )
     except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, json.JSONDecodeError) as error:
         print(json.dumps({"state": "error", "error": str(error)}, indent=2))
