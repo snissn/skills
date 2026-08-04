@@ -27,6 +27,7 @@ CLEAN_RE = re.compile(
     re.IGNORECASE,
 )
 SHA_RE = re.compile(r"\b[0-9a-f]{7,40}\b", re.IGNORECASE)
+REQUEST_RE = re.compile(r"^\s*@codex\s+review(?:\s|$)", re.IGNORECASE | re.MULTILINE)
 
 
 def _normalized_login(login: str) -> str:
@@ -137,7 +138,7 @@ def classify(
     all_requests = [
         _request_artifact(comment)
         for comment in data.get("comments", [])
-        if "@codex review" in (comment.get("body") or "").lower()
+        if REQUEST_RE.search(comment.get("body") or "")
         and not _is_codex_login(_login(comment.get("user")), configured)
     ]
     all_requests.sort(key=lambda item: item["timestamp"])
@@ -179,7 +180,7 @@ def classify(
     requests = []
     for comment in data.get("comments", []):
         body = comment.get("body", "")
-        if "@codex review" not in body.lower():
+        if not REQUEST_RE.search(body):
             continue
         if _is_codex_login(_login(comment.get("user")), configured):
             continue
@@ -423,12 +424,16 @@ def self_test() -> None:
     request_only_churn = _fixture(
         head=head,
         comments=[
-            {**trigger, "body": "@codex review", "created_at": f"2025-11-0{index}T00:00:00Z", "html_url": f"request-only-{index}"}
-            for index in range(1, 7)
+            *[
+                {**trigger, "body": "@codex review", "created_at": f"2025-11-0{index}T00:00:00Z", "html_url": f"request-only-{index}"}
+                for index in range(1, 7)
+            ],
+            {**trigger, "body": "Do not type @codex review again.", "created_at": "2025-11-07T00:00:00Z", "html_url": "quoted-trigger"},
         ],
     )
     result = classify(request_only_churn)
     assert result["state"] == "review_churn_blocked"
+    assert result["total_request_count"] == 6
     assert result["review_churn_reasons"] == ["total review requests 6 reached limit 6"]
 
     result = classify(churn_fixture, max_finding_heads=2)
