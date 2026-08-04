@@ -32,9 +32,12 @@ parallel managers inventing incompatible contracts.
 | `running` | Worker or coordinator is implementing/reviewing. | No | No |
 | `dependency-ready` | Public contract is stable enough for speculative descendants. | Yes | No |
 | `fix-needed` | Review, CI, tests, or performance evidence found blockers. | No new descendants unless safe | No |
+| `review-scope-reset` | PR-lifetime review cap was reached; current findings need disposition and the owner must choose narrow, split, defer, reject, or explicitly resume. | No | No |
 | `mergeable-candidate` | Worker believes PR is ready, graph gates still apply. | Yes | Only after predecessors merged and final revalidation passes |
 | `merged` | Coordinator merged PR. | Yes | Completed |
 | `blocked` | Waiting for decision, predecessor, CI, conflict, or external state. | No | No |
+
+On `review-scope-reset`, do not request another AI review, start descendants, or coerce the node back to `fix-needed`. Record the effective repository review rule, lifetime request/finding counts, unresolved-thread dispositions, owner, and required decision. Exit the state only after the scoped artifact is accepted under repository policy, narrowed/split/deferred, or explicitly authorized to resume.
 
 ## Sync Windows
 
@@ -83,9 +86,8 @@ A node can be declared mergeable only when:
 - required tests/benchmarks were rerun after that update;
 - PR body and comments no longer rely on speculative predecessor facts;
 - latest-head CI and review state are acceptable;
-- the shared `github-pr-mergeable/scripts/codex_review_gate.py --check`
-  classifier reports clean for the exact head; a clean Codex issue comment is
-  sufficient, while any later unresolved Codex thread blocks;
+- when Codex is required by the effective repository/workstream policy, the shared `github-pr-mergeable/scripts/codex_review_gate.py --check` classifier reports clean for the exact head; a clean Codex issue comment is sufficient, while any later unresolved Codex thread blocks;
+- when repository-local proportional scientific policy replaces Codex, the bounded review disposition and exact acceptance evidence required by that policy are recorded, and all existing threads are fixed or explicitly rejected;
 - AI reviews, if used, were requested only after the PR was mature;
 - coordinator final review passes.
 
@@ -137,6 +139,10 @@ nodes:
     tests: ...
     benchmarks: ...
     blockers: ...
+    review_policy: ...
+    review_budget: {max_total_requests: ..., max_finding_heads: ...}
+    review_stop_reason: ...
+    review_resume_authorized_by: ...
     contract_surface: ...
     conflict_surface: ...
     execution_mode: parallel|speculative|conflict-serialized|design-gate

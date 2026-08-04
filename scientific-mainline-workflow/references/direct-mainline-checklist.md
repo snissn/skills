@@ -9,7 +9,7 @@ does not silently promote SHOULD or COULD work into a broader theorem.
 
 ## Before editing
 
-- Read `AGENTS.md`.
+- Enumerate every tracked root/nested `AGENTS.md` applicable to candidate paths at the exact base/head, including policy files changed by the candidate, and read the full policy chain.
 - Fetch or sync the remote.
 - Record local and remote `main` SHAs.
 - Inspect dirty and untracked paths.
@@ -39,8 +39,7 @@ does not silently promote SHOULD or COULD work into a broader theorem.
   incapable of emitting a protocol verdict.
 - Bind design reviews to exact pushed commits for non-decisive analytic work or
   deterministic working-tree manifests for decision-bearing candidates.
-- Treat every scientific revision as a new candidate SHA requiring renewed
-  review.
+- Treat every scientific revision as a new candidate SHA for identity purposes. Renew review only while the effective repository/PR-lifetime review budget permits it; reaching the cap requires a claim/architecture/scope reset rather than another trigger.
 - Do not leave source or provenance untracked through a context switch, long
   calculation, review request, or end of session.
 - Write generated matrices, caches, logs, and resumable outputs to a bound
@@ -61,6 +60,7 @@ does not silently promote SHOULD or COULD work into a broader theorem.
 - A decision-bearing candidate remains uncommitted, is bound by an exact
   working-tree manifest, and has not appeared in any earlier commit.
 - The mutable design review resolved every blocking NEED finding.
+- The effective root/nested review policy, PR-lifetime request/finding counts, and any review-stop disposition are recorded.
 - Substantive validation completed locally, or through the exact-commit GitHub
   Actions fallback in
   [github-actions-python-fallback.md](github-actions-python-fallback.md) when the

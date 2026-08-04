@@ -51,6 +51,7 @@ Graph state:
 
 Rules:
 - You are not alone in the codebase. Do not revert changes made by others.
+- Enumerate every root/nested `AGENTS.md` applicable to your owned paths at the assigned head and report its review cap/stop rules.
 - Implement only this issue's scope.
 - Treat material performance regressions as blockers.
 - Do not request Codex, Copilot, CodeRabbit, or other AI reviews until the PR is
@@ -59,8 +60,7 @@ Rules:
   authority.
 - Do not spawn subagents.
 
-Return milestone handoffs for: implementation plan, PR opened, dependency-ready
-candidate, mergeable-candidate, blocker.
+Return milestone handoffs for: implementation plan, PR opened, dependency-ready candidate, review-scope-reset, mergeable-candidate, blocker. Use `review-scope-reset` when the PR-lifetime review cap is reached; do not request another review or relabel it as a generic blocker.
 
 If the time box expires without a visible milestone, stop expensive work and
 return the current HEAD, dirty files, commands/results, blocker, and exact next
@@ -73,6 +73,7 @@ Every handoff must include:
 - tests run;
 - benchmark evidence or rationale;
 - unresolved risks;
+- effective review policy and PR-lifetime request/finding counts;
 - current node state recommendation.
 ```
 
@@ -141,9 +142,7 @@ Time box: 10 minutes. Check only this PR:
 - PR body accuracy;
 - whether AI reviews were requested only after a mature head.
 
-Use `github-pr-mergeable/scripts/codex_review_gate.py --check` for Codex state.
-Do not inspect only formal reviews, and do not request another review when an
-exact-head clean issue comment already exists.
+Use `github-pr-mergeable/scripts/codex_review_gate.py --check` for Codex state. Do not inspect only formal reviews, and do not request another review when an exact-head clean issue comment already exists. If it reports PR-lifetime churn exhaustion, recommend `review-scope-reset`, include the effective root/nested policy and counts, and do not recommend another trigger.
 
 Run only bounded tests tied to a concrete risk; do not repeat a broad suite that
 already has exact-head evidence. Do not edit, spawn subagents, request reviews,

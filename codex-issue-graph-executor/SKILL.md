@@ -132,7 +132,7 @@ execute locally and record why. Do not pretend work was delegated.
   the dependent branch has been updated/revalidated on the final base.
 - Downstream speculative work is disabled unless the user explicitly opts in;
   `dependency-ready` alone does not authorize a speculative worker.
-- Audit policy for every node from that PR's actual worktree or head commit, not only from the coordinator checkout. Record local review-round caps and scientific acceptance/stop rules in graph state before review.
+- Audit policy for every node from that PR's actual worktree or head commit, not only from the coordinator checkout. Enumerate all root/nested `AGENTS.md` files at that head and map every changed path to its applicable policy chain, including policy files added by the PR. Record local review-round caps and scientific acceptance/stop rules in graph state before review.
 - Avoid review-credit churn: do not request Codex, Copilot, CodeRabbit, or other AI reviews until the PR is mature. Mature means coherent code pushed, focused tests and required benchmarks run or explicitly justified, PR body/status is current, no known local blockers remain, and latest-head CI is running or green.
 - Before every `@codex review`, run the `github-pr-mergeable` Codex gate classifier. An exact-head no-findings issue comment is a completed clean result even without a formal review object. Stop requesting immediately when clean; any later unresolved Codex finding supersedes it. Default to no more than three total requests per exact head, six across the PR, or three finding-bearing heads, with any lower repo-local cap taking precedence.
 - A new repair SHA does not reset the PR-lifetime review budget. On `review_churn_blocked`, disposition current threads, transition the node to `review-scope-reset`, update durable state, and stop review triggers until the project owner authorizes a narrowed/split/resumed path.
@@ -144,7 +144,7 @@ execute locally and record why. Do not pretend work was delegated.
 
 ## Workflow
 
-1. Load repo policy and relevant skills. For every adopted node, inspect policy from its actual worktree or PR-head bytes and record review caps/stop rules separately. Inspect model, custom-agent, spawn, and concurrency capabilities; record routing fallbacks.
+1. Load repo policy and relevant skills. For every adopted node, enumerate applicable root/nested policy files from its actual worktree or PR-head tree, inspect their exact bytes, and record review caps/stop rules separately. Inspect model, custom-agent, spawn, and concurrency capabilities; record routing fallbacks.
 2. Inventory all issue and PR nodes from GitHub live state locally. Include title, URL,
    state, branch, base, current head SHA, CI status, linked issues, and existing
    review status.

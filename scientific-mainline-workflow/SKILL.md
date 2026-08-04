@@ -114,7 +114,7 @@ If direct-main authority or a protected scientific scope boundary is unclear, as
 When this workflow is composed with `github-pr-mergeable`, an issue-graph executor, or an automated reviewer:
 
 - repository-local scientific proportionality and review-stop rules govern review cadence;
-- inspect those rules from the scientific worktree or exact candidate head, not only the coordinator checkout;
+- enumerate all root/nested `AGENTS.md` files at the scientific worktree or exact candidate head, map candidate paths to their applicable policy chain, and do not rely only on the coordinator checkout;
 - use PR tooling for final integration inventory, CI, and thread disposition, not to add an unbounded code-review loop after the scientific gate is satisfied;
 - an exact-head Codex clean artifact is required only when effective repository/workstream policy requires it;
 - a repair commit does not reset a repository-wide review-round cap.
@@ -149,7 +149,7 @@ binding](references/candidate-review-binding.md).
 ### 1. Refresh and orient
 
 1. Sync or fetch the real repository state and verify current `main`.
-2. Inspect dirty paths, worktrees, running processes, and active artifacts. Load policy from the actual scientific worktree/candidate head and record its review-round cap.
+2. Inspect dirty paths, worktrees, running processes, and active artifacts. Enumerate applicable root/nested policy from the actual scientific worktree/candidate head and record its review-round cap.
 3. Read the active issue, parent tracker, recent steering comments, frozen definitions, ledgers, validators, reviews, and claim boundaries.
 4. Build the smallest dependency map needed for the active question.
 5. Keep the main checkout as an integration surface. Create or reuse one

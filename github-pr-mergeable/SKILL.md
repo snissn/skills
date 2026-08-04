@@ -21,7 +21,7 @@ Before merge-related action, inspect repo-local policy when available:
 
 Repo-local rules override this skill. If policy and user instructions conflict, follow the stricter/no-merge interpretation unless the user explicitly authorizes a documented exception.
 
-Audit policy from the actual checkout/worktree for **each** adopted PR, not only the coordinator's current directory. If no checkout exists, inspect policy at the PR head with `git show <head>:AGENTS.md` or the GitHub contents API. Record any review-round cap, proportionality rule, scientific acceptance path, or stop condition before requesting a reviewer. A repository-local review stop is merge policy, not an optional suggestion.
+Audit policy from the actual checkout/worktree for **each** adopted PR, not only the coordinator's current directory. Enumerate every tracked `AGENTS.md` at the PR head (for example, `git ls-tree -r --name-only <head> | grep -E '(^|/)AGENTS\.md$'` or the recursive GitHub tree API), map changed paths to all root and nested policy files whose directory scope contains them, and read those exact-head bytes. Include an `AGENTS.md` added or modified by the PR. Record any review-round cap, proportionality rule, scientific acceptance path, or stop condition before requesting a reviewer. A repository-local review stop is merge policy, not an optional suggestion.
 
 ## Operating Modes
 
