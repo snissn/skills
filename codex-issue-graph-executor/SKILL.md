@@ -37,9 +37,7 @@ explicitly narrowed the request to planning or no-merge execution.
 
 ## Compose With
 
-- `github-pr-mergeable` for PR readiness, review, latest-head CI, and merge
-  execution. Use its bundled `scripts/codex_review_gate.py` for Codex state;
-  never infer Codex completion from formal reviews alone.
+- `github-pr-mergeable` for PR readiness, review, latest-head CI, and merge execution. Use its bundled `scripts/codex_review_gate.py` for Codex state; never infer Codex completion from formal reviews alone. Repository-local proportionality and review-stop rules override that skill's default Codex cadence.
 - `github:gh-fix-ci` when GitHub Actions failures need targeted diagnosis.
 - `github:gh-address-comments` when unresolved PR review threads must be
   inspected and fixed.
@@ -134,28 +132,19 @@ execute locally and record why. Do not pretend work was delegated.
   the dependent branch has been updated/revalidated on the final base.
 - Downstream speculative work is disabled unless the user explicitly opts in;
   `dependency-ready` alone does not authorize a speculative worker.
-- Avoid review-credit churn: do not request Codex, Copilot, CodeRabbit, or other
-  AI reviews until the PR is mature. Mature means coherent code pushed, focused
-  tests and required benchmarks run or explicitly justified, PR body/status is
-  current, no known local blockers remain, and latest-head CI is running or
-  green.
-- Before every `@codex review`, run the `github-pr-mergeable` Codex gate
-  classifier. An exact-head no-findings issue comment is a completed clean
-  result even without a formal review object. Stop requesting immediately when
-  clean; any later unresolved Codex finding supersedes it. Default to no more
-  than three total requests per exact head, at least ten minutes apart.
+- Audit policy for every node from that PR's actual worktree or head commit, not only from the coordinator checkout. Enumerate all root/nested `AGENTS.md` files at that head and map every changed path to its applicable policy chain, including policy files added by the PR. Record local review-round caps and scientific acceptance/stop rules in graph state before review.
+- Avoid review-credit churn: do not request Codex, Copilot, CodeRabbit, or other AI reviews until the PR is mature. Mature means coherent code pushed, focused tests and required benchmarks run or explicitly justified, PR body/status is current, no known local blockers remain, and latest-head CI is running or green.
+- Before every `@codex review`, run the `github-pr-mergeable` Codex gate classifier. An exact-head no-findings issue comment is a completed clean result even without a formal review object. Stop requesting immediately when clean; any later unresolved Codex finding supersedes it. Default to no more than three total requests per exact head, six across the PR, or three finding-bearing heads, with any lower repo-local cap taking precedence.
+- A new repair SHA does not reset the PR-lifetime review budget. On `review_churn_blocked`, disposition current threads, transition the node to `review-scope-reset`, update durable state, and stop review triggers until the project owner authorizes a narrowed/split/resumed path.
 - Treat material performance regressions as blockers unless the user or
   coordinator explicitly accepts them with evidence.
 - Keep user changes safe. Do not revert unrelated local changes. Do not use
   destructive git commands unless explicitly requested.
-- Continue until every node is merged, intentionally deferred to a linked
-  follow-up, or blocked by external state that is recorded in durable graph
-  state.
+- Continue until every node is merged, intentionally deferred to a linked follow-up, blocked by external state, or deliberately paused at `review-scope-reset` under a repository review-stop rule. Record the owner and next decision in durable graph state; execute-and-merge does not authorize bypassing a churn stop.
 
 ## Workflow
 
-1. Load repo policy and relevant skills. Inspect model, custom-agent, spawn, and
-   concurrency capabilities; record routing fallbacks.
+1. Load repo policy and relevant skills. For every adopted node, enumerate applicable root/nested policy files from its actual worktree or PR-head tree, inspect their exact bytes, and record review caps/stop rules separately. Inspect model, custom-agent, spawn, and concurrency capabilities; record routing fallbacks.
 2. Inventory all issue and PR nodes from GitHub live state locally. Include title, URL,
    state, branch, base, current head SHA, CI status, linked issues, and existing
    review status.
@@ -175,18 +164,12 @@ execute locally and record why. Do not pretend work was delegated.
    merge gates with the coordinator. Use an independent review agent only for a
    high-risk mature PR or a concrete disputed finding, and never concurrently
    with that PR's implementation worker.
-8. Track node state transitions in durable graph state and any local manifest:
-   `pending`, `running`, `dependency-ready`, `fix-needed`,
-   `mergeable-candidate`, `merged`, or `blocked`. Track requested and actual
-   agent routing separately.
+8. Track node state transitions in durable graph state and any local manifest: `pending`, `running`, `dependency-ready`, `fix-needed`, `review-scope-reset`, `mergeable-candidate`, `merged`, or `blocked`. Track requested and actual agent routing separately.
 9. Use sync windows instead of constant rebasing or polling: initial snapshot,
    predecessor contract change, predecessor merge, pre-final-review, and
    conflict/test trigger. Poll remote CI locally at coarse intervals while
    doing other work; do not dedicate an agent to waiting.
-10. Use `github-pr-mergeable` for each PR before final merge, including its
-   deterministic Codex classifier across issue comments, formal reviews, and
-   threads. Merge only after latest-head CI/reviews are acceptable, required
-   evidence is current, and all predecessors are merged.
+10. Use `github-pr-mergeable` for each PR before final merge, including its deterministic Codex classifier across issue comments, formal reviews, and threads. Apply the node's effective repository policy when deciding whether Codex is required. If the classifier reports lifetime churn exhaustion, stop at `review-scope-reset` rather than creating another head/request loop. Merge only after latest-head CI/reviews are acceptable under that policy, required evidence is current, and all predecessors are merged.
 11. Merge in topological order. After each merge, update descendants to the
     final base and rerun their required checks before declaring them mergeable.
 
