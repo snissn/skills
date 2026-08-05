@@ -1,6 +1,6 @@
 ---
 name: scientific-mainline-workflow
-description: Execute and govern theorem, model-integration, physics, manuscript-claim, or other scientific repository work using pushed issue-scoped feature branches for mutable pre-freeze construction and reviewed freeze integration to main without PR churn when authorized. Use for durable scientific iteration, exact-candidate adversarial review, local validation, frozen executions, scoped dispositions and inference, issue-graph progression, and strict separation of engineering defects from scientific results.
+description: Execute and govern theorem, model-integration, physics, manuscript-claim, or other scientific repository work using pushed issue-scoped feature branches for mutable pre-freeze construction and reviewed freeze integration to main without PR churn when authorized. Use for durable scientific iteration, proportional diagnostic/analytic/promotion assurance, exact-candidate adversarial review, cross-machine constructor handoffs, local validation, frozen executions, scoped dispositions and inference, issue-graph progression, and strict separation of engineering defects from scientific results.
 ---
 
 # Scientific Mainline Workflow
@@ -109,6 +109,12 @@ set, reviewer ownership, and local acceptance checks.
 
 If direct-main authority or a protected scientific scope boundary is unclear, ask before committing. Ordinary technical choices inside an authorized scientific identity do not require repeated approval.
 
+Read [proportional assurance profiles](references/proportional-assurance-profiles.md)
+before adding manifests, mutations, reviewers, or packet-specific validators.
+Read [cross-machine handoff](references/cross-machine-handoff.md) before a
+machine or agent switch, or whenever a constructor and integrator are different
+agents.
+
 ## Composition And Review Precedence
 
 When this workflow is composed with `github-pr-mergeable`, an issue-graph executor, or an automated reviewer:
@@ -143,6 +149,13 @@ pushed commit; a decision-bearing candidate must bind its uncommitted mutable
 bytes before their first freeze commit. Use an adversarial mutable-stage review
 and final exact-candidate acceptance. See [candidate review
 binding](references/candidate-review-binding.md).
+
+Give every mutable branch one writer. A constructor may publish an
+`integration-ready` handoff, but it must not claim current-main acceptance,
+mergeability, merge completion, or parent acceptance. The integrator verifies
+the remote head, scoped scientific digest, writer lease, current-main overlap,
+CI, review disposition, and merge method independently. A machine switch is a
+handoff of branch ownership, not concurrent editing of one branch.
 
 ## Workflow
 

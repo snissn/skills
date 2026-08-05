@@ -129,6 +129,7 @@ Use issue numbers as string keys under `nodes`.
 | `fix-needed` | Tests, CI, review, performance, conflict, or scope found required work. |
 | `ci-pending` | Exact-head hosted CI is running. |
 | `mergeable-candidate` | Local and remote gates appear satisfied; final coordinator check remains. |
+| `integration-ready` | Constructor pushed coherent exact-head state and released it to the named integrator; merge and parent acceptance remain. |
 | `merged` | PR merged; merge SHA recorded. |
 | `blocked` | External or design blocker with owner and next action. |
 | `deferred` | Explicitly moved to another issue/owner and non-blocking for this graph. |
@@ -139,12 +140,16 @@ explicitly when a node's state is ambiguous; the validator otherwise treats
 
 ## Run Lease
 
-The run block prevents accidental simultaneous ownership but must not lock the graph forever.
+The run block advertises graph-level intent but does not authorize branch
+writes. A branch writer must also hold the atomic fenced lease described by
+`scientific-mainline-workflow/references/cross-machine-handoff.md`.
 
 - Use a descriptive run ID and a short lease, normally four hours.
 - Refresh the lease when updating state during a long invocation.
 - A later invocation may reclaim an expired lease after re-reading live state.
-- A non-expired lease is advisory. If the user intentionally invokes another executor, reconcile rather than refusing automatically.
+- A non-expired run lease is advisory. If the user intentionally invokes
+  another executor, reconcile graph state, then atomically acquire each branch
+  lease before writing.
 - Never use the lease to imply background work continues.
 
 ## Reconciliation Rules
@@ -225,6 +230,15 @@ Use the PR marker:
 ```text
 <!-- gpt56-pro-issue-graph-executor:node:v1 -->
 ```
+
+For `constructor-handoff` mode, use `integration-ready` only when the remote
+branch contains every coherent change, `head_sha` is exact, evidence is bound
+to that head, and the fenced writer lease is released. Record the lease ref and
+generation, integrator owner,
+assurance profile, scientific authority, scoped scientific digest, scientific
+and engineering paths, source bindings, and one integrator intake action in
+the child issue or PR. These fields are forward-compatible context; later
+typed policy work may validate them more deeply.
 
 ## End-Of-Invocation Update
 

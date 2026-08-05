@@ -1,6 +1,6 @@
 ---
 name: gpt56-pro-issue-graph-executor
-description: Execute and merge GitHub issue dependency graphs from a parent tracker in the GPT-5.6 Pro ChatGPT harness. Use the connected GitHub adapter first, replace subagent delegation with isolated multi-worktree lanes and interleaved execution, build and test gomap locally, persist resumable graph state, and make later invocations idempotently continue branches, PRs, CI, reviews, and topological merges.
+description: Execute GitHub issue dependency graphs from a parent tracker in the GPT-5.6 Pro ChatGPT harness. Use the connected GitHub adapter first, replace subagent delegation with isolated multi-worktree lanes and interleaved execution, persist resumable graph state, and either merge topologically or publish an exact scientific constructor handoff to a separate Codex integrator.
 ---
 
 # GPT-5.6 Pro Issue Graph Executor
@@ -13,7 +13,12 @@ Invocation defaults to **execute, review, and merge the selected graph**. Inspec
 
 This is not the Codex subagent executor.
 
-- GPT-5.6 Pro is the sole graph coordinator, implementer, integrator, and final reviewer.
+- In `execute-and-merge` mode, GPT-5.6 Pro is the sole graph coordinator,
+  implementer, integrator, and final reviewer.
+- In `constructor-handoff` mode, GPT-5.6 Pro owns construction only. It must
+  publish exact pushed state, release the branch lease, and leave current-main
+  acceptance, final CI/review classification, merge, and parent acceptance to
+  the named integrator.
 - Do not invoke Codex subagents, Orca, Pi, or imaginary background workers.
 - “Parallel” means maintaining several isolated issue lanes and interleaving useful work while tests, builds, CI, or reviews run. Use separate worktrees and branches; start concurrent shell processes only when the runtime supports them and observe their results in the current invocation.
 - Never claim asynchronous work will continue after the response. Before ending, publish coherent progress and update the durable handoff.
@@ -30,7 +35,8 @@ Required:
 
 Optional:
 
-- execution mode: `execute-and-merge` (default), `readiness-only`, or `no-merge`;
+- execution mode: `execute-and-merge` (default), `constructor-handoff`,
+  `readiness-only`, or `no-merge`;
 - maximum active lanes;
 - explicitly excluded nodes;
 - permission for speculative descendants before predecessors merge.
@@ -45,6 +51,9 @@ Load and apply these skills when available:
 - `github-pr-mergeable` for latest-head CI, review, performance, and merge gates;
 - `github:gh-fix-ci` for GitHub Actions diagnosis;
 - `github:gh-address-comments` for actionable PR review findings;
+- `scientific-mainline-workflow` whenever a node changes a theorem, model,
+  scientific decision, provenance-bearing claim, or parent scientific
+  acceptance;
 - `build-gomap` whenever the target is `snissn/gomap`.
 
 Read:
@@ -215,6 +224,24 @@ Known risks:
 Exact next action:
 ```
 
+For a scientific `constructor-handoff`, also record:
+
+```text
+Constructor machine:
+Integrator owner:
+Assurance profile: diagnostic | analytic | promotion
+Scientific authority:
+Scoped scientific digest:
+Scientific versus engineering paths:
+Source bindings:
+Writer lease ref/generation: released
+Integrator intake action:
+```
+
+Construction complete is not merge complete. Use `integration-ready` only
+after every coherent change is pushed and its validation is bound to the exact
+head.
+
 Add this marker:
 
 ```text
@@ -241,6 +268,14 @@ Use the adapter to inventory exact-head comments, formal reviews, and review thr
 Do useful work in other lanes while CI or review is pending. Revisit at deliberate sync points rather than polling continuously.
 
 ## Merge Gate
+
+In `constructor-handoff` mode, this is a hard stop boundary: publish the exact
+candidate as `integration-ready`, release its fenced writer lease, and delegate
+current-main comparison, final CI/review classification, merge, and parent
+acceptance to the named integrator. Do not run the merge gate or merge sibling
+nodes in that mode.
+
+The following merge gate applies only in `execute-and-merge` mode.
 
 A node may merge only when:
 
@@ -274,6 +309,13 @@ Before ending every invocation:
 
 A later invocation should be able to continue using GitHub alone even if the previous local worktrees no longer exist.
 
+In `constructor-handoff` mode, additionally record the repository, issue,
+constructor and integrator roles, machine label, branch, exact base/head, owned
+paths, assurance profile, authority, scoped scientific digest, source
+bindings, validation, CI/review state, blocker, one next action, and released
+fenced-writer lease ref/generation. The integrator must be able to reconstruct
+the candidate without access to the constructor's machine or chat history.
+
 ## Example: Parent `snissn/gomap#4051`
 
 Always reread the live tracker; this is only an execution-shape example.
@@ -290,6 +332,8 @@ Always reread the live tracker; this is only an execution-shape example.
 Continue until every selected node is:
 
 - merged;
+- `integration-ready` with an accepted constructor handoff when mode is
+  `constructor-handoff`;
 - intentionally deferred to a linked owner with accepted scope;
 - or blocked by external state with a durable blocker, owner, and exact next action.
 

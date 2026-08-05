@@ -28,6 +28,7 @@ STATES = {
     "fix-needed",
     "ci-pending",
     "mergeable-candidate",
+    "integration-ready",
     "merged",
     "blocked",
     "deferred",
@@ -116,10 +117,14 @@ def validate(data: dict[str, Any]) -> Validation:
     mode = data.get("mode")
     if not isinstance(mode, str) or mode not in {
         "execute-and-merge",
+        "constructor-handoff",
         "readiness-only",
         "no-merge",
     }:
-        v.error("mode must be execute-and-merge, readiness-only, or no-merge")
+        v.error(
+            "mode must be execute-and-merge, constructor-handoff, "
+            "readiness-only, or no-merge"
+        )
 
     base_sha = data.get("base_sha")
     if (
@@ -127,6 +132,8 @@ def validate(data: dict[str, Any]) -> Validation:
         or re.fullmatch(r"[0-9a-fA-F]{7,64}", base_sha) is None
     ):
         v.error("base_sha must be a hexadecimal commit SHA or unambiguous prefix")
+    elif mode == "constructor-handoff" and not is_full_sha(base_sha):
+        v.error("constructor-handoff base_sha must be an exact 40- or 64-character SHA")
 
     limits = data.get("limits")
     if not isinstance(limits, dict):
@@ -238,6 +245,26 @@ def validate(data: dict[str, Any]) -> Validation:
                     v.error(
                         f"node {node_id}: merged node missing valid {field}"
                     )
+        elif state == "integration-ready":
+            if mode != "constructor-handoff":
+                v.error(
+                    f"node {node_id}: integration-ready requires "
+                    "constructor-handoff mode"
+                )
+            if not isinstance(branch, str) or not branch:
+                v.error(f"node {node_id}: integration-ready node missing branch")
+            if not is_full_sha(node.get("head_sha")):
+                v.error(
+                    f"node {node_id}: integration-ready node missing valid head_sha"
+                )
+            if not is_full_sha(node.get("base_sha")):
+                v.error(
+                    f"node {node_id}: integration-ready node missing valid base_sha"
+                )
+            if node.get("merge_sha") is not None:
+                v.error(
+                    f"node {node_id}: integration-ready node must have null merge_sha"
+                )
         elif node.get("merge_sha") is not None:
             v.warn(f"node {node_id}: non-merged node has merge_sha")
 
