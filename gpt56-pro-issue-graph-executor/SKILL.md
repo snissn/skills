@@ -234,7 +234,7 @@ Scientific authority:
 Scoped scientific digest:
 Scientific versus engineering paths:
 Source bindings:
-Writer lease: released
+Writer lease ref/generation: released
 Integrator intake action:
 ```
 
@@ -268,6 +268,14 @@ Use the adapter to inventory exact-head comments, formal reviews, and review thr
 Do useful work in other lanes while CI or review is pending. Revisit at deliberate sync points rather than polling continuously.
 
 ## Merge Gate
+
+In `constructor-handoff` mode, this is a hard stop boundary: publish the exact
+candidate as `integration-ready`, release its fenced writer lease, and delegate
+current-main comparison, final CI/review classification, merge, and parent
+acceptance to the named integrator. Do not run the merge gate or merge sibling
+nodes in that mode.
+
+The following merge gate applies only in `execute-and-merge` mode.
 
 A node may merge only when:
 
@@ -305,8 +313,8 @@ In `constructor-handoff` mode, additionally record the repository, issue,
 constructor and integrator roles, machine label, branch, exact base/head, owned
 paths, assurance profile, authority, scoped scientific digest, source
 bindings, validation, CI/review state, blocker, one next action, and released
-writer lease. The integrator must be able to reconstruct the candidate without
-access to the constructor's machine or chat history.
+fenced-writer lease ref/generation. The integrator must be able to reconstruct
+the candidate without access to the constructor's machine or chat history.
 
 ## Example: Parent `snissn/gomap#4051`
 
