@@ -28,6 +28,7 @@ STATES = {
     "fix-needed",
     "ci-pending",
     "mergeable-candidate",
+    "integration-ready",
     "merged",
     "blocked",
     "deferred",
@@ -116,10 +117,14 @@ def validate(data: dict[str, Any]) -> Validation:
     mode = data.get("mode")
     if not isinstance(mode, str) or mode not in {
         "execute-and-merge",
+        "constructor-handoff",
         "readiness-only",
         "no-merge",
     }:
-        v.error("mode must be execute-and-merge, readiness-only, or no-merge")
+        v.error(
+            "mode must be execute-and-merge, constructor-handoff, "
+            "readiness-only, or no-merge"
+        )
 
     base_sha = data.get("base_sha")
     if (
@@ -238,6 +243,18 @@ def validate(data: dict[str, Any]) -> Validation:
                     v.error(
                         f"node {node_id}: merged node missing valid {field}"
                     )
+        elif state == "integration-ready":
+            if mode != "constructor-handoff":
+                v.error(
+                    f"node {node_id}: integration-ready requires "
+                    "constructor-handoff mode"
+                )
+            if not isinstance(branch, str) or not branch:
+                v.error(f"node {node_id}: integration-ready node missing branch")
+            if not is_full_sha(node.get("head_sha")):
+                v.error(
+                    f"node {node_id}: integration-ready node missing valid head_sha"
+                )
         elif node.get("merge_sha") is not None:
             v.warn(f"node {node_id}: non-merged node has merge_sha")
 
