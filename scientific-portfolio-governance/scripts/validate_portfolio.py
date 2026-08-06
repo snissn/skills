@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+DEFAULT_SCIENCE_LIMIT = 3
+DEFAULT_MAINTENANCE_LIMIT = 1
 DEFAULT_STATUSES = {
     "ACTIVE",
     "REVIEW_OR_CI",
@@ -51,13 +53,19 @@ def reject_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 
 def load(path: Path) -> dict[str, Any]:
-    data = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=reject_duplicates)
+    data = json.loads(
+        path.read_text(encoding="utf-8"),
+        object_pairs_hook=reject_duplicates,
+    )
     require(isinstance(data, dict), "board must be a JSON object")
     return data
 
 
 def nonempty(value: Any, field: str) -> str:
-    require(isinstance(value, str) and value.strip(), f"{field} must be nonempty text")
+    require(
+        isinstance(value, str) and value.strip(),
+        f"{field} must be nonempty text",
+    )
     return value
 
 
@@ -96,7 +104,10 @@ def validate_entry(
     nonempty(entry.get("next_action"), f"{lane_id}.next_action")
 
     if active:
-        require(status in occupying, f"{lane_id}: active entry does not occupy a slot")
+        require(
+            status in occupying,
+            f"{lane_id}: active entry does not occupy a slot",
+        )
         nonempty(
             entry.get("load_bearing_question"),
             f"{lane_id}.load_bearing_question",
@@ -117,10 +128,26 @@ def validate_entry(
         nonempty(entry.get("reason"), f"{lane_id}.reason")
 
 
+def require_unique_ownership(
+    entries: list[dict[str, Any]],
+    field: str,
+) -> None:
+    owners: dict[int | str, str] = {}
+    for entry in entries:
+        lane_id = entry["id"]
+        for value in entry[field]:
+            previous = owners.get(value)
+            require(
+                previous is None,
+                f"{field[:-1]} {value} is owned by both {previous} and {lane_id}",
+            )
+            owners[value] = lane_id
+
+
 def validate(
     data: dict[str, Any],
-    max_science: int | None,
-    max_maintenance: int | None,
+    max_science: int | None = DEFAULT_SCIENCE_LIMIT,
+    max_maintenance: int | None = DEFAULT_MAINTENANCE_LIMIT,
 ) -> dict[str, int]:
     require(data.get("schema_version") == 1, "schema_version must be 1")
     nonempty(data.get("scope"), "scope")
@@ -129,34 +156,57 @@ def validate(
     allowed = set(data.get("allowed_statuses", []))
     occupying = set(data.get("occupying_statuses", []))
     require(allowed, "allowed status set must be nonempty")
-    require(allowed <= DEFAULT_STATUSES, "allowed status set contains unknown values")
-    require(occupying, "occupying status set must be nonempty")
     require(
-        occupying <= DEFAULT_OCCUPYING,
-        "occupying status set contains unknown values",
+        allowed <= DEFAULT_STATUSES,
+        "allowed status set contains unknown values",
     )
-    require(occupying <= allowed, "occupying statuses must also be allowed")
+    require(
+        occupying == allowed & DEFAULT_OCCUPYING,
+        "occupying statuses must preserve the default semantics of every allowed active status",
+    )
 
     rules = data.get("rules")
     require(isinstance(rules, dict), "rules must be an object")
     for key, expected in REQUIRED_RULES.items():
-        require(rules.get(key) is expected, f"required operating rule changed: {key}")
+        require(
+            rules.get(key) is expected,
+            f"required operating rule changed: {key}",
+        )
 
     limits = data.get("limits")
     require(isinstance(limits, dict), "limits must be an object")
     science_limit = limits.get("active_scientific_workstreams")
     maintenance_limit = limits.get("active_maintenance_workstreams")
-    require(type(science_limit) is int and science_limit >= 0, "invalid science limit")
+    require(
+        type(science_limit) is int and science_limit >= 0,
+        "invalid science limit",
+    )
     require(
         type(maintenance_limit) is int and maintenance_limit >= 0,
         "invalid maintenance limit",
     )
+    require(
+        science_limit <= DEFAULT_SCIENCE_LIMIT,
+        "board science limit exceeds the default maximum",
+    )
+    require(
+        maintenance_limit <= DEFAULT_MAINTENANCE_LIMIT,
+        "board maintenance limit exceeds the default maximum",
+    )
     if max_science is not None:
+        require(
+            0 <= max_science <= DEFAULT_SCIENCE_LIMIT,
+            "command-line science maximum may only narrow the default",
+        )
         require(
             science_limit <= max_science,
             "board science limit exceeds command-line maximum",
         )
     if max_maintenance is not None:
+        require(
+            0 <= max_maintenance <= DEFAULT_MAINTENANCE_LIMIT,
+            "command-line maintenance maximum may only narrow the default",
+        )
         require(
             maintenance_limit <= max_maintenance,
             "board maintenance limit exceeds command-line maximum",
@@ -167,15 +217,30 @@ def validate(
     require(isinstance(active, list), "workstreams must be a list")
     require(isinstance(nonactive, list), "nonactive_workstreams must be a list")
     for entry in active:
-        validate_entry(entry, active=True, occupying=occupying, allowed=allowed)
+        validate_entry(
+            entry,
+            active=True,
+            occupying=occupying,
+            allowed=allowed,
+        )
     for entry in nonactive:
-        validate_entry(entry, active=False, occupying=occupying, allowed=allowed)
+        validate_entry(
+            entry,
+            active=False,
+            occupying=occupying,
+            allowed=allowed,
+        )
 
-    ids = [entry["id"] for entry in [*active, *nonactive]]
+    entries = [*active, *nonactive]
+    ids = [entry["id"] for entry in entries]
     require(len(ids) == len(set(ids)), "duplicate workstream id")
+    require_unique_ownership(entries, "issues")
+    require_unique_ownership(entries, "prs")
 
     science_active = sum(entry["class"] == "science" for entry in active)
-    maintenance_active = sum(entry["class"] == "maintenance" for entry in active)
+    maintenance_active = sum(
+        entry["class"] == "maintenance" for entry in active
+    )
     require(
         science_active <= science_limit,
         "active scientific workstream limit exceeded",
@@ -196,11 +261,23 @@ def validate(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("board", type=Path)
-    parser.add_argument("--max-science", type=int)
-    parser.add_argument("--max-maintenance", type=int)
+    parser.add_argument(
+        "--max-science",
+        type=int,
+        default=DEFAULT_SCIENCE_LIMIT,
+    )
+    parser.add_argument(
+        "--max-maintenance",
+        type=int,
+        default=DEFAULT_MAINTENANCE_LIMIT,
+    )
     args = parser.parse_args()
 
-    summary = validate(load(args.board), args.max_science, args.max_maintenance)
+    summary = validate(
+        load(args.board),
+        args.max_science,
+        args.max_maintenance,
+    )
     print(json.dumps({"status": "PASS", **summary}, sort_keys=True))
     return 0
 
