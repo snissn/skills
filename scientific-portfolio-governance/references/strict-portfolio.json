@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "scope": "STRICT_EXAMPLE_PROGRAM",
+  "snapshot_date": "2026-08-06",
+  "limits": {
+    "active_scientific_workstreams": 2,
+    "active_maintenance_workstreams": 0
+  },
+  "occupying_statuses": [
+    "ACTIVE"
+  ],
+  "allowed_statuses": [
+    "ACTIVE",
+    "PARKED",
+    "COMPLETED"
+  ],
+  "rules": {
+    "one_scientific_decision_per_pr": true,
+    "workflow_generated_scientific_writes_forbidden": true,
+    "exact_head_identity_required": true,
+    "renewed_review_after_scientific_edit_required": true,
+    "claim_changing_findings_only_after_default_repair_round": true,
+    "downstream_requires_merged_positive_authority": true,
+    "blocked_or_parked_scientific_writes_allowed": false,
+    "maintenance_uses_separate_slot": true,
+    "requires_signed_owner_handoff": true
+  },
+  "workstreams": [
+    {
+      "id": "strict-active",
+      "class": "science",
+      "status": "ACTIVE",
+      "owner": "issue-10",
+      "issues": [10],
+      "prs": [],
+      "load_bearing_question": "Prove the strict program's selected theorem.",
+      "next_action": "Complete one bounded proof packet.",
+      "blocked_descendants": [11]
+    }
+  ],
+  "nonactive_workstreams": [
+    {
+      "id": "strict-parked",
+      "class": "science",
+      "status": "PARKED",
+      "owner": "issue-12",
+      "issues": [12],
+      "prs": [],
+      "scientific_writes_allowed": false,
+      "reason": "The strict program permits only one active status.",
+      "next_action": "Reactivate through a signed board transition."
+    },
+    {
+      "id": "strict-completed",
+      "class": "science",
+      "status": "COMPLETED",
+      "owner": "issue-13",
+      "issues": [13],
+      "prs": [14],
+      "scientific_writes_allowed": false,
+      "reason": "The scoped result is merged.",
+      "next_action": "No automatic successor."
+    }
+  ]
+}

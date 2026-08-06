@@ -1,0 +1,55 @@
+name: Scientific portfolio governance skill
+
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "scientific-portfolio-governance/**"
+      - ".github/workflows/scientific-portfolio-governance.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "AGENTS.md"
+      - "scientific-portfolio-governance/**"
+      - ".github/workflows/scientific-portfolio-governance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compile validator and regression tests
+        run: |
+          python3 -m py_compile \
+            scientific-portfolio-governance/scripts/validate_portfolio.py \
+            scientific-portfolio-governance/scripts/test_validate_portfolio.py
+      - name: Validate default and stricter reference portfolios
+        run: |
+          python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
+            scientific-portfolio-governance/references/example-portfolio.json
+          python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
+            scientific-portfolio-governance/references/strict-portfolio.json
+      - name: Exercise fail-closed portfolio invariants
+        run: python3 scientific-portfolio-governance/scripts/test_validate_portfolio.py
+      - name: Check complete skill diff whitespace
+        shell: bash
+        env:
+          PULL_REQUEST_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          base="$PULL_REQUEST_BASE"
+          if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
+            base="$PUSH_BEFORE"
+          fi
+          if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
+            base="$(git rev-parse HEAD^)"
+          fi
+          git diff --check "$base"...HEAD

@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "scope": "EXAMPLE_SCIENTIFIC_PROGRAM",
+  "snapshot_date": "2026-08-06",
+  "limits": {
+    "active_scientific_workstreams": 3,
+    "active_maintenance_workstreams": 1
+  },
+  "occupying_statuses": [
+    "ACTIVE",
+    "REVIEW_OR_CI",
+    "FIX_NEEDED"
+  ],
+  "allowed_statuses": [
+    "ACTIVE",
+    "REVIEW_OR_CI",
+    "FIX_NEEDED",
+    "BLOCKED_SCIENTIFIC_REDESIGN",
+    "PARKED",
+    "MAINTENANCE",
+    "DEFERRED_NARROWED",
+    "SUPERSEDED",
+    "COMPLETED"
+  ],
+  "rules": {
+    "one_scientific_decision_per_pr": true,
+    "workflow_generated_scientific_writes_forbidden": true,
+    "exact_head_identity_required": true,
+    "renewed_review_after_scientific_edit_required": true,
+    "claim_changing_findings_only_after_default_repair_round": true,
+    "downstream_requires_merged_positive_authority": true,
+    "blocked_or_parked_scientific_writes_allowed": false,
+    "maintenance_uses_separate_slot": true
+  },
+  "workstreams": [
+    {
+      "id": "example-theorem",
+      "class": "science",
+      "status": "ACTIVE",
+      "owner": "issue-1",
+      "issues": [1],
+      "prs": [],
+      "load_bearing_question": "Prove or obstruct the selected theorem.",
+      "next_action": "Complete the exact source-bound calculation.",
+      "blocked_descendants": [2]
+    },
+    {
+      "id": "example-maintenance",
+      "class": "maintenance",
+      "status": "FIX_NEEDED",
+      "owner": "issue-3",
+      "issues": [3],
+      "prs": [4],
+      "load_bearing_question": "Restore the clean build without changing theorem statements.",
+      "next_action": "Run the clean build and exact-head engineering review.",
+      "blocked_descendants": []
+    }
+  ],
+  "nonactive_workstreams": [
+    {
+      "id": "example-parked",
+      "class": "science",
+      "status": "PARKED",
+      "owner": "issue-5",
+      "issues": [5],
+      "prs": [],
+      "scientific_writes_allowed": false,
+      "reason": "The active portfolio is focused on a higher-priority gate.",
+      "next_action": "Reactivate through an explicit board transition."
+    }
+  ]
+}
