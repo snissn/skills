@@ -49,6 +49,11 @@ findings_and_dispositions:
 disposition: ACCEPT | REJECT
 candidate_edits_by_reviewer: false
 codex_unavailability_evidence:
+  response_url:
+  bot_login:
+  timestamp:
+  exact_candidate_head:
+  normalized_reason:
 ```
 
 A same-agent local fallback must be labeled `LOCAL_GPT56_REVIEW`; it must not be
@@ -70,5 +75,7 @@ artifact. It does not waive:
 - a repository rule that explicitly requires GitHub-hosted Codex itself.
 
 Any later scientific or review-relevant code edit invalidates the fallback
-review. Representation-only changes require a focused exact-head equivalence
-review. Never report quota evidence as a Codex pass.
+review. A representation-only change also invalidates the prior fallback until
+a new focused exact-head equivalence review is recorded with all required
+evidence fields and `disposition: ACCEPT`. Never report quota evidence as a
+Codex pass.
