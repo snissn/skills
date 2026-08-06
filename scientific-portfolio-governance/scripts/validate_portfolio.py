@@ -64,17 +64,30 @@ def nonempty(value: Any, field: str) -> str:
 def refs(value: Any, field: str) -> list[int | str]:
     require(isinstance(value, list), f"{field} must be a list")
     require(
-        all((type(item) is int and item > 0) or (isinstance(item, str) and item.strip()) for item in value),
+        all(
+            (type(item) is int and item > 0)
+            or (isinstance(item, str) and item.strip())
+            for item in value
+        ),
         f"{field} must contain positive integers or nonempty strings",
     )
     require(len(value) == len(set(value)), f"{field} contains duplicates")
     return value
 
 
-def validate_entry(entry: Any, *, active: bool, occupying: set[str], allowed: set[str]) -> None:
+def validate_entry(
+    entry: Any,
+    *,
+    active: bool,
+    occupying: set[str],
+    allowed: set[str],
+) -> None:
     require(isinstance(entry, dict), "workstream entry must be an object")
     lane_id = nonempty(entry.get("id"), "id")
-    require(entry.get("class") in {"science", "maintenance"}, f"{lane_id}: invalid class")
+    require(
+        entry.get("class") in {"science", "maintenance"},
+        f"{lane_id}: invalid class",
+    )
     status = entry.get("status")
     require(status in allowed, f"{lane_id}: invalid status {status}")
     nonempty(entry.get("owner"), f"{lane_id}.owner")
@@ -84,35 +97,70 @@ def validate_entry(entry: Any, *, active: bool, occupying: set[str], allowed: se
 
     if active:
         require(status in occupying, f"{lane_id}: active entry does not occupy a slot")
-        nonempty(entry.get("load_bearing_question"), f"{lane_id}.load_bearing_question")
-        refs(entry.get("blocked_descendants", []), f"{lane_id}.blocked_descendants")
+        nonempty(
+            entry.get("load_bearing_question"),
+            f"{lane_id}.load_bearing_question",
+        )
+        refs(
+            entry.get("blocked_descendants", []),
+            f"{lane_id}.blocked_descendants",
+        )
     else:
-        require(status not in occupying, f"{lane_id}: nonactive entry has an occupying status")
-        require(entry.get("scientific_writes_allowed") is False, f"{lane_id}: nonactive entry must forbid scientific writes")
+        require(
+            status not in occupying,
+            f"{lane_id}: nonactive entry has an occupying status",
+        )
+        require(
+            entry.get("scientific_writes_allowed") is False,
+            f"{lane_id}: nonactive entry must forbid scientific writes",
+        )
         nonempty(entry.get("reason"), f"{lane_id}.reason")
 
 
-def validate(data: dict[str, Any], max_science: int | None, max_maintenance: int | None) -> dict[str, int]:
+def validate(
+    data: dict[str, Any],
+    max_science: int | None,
+    max_maintenance: int | None,
+) -> dict[str, int]:
     require(data.get("schema_version") == 1, "schema_version must be 1")
     nonempty(data.get("scope"), "scope")
     nonempty(data.get("snapshot_date"), "snapshot_date")
 
     allowed = set(data.get("allowed_statuses", []))
     occupying = set(data.get("occupying_statuses", []))
-    require(allowed == DEFAULT_STATUSES, "allowed status set differs from the default contract")
-    require(occupying == DEFAULT_OCCUPYING, "occupying status set differs from the default contract")
-    require(data.get("rules") == REQUIRED_RULES, "required operating rules changed")
+    require(allowed, "allowed status set must be nonempty")
+    require(allowed <= DEFAULT_STATUSES, "allowed status set contains unknown values")
+    require(occupying, "occupying status set must be nonempty")
+    require(
+        occupying <= DEFAULT_OCCUPYING,
+        "occupying status set contains unknown values",
+    )
+    require(occupying <= allowed, "occupying statuses must also be allowed")
+
+    rules = data.get("rules")
+    require(isinstance(rules, dict), "rules must be an object")
+    for key, expected in REQUIRED_RULES.items():
+        require(rules.get(key) is expected, f"required operating rule changed: {key}")
 
     limits = data.get("limits")
     require(isinstance(limits, dict), "limits must be an object")
     science_limit = limits.get("active_scientific_workstreams")
     maintenance_limit = limits.get("active_maintenance_workstreams")
     require(type(science_limit) is int and science_limit >= 0, "invalid science limit")
-    require(type(maintenance_limit) is int and maintenance_limit >= 0, "invalid maintenance limit")
+    require(
+        type(maintenance_limit) is int and maintenance_limit >= 0,
+        "invalid maintenance limit",
+    )
     if max_science is not None:
-        require(science_limit <= max_science, "board science limit exceeds command-line maximum")
+        require(
+            science_limit <= max_science,
+            "board science limit exceeds command-line maximum",
+        )
     if max_maintenance is not None:
-        require(maintenance_limit <= max_maintenance, "board maintenance limit exceeds command-line maximum")
+        require(
+            maintenance_limit <= max_maintenance,
+            "board maintenance limit exceeds command-line maximum",
+        )
 
     active = data.get("workstreams")
     nonactive = data.get("nonactive_workstreams")
@@ -128,8 +176,14 @@ def validate(data: dict[str, Any], max_science: int | None, max_maintenance: int
 
     science_active = sum(entry["class"] == "science" for entry in active)
     maintenance_active = sum(entry["class"] == "maintenance" for entry in active)
-    require(science_active <= science_limit, "active scientific workstream limit exceeded")
-    require(maintenance_active <= maintenance_limit, "active maintenance workstream limit exceeded")
+    require(
+        science_active <= science_limit,
+        "active scientific workstream limit exceeded",
+    )
+    require(
+        maintenance_active <= maintenance_limit,
+        "active maintenance workstream limit exceeded",
+    )
 
     return {
         "scientific_active": science_active,
