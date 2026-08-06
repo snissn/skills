@@ -1,0 +1,35 @@
+name: Scientific portfolio governance skill
+
+on:
+  pull_request:
+    paths:
+      - "AGENTS.md"
+      - "scientific-portfolio-governance/**"
+      - ".github/workflows/scientific-portfolio-governance.yml"
+  push:
+    branches: ["main"]
+    paths:
+      - "AGENTS.md"
+      - "scientific-portfolio-governance/**"
+      - ".github/workflows/scientific-portfolio-governance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile validator
+        run: python3 -m py_compile scientific-portfolio-governance/scripts/validate_portfolio.py
+      - name: Validate reference portfolio
+        run: |
+          python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
+            scientific-portfolio-governance/references/example-portfolio.json \
+            --max-science 3 \
+            --max-maintenance 1
+      - name: Check whitespace
+        run: git diff --check
