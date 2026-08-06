@@ -27,10 +27,14 @@ jobs:
           fetch-depth: 0
       - name: Compile validator
         run: python3 -m py_compile scientific-portfolio-governance/scripts/validate_portfolio.py
-      - name: Validate reference portfolio
+      - name: Validate default and stricter reference portfolios
         run: |
           python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
             scientific-portfolio-governance/references/example-portfolio.json \
+            --max-science 3 \
+            --max-maintenance 1
+          python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
+            scientific-portfolio-governance/references/strict-portfolio.json \
             --max-science 3 \
             --max-maintenance 1
       - name: Check complete skill diff whitespace
