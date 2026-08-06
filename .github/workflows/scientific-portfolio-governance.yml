@@ -23,6 +23,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Compile validator
         run: python3 -m py_compile scientific-portfolio-governance/scripts/validate_portfolio.py
       - name: Validate reference portfolio
@@ -31,5 +33,18 @@ jobs:
             scientific-portfolio-governance/references/example-portfolio.json \
             --max-science 3 \
             --max-maintenance 1
-      - name: Check whitespace
-        run: git diff --check
+      - name: Check complete skill diff whitespace
+        shell: bash
+        env:
+          PULL_REQUEST_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          base="$PULL_REQUEST_BASE"
+          if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
+            base="$PUSH_BEFORE"
+          fi
+          if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
+            base="$(git rev-parse HEAD^)"
+          fi
+          git diff --check "$base"...HEAD
