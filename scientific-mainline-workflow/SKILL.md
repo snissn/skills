@@ -155,7 +155,11 @@ Give every mutable branch one writer. A constructor may publish an
 mergeability, merge completion, or parent acceptance. The integrator verifies
 the remote head, scoped scientific digest, writer lease, current-main overlap,
 CI, review disposition, and merge method independently. A machine switch is a
-handoff of branch ownership, not concurrent editing of one branch.
+handoff of branch ownership, not concurrent editing of one branch. Use short,
+renewable leases; release at every stable pause or handoff. On a collision, the
+lease winner must reconcile applicable pushed science and qualified engineering
+evidence before advancing rather than discarding a sibling lane or narrowing
+the theorem for convenience.
 
 ## Workflow
 
