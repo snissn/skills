@@ -22,8 +22,17 @@ The reviewer must inspect the actual theorem, action, state space, source
 bindings, validators, controls, recovery maps, and claim boundaries at the exact
 head or deterministic byte manifest. The durable record must identify reviewer
 mode, model, base/head or manifest, reviewed paths, checks, findings,
-dispositions, final `ACCEPT` or `REJECT`, and `candidate_edits_by_reviewer:
-false`.
+dispositions, final `ACCEPT` or `REJECT`, and
+`candidate_edits_by_reviewer: false`. It must also retain:
+
+```text
+codex_unavailability_evidence:
+  response_url:
+  bot_login:
+  timestamp:
+  exact_candidate_head:
+  normalized_reason:
+```
 
 A local same-agent fallback is labeled `LOCAL_GPT56_REVIEW` and is accepted only
 as an internal repository review. It is not independent human review, external
