@@ -1,26 +1,23 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "scope": "EXAMPLE_SCIENTIFIC_PROGRAM",
-  "snapshot_date": "2026-08-06",
+  "snapshot_date": "2026-08-07",
   "limits": {
-    "active_scientific_workstreams": 3,
-    "active_maintenance_workstreams": 1
+    "active_authority_writing_workstreams": 3,
+    "active_qualification_workstreams": 2,
+    "active_maintenance_workstreams": 2
   },
-  "occupying_statuses": [
-    "ACTIVE",
-    "REVIEW_OR_CI",
-    "FIX_NEEDED"
-  ],
+  "class_slot_groups": {
+    "science": "authority_writing",
+    "formalization": "authority_writing",
+    "qualification": "qualification",
+    "maintenance": "maintenance"
+  },
+  "occupying_statuses": ["ACTIVE", "REVIEW_OR_CI", "FIX_NEEDED"],
   "allowed_statuses": [
-    "ACTIVE",
-    "REVIEW_OR_CI",
-    "FIX_NEEDED",
-    "BLOCKED_SCIENTIFIC_REDESIGN",
-    "PARKED",
-    "MAINTENANCE",
-    "DEFERRED_NARROWED",
-    "SUPERSEDED",
-    "COMPLETED"
+    "ACTIVE", "REVIEW_OR_CI", "FIX_NEEDED",
+    "BLOCKED_SCIENTIFIC_REDESIGN", "PARKED",
+    "DEFERRED_NARROWED", "SUPERSEDED", "COMPLETED"
   ],
   "rules": {
     "one_scientific_decision_per_pr": true,
@@ -29,44 +26,114 @@
     "renewed_review_after_scientific_edit_required": true,
     "claim_changing_findings_only_after_default_repair_round": true,
     "downstream_requires_merged_positive_authority": true,
-    "blocked_or_parked_scientific_writes_allowed": false,
-    "maintenance_uses_separate_slot": true
+    "blocked_or_parked_authority_writes_allowed": false,
+    "theorem_bearing_formalization_uses_authority_slot": true,
+    "qualification_may_not_change_governed_authority_bytes": true,
+    "maintenance_may_not_change_governed_authority_bytes": true,
+    "one_active_writer_per_authority_surface": true,
+    "one_active_qualifier_per_qualified_surface": true,
+    "path_disjoint_parallelism_allowed": true,
+    "governance_transitions_do_not_occupy_slots": true,
+    "reconciliation_is_surface_local_not_global": true
   },
   "workstreams": [
     {
-      "id": "example-theorem",
+      "id": "example-science",
       "class": "science",
+      "slot_group": "authority_writing",
       "status": "ACTIVE",
       "owner": "issue-1",
       "issues": [1],
       "prs": [],
+      "scientific_writes_allowed": true,
+      "theorem_writes_allowed": true,
+      "governed_authority_bytes_mutable": true,
       "load_bearing_question": "Prove or obstruct the selected theorem.",
-      "next_action": "Complete the exact source-bound calculation.",
-      "blocked_descendants": [2]
+      "next_action": "Complete one source-bound calculation.",
+      "blocked_descendants": [2],
+      "owned_paths": ["science/theorem/"],
+      "authority_surface": "science/theorem/",
+      "concurrency_key": "authority:example-science"
+    },
+    {
+      "id": "example-formalization",
+      "class": "formalization",
+      "slot_group": "authority_writing",
+      "status": "ACTIVE",
+      "owner": "issue-3",
+      "issues": [3],
+      "prs": [],
+      "scientific_writes_allowed": true,
+      "theorem_writes_allowed": true,
+      "governed_authority_bytes_mutable": true,
+      "load_bearing_question": "Formalize the finite theorem interface.",
+      "next_action": "Compile the public proof package.",
+      "blocked_descendants": [4],
+      "owned_paths": ["proof/theorem/"],
+      "authority_surface": "proof/theorem/",
+      "concurrency_key": "authority:example-formalization"
+    },
+    {
+      "id": "example-qualification",
+      "class": "qualification",
+      "slot_group": "qualification",
+      "status": "REVIEW_OR_CI",
+      "owner": "issue-5",
+      "issues": [5],
+      "prs": [],
+      "scientific_writes_allowed": false,
+      "theorem_writes_allowed": false,
+      "governed_authority_bytes_mutable": false,
+      "source_repairs_allowed": false,
+      "load_bearing_question": "Qualify immutable reviewed authority.",
+      "next_action": "Run exact-byte CI and review.",
+      "blocked_descendants": [6],
+      "owned_paths": ["qualification/example/"],
+      "qualified_surfaces": ["science:merge:manifest"],
+      "frozen_inputs": [
+        {
+          "issue": 1,
+          "pr": 10,
+          "merge": "0123456789abcdef",
+          "manifest": "abcdef0123456789",
+          "mutable": false
+        }
+      ],
+      "concurrency_key": "qualification:example"
     },
     {
       "id": "example-maintenance",
       "class": "maintenance",
+      "slot_group": "maintenance",
       "status": "FIX_NEEDED",
-      "owner": "issue-3",
-      "issues": [3],
-      "prs": [4],
-      "load_bearing_question": "Restore the clean build without changing theorem statements.",
-      "next_action": "Run the clean build and exact-head engineering review.",
-      "blocked_descendants": []
+      "owner": "issue-7",
+      "issues": [7],
+      "prs": [],
+      "scientific_writes_allowed": false,
+      "theorem_writes_allowed": false,
+      "governed_authority_bytes_mutable": false,
+      "load_bearing_question": "Restore a locked build without changing authority.",
+      "next_action": "Repair the toolchain compatibility layer.",
+      "blocked_descendants": [],
+      "owned_paths": ["maintenance/build/"],
+      "maintenance_surface": "locked-build-compatibility",
+      "concurrency_key": "maintenance:example"
     }
   ],
   "nonactive_workstreams": [
     {
       "id": "example-parked",
       "class": "science",
+      "slot_group": "authority_writing",
       "status": "PARKED",
-      "owner": "issue-5",
-      "issues": [5],
+      "owner": "issue-8",
+      "issues": [8],
       "prs": [],
       "scientific_writes_allowed": false,
-      "reason": "The active portfolio is focused on a higher-priority gate.",
-      "next_action": "Reactivate through an explicit board transition."
+      "theorem_writes_allowed": false,
+      "governed_authority_bytes_mutable": false,
+      "reason": "A predecessor is not merged.",
+      "next_action": "Remain parked."
     }
   ]
 }

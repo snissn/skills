@@ -1,17 +1,27 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "scope": "STRICT_EXAMPLE_PROGRAM",
-  "snapshot_date": "2026-08-06",
+  "snapshot_date": "2026-08-07",
   "limits": {
-    "active_scientific_workstreams": 2,
+    "active_authority_writing_workstreams": 1,
+    "active_qualification_workstreams": 0,
     "active_maintenance_workstreams": 0
+  },
+  "class_slot_groups": {
+    "science": "authority_writing",
+    "formalization": "authority_writing",
+    "qualification": "qualification",
+    "maintenance": "maintenance"
   },
   "occupying_statuses": [
     "ACTIVE"
   ],
   "allowed_statuses": [
     "ACTIVE",
+    "BLOCKED_SCIENTIFIC_REDESIGN",
     "PARKED",
+    "DEFERRED_NARROWED",
+    "SUPERSEDED",
     "COMPLETED"
   ],
   "rules": {
@@ -21,45 +31,59 @@
     "renewed_review_after_scientific_edit_required": true,
     "claim_changing_findings_only_after_default_repair_round": true,
     "downstream_requires_merged_positive_authority": true,
-    "blocked_or_parked_scientific_writes_allowed": false,
-    "maintenance_uses_separate_slot": true,
+    "blocked_or_parked_authority_writes_allowed": false,
+    "theorem_bearing_formalization_uses_authority_slot": true,
+    "qualification_may_not_change_governed_authority_bytes": true,
+    "maintenance_may_not_change_governed_authority_bytes": true,
+    "one_active_writer_per_authority_surface": true,
+    "one_active_qualifier_per_qualified_surface": true,
+    "path_disjoint_parallelism_allowed": true,
+    "governance_transitions_do_not_occupy_slots": true,
+    "reconciliation_is_surface_local_not_global": true,
     "requires_signed_owner_handoff": true
   },
   "workstreams": [
     {
       "id": "strict-active",
-      "class": "science",
+      "class": "formalization",
+      "slot_group": "authority_writing",
       "status": "ACTIVE",
       "owner": "issue-10",
-      "issues": [10],
+      "issues": [
+        10
+      ],
       "prs": [],
-      "load_bearing_question": "Prove the strict program's selected theorem.",
-      "next_action": "Complete one bounded proof packet.",
-      "blocked_descendants": [11]
+      "scientific_writes_allowed": true,
+      "theorem_writes_allowed": true,
+      "governed_authority_bytes_mutable": true,
+      "load_bearing_question": "Formalize the strict theorem.",
+      "next_action": "Compile one bounded proof package.",
+      "blocked_descendants": [
+        11
+      ],
+      "owned_paths": [
+        "strict/proof/"
+      ],
+      "authority_surface": "strict/proof/",
+      "concurrency_key": "authority:strict"
     }
   ],
   "nonactive_workstreams": [
     {
       "id": "strict-parked",
       "class": "science",
+      "slot_group": "authority_writing",
       "status": "PARKED",
       "owner": "issue-12",
-      "issues": [12],
+      "issues": [
+        12
+      ],
       "prs": [],
       "scientific_writes_allowed": false,
-      "reason": "The strict program permits only one active status.",
-      "next_action": "Reactivate through a signed board transition."
-    },
-    {
-      "id": "strict-completed",
-      "class": "science",
-      "status": "COMPLETED",
-      "owner": "issue-13",
-      "issues": [13],
-      "prs": [14],
-      "scientific_writes_allowed": false,
-      "reason": "The scoped result is merged.",
-      "next_action": "No automatic successor."
+      "theorem_writes_allowed": false,
+      "governed_authority_bytes_mutable": false,
+      "reason": "The strict program has one authority slot.",
+      "next_action": "Remain parked."
     }
   ]
 }
