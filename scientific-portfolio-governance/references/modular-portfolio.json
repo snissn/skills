@@ -1,0 +1,43 @@
+{
+  "schema_version": 2,
+  "scope": "MODULAR_EXAMPLE_PROGRAM",
+  "snapshot_date": "2026-08-07",
+  "limits": {
+    "active_authority_writing_workstreams": 1,
+    "active_qualification_workstreams": 1,
+    "active_maintenance_workstreams": 1
+  },
+  "class_slot_groups": {
+    "science": "authority_writing",
+    "formalization": "authority_writing",
+    "qualification": "qualification",
+    "maintenance": "maintenance"
+  },
+  "occupying_statuses": ["ACTIVE", "REVIEW_OR_CI", "FIX_NEEDED"],
+  "allowed_statuses": [
+    "ACTIVE", "REVIEW_OR_CI", "FIX_NEEDED",
+    "BLOCKED_SCIENTIFIC_REDESIGN", "PARKED",
+    "DEFERRED_NARROWED", "SUPERSEDED", "COMPLETED"
+  ],
+  "rules": {
+    "one_scientific_decision_per_pr": true,
+    "workflow_generated_scientific_writes_forbidden": true,
+    "exact_head_identity_required": true,
+    "renewed_review_after_scientific_edit_required": true,
+    "claim_changing_findings_only_after_default_repair_round": true,
+    "downstream_requires_merged_positive_authority": true,
+    "blocked_or_parked_authority_writes_allowed": false,
+    "theorem_bearing_formalization_uses_authority_slot": true,
+    "qualification_may_not_change_governed_authority_bytes": true,
+    "maintenance_may_not_change_governed_authority_bytes": true,
+    "one_active_writer_per_authority_surface": true,
+    "one_active_qualifier_per_qualified_surface": true,
+    "path_disjoint_parallelism_allowed": true,
+    "governance_transitions_do_not_occupy_slots": true,
+    "reconciliation_is_surface_local_not_global": true
+  },
+  "workstream_files": {
+    "active": "modular-portfolio.active.json",
+    "nonactive": "modular-portfolio.nonactive.json"
+  }
+}
