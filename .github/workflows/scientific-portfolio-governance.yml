@@ -34,9 +34,9 @@ jobs:
           test -f scientific-portfolio-governance/SKILL.md
           test -f scientific-portfolio-governance/AGENTS.md
           test -f scientific-portfolio-governance/references/workstream-marker.md
-          grep -Fq "No checked-in portfolio board" scientific-portfolio-governance/SKILL.md
-          grep -Fq "one writer" scientific-portfolio-governance/SKILL.md
-          grep -Fq "No successor activates automatically" scientific-portfolio-governance/SKILL.md
+          grep -Fiq "No checked-in portfolio board" scientific-portfolio-governance/SKILL.md
+          grep -Fiq "one writer" scientific-portfolio-governance/SKILL.md
+          grep -Fiq "No successor activates automatically" scientific-portfolio-governance/SKILL.md
           test ! -e scientific-portfolio-governance/scripts/validate_portfolio.py
           test ! -e scientific-portfolio-governance/scripts/test_validate_portfolio.py
           test ! -e scientific-portfolio-governance/references/portfolio-schema.md
