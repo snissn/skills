@@ -13,8 +13,17 @@
     "qualification": "qualification",
     "maintenance": "maintenance"
   },
-  "occupying_statuses": ["ACTIVE"],
-  "allowed_statuses": ["ACTIVE", "PARKED", "COMPLETED"],
+  "occupying_statuses": [
+    "ACTIVE"
+  ],
+  "allowed_statuses": [
+    "ACTIVE",
+    "BLOCKED_SCIENTIFIC_REDESIGN",
+    "PARKED",
+    "DEFERRED_NARROWED",
+    "SUPERSEDED",
+    "COMPLETED"
+  ],
   "rules": {
     "one_scientific_decision_per_pr": true,
     "workflow_generated_scientific_writes_forbidden": true,
@@ -40,15 +49,21 @@
       "slot_group": "authority_writing",
       "status": "ACTIVE",
       "owner": "issue-10",
-      "issues": [10],
+      "issues": [
+        10
+      ],
       "prs": [],
       "scientific_writes_allowed": true,
       "theorem_writes_allowed": true,
       "governed_authority_bytes_mutable": true,
       "load_bearing_question": "Formalize the strict theorem.",
       "next_action": "Compile one bounded proof package.",
-      "blocked_descendants": [11],
-      "owned_paths": ["strict/proof/"],
+      "blocked_descendants": [
+        11
+      ],
+      "owned_paths": [
+        "strict/proof/"
+      ],
       "authority_surface": "strict/proof/",
       "concurrency_key": "authority:strict"
     }
@@ -60,7 +75,9 @@
       "slot_group": "authority_writing",
       "status": "PARKED",
       "owner": "issue-12",
-      "issues": [12],
+      "issues": [
+        12
+      ],
       "prs": [],
       "scientific_writes_allowed": false,
       "theorem_writes_allowed": false,
