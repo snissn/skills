@@ -9,7 +9,7 @@ description: Coordinate independent scientific agents with one issue-scoped bran
 
 Keep independent scientific work safe without turning coordination into a second project. The owner chooses priorities. GitHub issues define scientific contracts, issue-scoped branches carry mutable work, PRs carry bounded candidates, and `main` carries merged authority.
 
-A checked-in portfolio board, slot pool, class taxonomy, activation PR, schema migration, or workflow-generated scheduler is not required.
+No checked-in portfolio board, slot pool, class taxonomy, activation PR, schema migration, or workflow-generated scheduler is required.
 
 ## Core rules
 
