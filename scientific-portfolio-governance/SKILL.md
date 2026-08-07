@@ -9,28 +9,26 @@ description: Project-manage a scientific repository with bounded authority-writi
 
 Use this skill to control the number, authority type, and concurrency surface of
 active scientific work before theorem construction, formalization,
-qualification, CI, review, or merge workflows proceed. It governs authorization
-and sequencing. It does not decide the mathematics or replace scientific review.
+qualification, CI, review, or merge. It governs authorization and sequencing.
+It does not decide the mathematics or replace scientific review.
 
-Compose with:
+Compose it with:
 
-- `scientific-mainline-workflow` for model, theorem, or obstruction work inside
-  an active `science` lane;
+- `scientific-mainline-workflow` for an active `science` lane;
 - proof-assistant/build skills for an active `formalization` lane;
 - review or CI skills for an active `qualification` lane;
-- `gpt56-pro-issue-graph-executor` for dependency-graph execution across the
-  available pools; and
+- `gpt56-pro-issue-graph-executor` for dependency-graph execution; and
 - repository-specific `AGENTS.md`, source-lock, review, and merge rules.
 
-Repository-local policy overrides these defaults when it is stricter. A local
-policy that is internally contradictory should be repaired by an explicit
-governance transition rather than followed mechanically.
+Repository-local policy overrides these defaults when it is stricter. Repair an
+internally contradictory local policy through an explicit governance transition
+rather than following the contradiction mechanically.
 
 ## Classify by governed writes
 
-Classify the workstream by what authority it is allowed to create or change,
-not by programming language, directory name, or labels such as `Lean`,
-`review`, `integration`, or `maintenance`.
+Classify a lane by what authority it may create or change, not by programming
+language, directory name, or labels such as `Lean`, `review`, `integration`, or
+`maintenance`.
 
 ### `science`
 
@@ -62,7 +60,7 @@ verification, CI/runtime evidence, integration metadata, and qualification
 receipts.
 
 Qualification may not alter the governed authority it qualifies. A source
-defect returns to the source owner or a separately activated replacement.
+defect returns to the source owner or to a separately activated replacement.
 
 Qualification occupies the `qualification` pool.
 
@@ -77,7 +75,7 @@ It occupies the `maintenance` pool.
 
 ## Default limits
 
-Absent repository-specific policy, allow at most:
+Absent stricter repository policy, allow at most:
 
 - three active authority-writing workstreams (`science` + `formalization`);
 - two active qualification workstreams; and
@@ -88,47 +86,48 @@ These are conservative circuit breakers, not scientific dependencies.
 transitions consume no implementation slot when they change no governed
 candidate bytes.
 
-Path-disjoint work on distinct authority or qualification surfaces may proceed
-in parallel. Do not serialize unrelated programs merely because both happen to
-use Lean, CI, or review tooling.
+Path-disjoint work on distinct authority and qualification surfaces may proceed
+in parallel. Do not serialize unrelated programs merely because both use Lean,
+CI, or review tooling.
 
 ## Status taxonomy
 
-Use one repository-defined status when available. Otherwise use:
+Use repository-defined statuses when available. Otherwise use:
 
 - `ACTIVE`: bounded construction or qualification is authorized now;
-- `REVIEW_OR_CI`: governed construction is frozen; exact-head review, CI, or
-  merge closeout is in flight;
+- `REVIEW_OR_CI`: governed construction is frozen and only exact-head review,
+  CI, or merge closeout is in flight;
 - `FIX_NEEDED`: one bounded claim-changing or evidence-path repair is active;
 - `BLOCKED_SCIENTIFIC_REDESIGN`: preserve and redesign, but write no new
   authority to the current identity;
 - `PARKED`: no implementation or review-fix work is authorized;
 - `DEFERRED_NARROWED`: a named future obligation survives, but work is not
   authorized now;
-- `SUPERSEDED`: preserve provenance and extract reusable evidence only;
+- `SUPERSEDED`: preserve provenance and extract reusable evidence only; and
 - `COMPLETED`: a reviewed scoped disposition is merged and no successor opens
   automatically.
 
 Class and status are orthogonal. `maintenance` and `qualification` are classes,
 not statuses.
 
-Every nonactive entry must forbid scientific writes, theorem writes, and
-mutation of governed authority bytes.
+Every board must retain all nonauthorizing states needed to represent blocked,
+parked, deferred, superseded, and completed work. Every nonactive entry must
+forbid scientific writes, theorem writes, and governed-authority mutation.
 
 ## Startup reconciliation
 
 1. Resolve the repository and default-branch SHA through the connected GitHub
    adapter.
-2. Read root and nested `AGENTS.md` files applying to candidate paths.
+2. Read root and nested `AGENTS.md` files for every candidate path.
 3. Locate the human and machine portfolio boards.
 4. Read parent issues, active children, open PRs, exact heads, CI, reviews, and
    latest status comments.
-5. Reconcile exact live state against board authorization.
-6. When they disagree, pause only the conflicting authority or qualification
-   surface and publish a governance reconciliation.
+5. Reconcile live state against board authorization.
+6. Pause only the conflicting authority or qualification surface when they
+   disagree, and publish a governance reconciliation.
 7. Count the three slot groups and identify the scientific critical path.
-8. Check authority surfaces, qualified surfaces, owned paths, and concurrency
-   keys before declaring that two lanes can proceed in parallel.
+8. Check authority surfaces, exact frozen-input identities, owned paths, and
+   concurrency keys before declaring that lanes may proceed in parallel.
 
 An open issue or PR does not imply authorization. A lane is writable only when
 the board or another explicit repository authority says so.
@@ -178,25 +177,33 @@ blocked_descendants:
 exact_next_action:
 ```
 
+`qualified_surfaces` and `frozen_inputs` must bind one-to-one. The canonical
+frozen identity `(issue, PR, merge, manifest)` is globally unique across active
+qualifiers even when two lanes use different human-readable labels.
+
 An active maintenance lane should record a bounded maintenance surface and set
 all governed write flags to false.
 
 ## Surface-level concurrency
 
 Require one active writer per authority surface and concurrency key. Require one
-active qualifier per exact qualified surface.
+active qualifier per human-readable qualified surface and per canonical frozen
+input identity.
+
+Owned paths must be repository-relative and nonoverlapping. Equality and
+ancestor/descendant collisions are conflicts: `proof/` and `proof/package/`
+cannot be owned by separate active lanes.
 
 A qualifier may coexist with an authority writer only when it binds an earlier
-immutable candidate and cannot mutate the active surface. Broad ownership such
-as `.github/workflows/` does not grant every workflow; each PR still needs an
-exact changed-path allowlist.
+immutable candidate and cannot mutate that surface. Broad ownership such as
+`.github/workflows/` grants no implicit ownership; each PR needs an exact
+changed-path allowlist.
 
-Do not hide multiple independent decisions inside one workstream merely to
-bypass the cap.
+Do not hide independent decisions inside one workstream to bypass a cap.
 
 ## Activation gate
 
-Activate a new or resumed workstream only after recording:
+Activate a new or resumed lane only after recording:
 
 ```text
 class and slot group
@@ -216,8 +223,8 @@ names a materially different identity. Open PRs, local tests, constructor
 handoffs, diagnostic packets, and git mergeability are not merged authority.
 
 Merged predecessors do not activate successors automatically. A separate board
-transition is still required, but capacity must not be used to invent a false
-scientific dependency between unrelated programs.
+transition is still required, but capacity must not invent a false scientific
+dependency between unrelated programs.
 
 ## One decision per PR
 
@@ -230,7 +237,7 @@ Separate by default:
 5. downstream parent acceptance.
 
 A combined PR is acceptable only when one exact independent review can
-adjudicate one indivisible decision surface and repository policy allows it.
+adjudicate one indivisible decision surface and repository policy permits it.
 
 Do not append source repairs to a qualification PR or public theorem
 construction to a maintenance PR. Reclassify or split first.
@@ -245,8 +252,8 @@ theorem statements, proof definitions, source-authority ledgers,
 classifications, claim-bearing validators, or scientific manifests that become
 new authority.
 
-The constructor publishes an inspectable commit first. CI is evidence about that
-commit, not its author or reviewer.
+The constructor publishes an inspectable commit first. CI is evidence about
+that commit, not its author or reviewer.
 
 ## Exact-head and immutable-byte gates
 
@@ -259,7 +266,7 @@ Before review credit or merge, align:
 - merge expected head or exact immutable source set.
 
 Any governed edit invalidates prior authority review and qualification.
-Execution-only or representation-only changes require a new exact-head
+Execution-only or representation-only changes require a renewed exact-head
 semantic-equivalence review.
 
 GitHub `mergeable: true` is only a git property.
@@ -284,10 +291,12 @@ Classify a quota, usage-limit, review-limit, rate-limit, capacity, or service
 response as `CODEX_REVIEW_UNAVAILABLE_QUOTA`. It is neither acceptance nor a
 finding.
 
-When repository policy permits, use an independent read-only GPT-5.6 Pro
-subagent or a documented local clean-room `LOCAL_GPT56_REVIEW`. Bind the exact
+When repository policy permits, a workstream may advance from `REVIEW_OR_CI`
+toward merge only when an independent read-only GPT-5.6 Pro subagent or a
+documented clean-room `LOCAL_GPT56_REVIEW` returns `ACCEPT`. Bind the exact
 head or manifest, reviewed paths and claims, checks, findings, disposition, and
-confirmation of no candidate edits.
+confirmation of no candidate edits. `REJECT` and every non-`ACCEPT` disposition
+are not merge-ready.
 
 Other CI, predecessor, branch-protection, thread-resolution, human-review, and
 merge gates remain in force.
@@ -303,10 +312,13 @@ PORTFOLIO.nonactive.json   parked/completed/provenance roster
 PORTFOLIO.md               human board
 ```
 
-A single-file board remains valid. A modular board reduces merge contention by
-allowing active scheduling changes without rewriting the completed roster.
-The validator must materialize all files and enforce global ownership and slot
-invariants.
+A single-file board remains valid. A modular board reduces merge contention.
+Roster paths may be relative to the root board or repository-prefixed; the
+validator resolves them through the board's ancestor directories. Absolute and
+parent-traversal paths are invalid.
+
+The validator must materialize all files and enforce global ownership, surface,
+path, frozen-input, status, and slot invariants.
 
 Use [the v2 portfolio schema](references/portfolio-schema.md) as a starting
 point. Validate with:
@@ -318,8 +330,7 @@ python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
 
 ## Applying status to GitHub
 
-A portfolio transition should update the board and owning issue or PR together.
-Use a receipt containing:
+A transition should update the board and owning issue or PR together. Use:
 
 ```text
 portfolio_status:
@@ -346,9 +357,8 @@ Before ending:
 4. merge or leave a precise external gate;
 5. update affected issue/PR receipts;
 6. report occupied and vacant pools;
-7. identify exactly which lanes may write authority, qualify frozen authority,
-   or perform maintenance; and
-8. name the next board transition required for every parked successor.
+7. identify exactly which lanes may write, qualify, or maintain; and
+8. name the next transition required for every parked successor.
 
 This skill manages authorization and sequencing. It never promotes a scientific
 result or weakens a banked obstruction.
