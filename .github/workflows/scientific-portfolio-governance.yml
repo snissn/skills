@@ -17,27 +17,54 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: scientific-portfolio-governance-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Compile validator and regression tests
         run: |
           python3 -m py_compile \
             scientific-portfolio-governance/scripts/validate_portfolio.py \
             scientific-portfolio-governance/scripts/test_validate_portfolio.py
-      - name: Validate default and stricter reference portfolios
+
+      - name: Validate inline strict and modular reference portfolios
         run: |
           python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
             scientific-portfolio-governance/references/example-portfolio.json
           python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
             scientific-portfolio-governance/references/strict-portfolio.json
-      - name: Exercise fail-closed portfolio invariants
+          python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
+            scientific-portfolio-governance/references/modular-portfolio.json
+
+      - name: Exercise fail-closed authority-write invariants
         run: python3 scientific-portfolio-governance/scripts/test_validate_portfolio.py
+
+      - name: Validate exact skill changed paths
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          allowed='^(AGENTS\.md|scientific-portfolio-governance/.*|\.github/workflows/scientific-portfolio-governance\.yml)$'
+          mapfile -t changed < <(git diff --name-only "$BASE_SHA"...HEAD)
+          test "${#changed[@]}" -gt 0
+          printf '%s\n' "${changed[@]}"
+          for path in "${changed[@]}"; do
+            [[ "$path" =~ $allowed ]] || {
+              echo "unexpected skill path: $path" >&2
+              exit 1
+            }
+          done
+
       - name: Check complete skill diff whitespace
         shell: bash
         env:
