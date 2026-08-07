@@ -54,6 +54,12 @@ classifies work by governed authority writes.
 }
 ```
 
+Every board must retain all five nonauthorizing statuses:
+`BLOCKED_SCIENTIFIC_REDESIGN`, `PARKED`, `DEFERRED_NARROWED`,
+`SUPERSEDED`, and `COMPLETED`. A repository may narrow its allowed occupying
+statuses but may not remove the states needed to represent nonauthorization and
+terminal provenance.
+
 A modular board may replace the two inline arrays with:
 
 ```json
@@ -66,7 +72,8 @@ A modular board may replace the two inline arrays with:
 ```
 
 Paths are resolved relative to the root board. The validator also accepts a
-repository-prefixed path when the root board is inside that repository folder.
+repository-prefixed path by searching the root board's ancestor directories.
+Absolute paths and paths containing `..` are rejected.
 
 ## Active authority-writing entry
 
@@ -126,6 +133,18 @@ repository-prefixed path when the root board is inside that repository folder.
 }
 ```
 
+`qualified_surfaces` and `frozen_inputs` are ordered one-to-one lists of equal
+length. Each surface label at index `i` names the immutable input at index `i`.
+The canonical qualified identity is the tuple:
+
+```text
+(issue, PR, merge, manifest)
+```
+
+That canonical identity must be globally unique across active qualification
+lanes even when two lanes use different human-readable surface labels. A label
+change cannot create a second lawful qualifier for the same exact frozen input.
+
 ## Active maintenance entry
 
 Maintenance uses `slot_group: maintenance`, all governed write flags `false`,
@@ -136,13 +155,23 @@ and a nonempty `maintenance_surface`.
 Every nonactive entry must have a nonoccupying status, all governed write flags
 `false`, a reason, and an exact reactivation or terminal action.
 
+## Ownership and path semantics
+
+Issue and PR ownership is globally unique across inline or modular rosters.
+Concurrency keys and active authority or qualification surfaces are unique.
+
+Owned paths must be repository-relative and pairwise nonoverlapping across
+active workstreams. Equality, ancestor, and descendant collisions are all
+forbidden. For example, active ownership of both `proof/` and
+`proof/package/` is invalid.
+
 ## Semantics
 
 - `science` and `formalization` share the authority-writing cap.
 - `qualification` and `maintenance` have separate caps and may not mutate
   governed authority.
-- issue and PR ownership is globally unique across modular files.
-- concurrency keys and active surfaces are unique.
-- exact duplicate owned paths are forbidden.
+- one active writer exists per authority surface.
+- one active qualifier exists per human-readable qualified surface and per
+  canonical frozen-input identity.
 - live GitHub remains authoritative for exact heads, CI, reviews, merges, and
   issue state; the board controls authorization and slot allocation.
