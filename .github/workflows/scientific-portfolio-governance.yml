@@ -1,4 +1,4 @@
-name: Scientific portfolio governance skill
+name: Scientific workstream coordination policy
 
 on:
   pull_request:
@@ -17,63 +17,38 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: scientific-portfolio-governance-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
-
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Compile validator and regression tests
-        run: |
-          python3 -m py_compile \
-            scientific-portfolio-governance/scripts/validate_portfolio.py \
-            scientific-portfolio-governance/scripts/test_validate_portfolio.py
-
-      - name: Validate inline strict and modular reference portfolios
-        run: |
-          python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
-            scientific-portfolio-governance/references/example-portfolio.json
-          python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
-            scientific-portfolio-governance/references/strict-portfolio.json
-          python3 scientific-portfolio-governance/scripts/validate_portfolio.py \
-            scientific-portfolio-governance/references/modular-portfolio.json
-
-      - name: Exercise fail-closed authority-write invariants
-        run: python3 scientific-portfolio-governance/scripts/test_validate_portfolio.py
-
-      - name: Validate exact skill changed paths
-        if: github.event_name == 'pull_request'
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      - name: Validate lightweight coordination surface
+        shell: bash
         run: |
           set -euo pipefail
-          allowed='^(AGENTS\.md|scientific-portfolio-governance/.*|\.github/workflows/scientific-portfolio-governance\.yml)$'
-          mapfile -t changed < <(git diff --name-only "$BASE_SHA"...HEAD)
-          test "${#changed[@]}" -gt 0
-          printf '%s\n' "${changed[@]}"
-          for path in "${changed[@]}"; do
-            [[ "$path" =~ $allowed ]] || {
-              echo "unexpected skill path: $path" >&2
-              exit 1
-            }
-          done
+          test -f scientific-portfolio-governance/SKILL.md
+          test -f scientific-portfolio-governance/AGENTS.md
+          test -f scientific-portfolio-governance/references/workstream-marker.md
+          grep -Fiq "No checked-in portfolio board" scientific-portfolio-governance/SKILL.md
+          grep -Fiq "one writer" scientific-portfolio-governance/SKILL.md
+          grep -Fiq "No successor activates automatically" scientific-portfolio-governance/SKILL.md
+          test ! -e scientific-portfolio-governance/scripts/validate_portfolio.py
+          test ! -e scientific-portfolio-governance/scripts/test_validate_portfolio.py
+          test ! -e scientific-portfolio-governance/references/portfolio-schema.md
 
-      - name: Check complete skill diff whitespace
+      - name: Check complete diff whitespace
         shell: bash
         env:
-          PULL_REQUEST_BASE: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PUSH_BEFORE: ${{ github.event.before }}
         run: |
           set -euo pipefail
-          base="$PULL_REQUEST_BASE"
+          base="$BASE_SHA"
           if [[ -z "$base" || "$base" =~ ^0+$ ]]; then
             base="$PUSH_BEFORE"
           fi

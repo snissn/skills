@@ -1,19 +1,4 @@
 {
-  "schema_version": 2,
-  "nonactive_workstreams": [
-    {
-      "id": "modular-parked",
-      "class": "science",
-      "slot_group": "authority_writing",
-      "status": "PARKED",
-      "owner": "issue-22",
-      "issues": [22],
-      "prs": [],
-      "scientific_writes_allowed": false,
-      "theorem_writes_allowed": false,
-      "governed_authority_bytes_mutable": false,
-      "reason": "The predecessor is not merged.",
-      "next_action": "Remain parked."
-    }
-  ]
+  "status": "DEPRECATED_NONAUTHORITATIVE",
+  "reason": "Slot-based portfolio scheduling was retired; see ../SKILL.md and workstream-marker.md."
 }

@@ -1,41 +1,18 @@
-# Scientific portfolio governance policy
+# Lightweight scientific workstream coordination policy
 
-This file supplements the repository root `AGENTS.md` for
-`scientific-portfolio-governance/`.
+This directory must stay small and coordination-focused.
 
-## Authority-write taxonomy
+## Required behavior
 
-The skill and fixtures must classify work by governed writes:
+- Do not require a checked-in live scheduler, slot pool, class taxonomy, activation PR, modular roster, or schema migration by default.
+- Treat explicit owner direction or a clear issue assignment as sufficient to start a dependency-ready lane.
+- Require one writer per issue-scoped branch and check same-decision or owned-path overlap before writing.
+- Allow path-disjoint work to proceed in parallel.
+- Do not pause unrelated branches because `main` advanced.
+- Keep one bounded scientific decision per PR by default.
+- Preserve merged-predecessor gates declared by the scientific issue.
+- Preserve proportional exact-candidate review and the documented GPT-5.6 Pro quota fallback.
+- Never use a workflow to author or push scientific or governance authority.
+- Never activate a successor automatically.
 
-- `science` and `formalization` share the authority-writing pool;
-- `qualification` validates immutable authority and may not repair it;
-- `maintenance` is non-authority engineering.
-
-A theorem-bearing formalization may not be represented as maintenance. A
-qualification lane may not enable scientific, theorem, source-authority,
-classification, or governed-manifest writes.
-
-Generic validators and examples must fail closed on those errors and on
-multiple active writers or qualifiers for the same surface.
-
-## Review fallback
-
-Portfolio boards and status comments may record
-`CODEX_REVIEW_UNAVAILABLE_QUOTA` when GitHub `@codex review` cannot run because
-of quota, usage-limit, review-limit, rate-limit, capacity, or service errors.
-That status is reviewer unavailability, not review success or scientific
-failure.
-
-A workstream may move from `REVIEW_OR_CI` to a merge-ready review disposition
-only after an exact-head GPT-5.6 Pro fallback authorized by repository policy
-returns `ACCEPT`:
-
-- `INDEPENDENT_GPT56_SUBAGENT`; or
-- `LOCAL_GPT56_REVIEW` when no separate subagent is available and a clean-room,
-  read-only review phase is documented.
-
-The board or owning PR must retain the quota evidence, exact candidate identity,
-reviewer mode, findings disposition, and final `ACCEPT` or `REJECT`. All other
-CI, branch-protection, predecessor, human/external-review, thread-resolution,
-and merge gates remain in force. Any later governed edit returns the workstream
-to review.
+The optional issue-comment marker in `references/workstream-marker.md` is coordination metadata only and creates no scientific authority.

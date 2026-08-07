@@ -1,23 +1,4 @@
 {
-  "schema_version": 2,
-  "workstreams": [
-    {
-      "id": "modular-formalization",
-      "class": "formalization",
-      "slot_group": "authority_writing",
-      "status": "ACTIVE",
-      "owner": "issue-20",
-      "issues": [20],
-      "prs": [],
-      "scientific_writes_allowed": true,
-      "theorem_writes_allowed": true,
-      "governed_authority_bytes_mutable": true,
-      "load_bearing_question": "Formalize one modular theorem surface.",
-      "next_action": "Compile the exact proof package.",
-      "blocked_descendants": [21],
-      "owned_paths": ["modular/proof/"],
-      "authority_surface": "modular/proof/",
-      "concurrency_key": "authority:modular-proof"
-    }
-  ]
+  "status": "DEPRECATED_NONAUTHORITATIVE",
+  "reason": "Slot-based portfolio scheduling was retired; see ../SKILL.md and workstream-marker.md."
 }
