@@ -260,6 +260,11 @@ Before declaring any PR mergeable, and especially a dependent PR:
 
 Merge in topological order. If a descendant reaches implementation completion early, keep it blocked as `mergeable-candidate` until predecessors merge and final revalidation passes.
 
+After each merged node is resolved, apply `/skill:github-pr-mergeable`
+post-merge cleanup as soon as no descendant, recovery handoff, or provenance
+rule still depends on its worktree or branch. Do not defer all cleanup until the
+whole graph finishes.
+
 ## Commands / Examples
 
 Inventory issues:
@@ -325,4 +330,5 @@ Return:
 - dependency-ready events and sync windows used;
 - merges completed in topological order with merge commits;
 - tests/benchmarks by issue;
+- worktree, local-branch, and GitHub remote-branch cleanup status by issue;
 - blockers, risks, deferred follow-ups, and cleanup recommendations.

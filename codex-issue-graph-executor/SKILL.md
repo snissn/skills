@@ -172,6 +172,9 @@ execute locally and record why. Do not pretend work was delegated.
 10. Use `github-pr-mergeable` for each PR before final merge, including its deterministic Codex classifier across issue comments, formal reviews, and threads. Apply the node's effective repository policy when deciding whether Codex is required. If the classifier reports lifetime churn exhaustion, stop at `review-scope-reset` rather than creating another head/request loop. Merge only after latest-head CI/reviews are acceptable under that policy, required evidence is current, and all predecessors are merged.
 11. Merge in topological order. After each merge, update descendants to the
     final base and rerun their required checks before declaring them mergeable.
+12. When a merged node is resolved and no descendant or provenance obligation
+    still needs its branch/worktree, apply `github-pr-mergeable` post-merge
+    cleanup immediately rather than accumulating completed local streams.
 
 ## Dependency Ready
 
@@ -205,6 +208,7 @@ Report:
 - Agent routing used for coordinator, implementation, inventory, and independent
   review, including any requested-versus-actual fallback.
 - Any deferred nodes with blocker, owner, and next action.
+- Per-node local worktree, local branch, and GitHub remote-branch cleanup status.
 - Durable graph-state location and whether any fallback execution path was used.
 
 Read `references/worker-prompts.md` before dispatching workers. Read

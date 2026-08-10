@@ -204,6 +204,8 @@ Adjust merge method to repo convention if needed. After merge:
 - fetch/update base refs;
 - comment/update relevant tracker if required;
 - tell any downstream managers their base changed, if they exist;
+- apply `/skill:github-pr-mergeable` post-merge cleanup once no dependent work
+  or recovery/provenance obligation needs the completed worktree or branch;
 - start the next issue manager from the updated base.
 
 If merge fails due to new conflicts/checks/reviews, send back to the manager and resume the review/fix loop.
@@ -244,4 +246,4 @@ After the list is complete or paused, report:
 - conformance/fallback evidence by foundation issue where relevant;
 - CI and AI review status by issue;
 - follow-up issues/deferrals created or updated;
-- Orca worktrees/terminals created and cleanup recommendations.
+- Orca worktrees/terminals created and completed or deferred cleanup status.

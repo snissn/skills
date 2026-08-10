@@ -499,6 +499,14 @@ real dependency edges, and choose the highest-priority newly unblocked issue.
 A failed selected realization is not a family no-go; do not reopen frozen
 dependencies without a demonstrated contradiction.
 
+After integration and issue resolution, remove the isolated worktree and prune
+Git worktree metadata once no live execution, descendant, recovery handoff, or
+provenance obligation uses it. Delete the merged local topic branch and, for a
+GitHub-backed repository, its remote branch when repository policy permits and
+all scientific provenance and external artifacts remain durably recoverable.
+Never delete the primary checkout, a protected/shared branch, or scientific
+evidence. Record completed and deferred cleanup in the disposition report.
+
 ## Failure Handling
 
 Request a user-level decision only when work would change a frozen identity,

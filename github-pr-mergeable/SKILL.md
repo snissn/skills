@@ -362,6 +362,22 @@ Preferred batch workflow:
 
 Merge only when the selected operating mode is `coordinator-merge`, repo policy permits it, and the user has authorized it. Otherwise, do not merge directly; hand off mergeable evidence to the coordinator or human reviewer.
 
+## Post-Merge Cleanup
+
+After an authorized merge and only when the ticket or PR is resolved, clean up
+the completed local stream:
+
+- verify no dependent work still uses the branch or worktree, no uncommitted or
+  unpushed work needs preservation, and no recovery/provenance rule requires it;
+- remove the issue worktree with `git worktree remove <path>`, run `git worktree
+  prune`, and delete the merged local branch;
+- for a GitHub-backed repository, use `gh pr merge --delete-branch` during the
+  merge or delete the remote topic branch afterward when repository policy
+  permits it; never delete a default, protected, shared, or reused branch; and
+- never remove the primary checkout, a dirty user-owned worktree, active
+  descendant snapshots, or durable scientific artifacts. Record completed and
+  deferred cleanup in the final report.
+
 ## Final Response
 
 When reporting back, provide:
@@ -371,7 +387,7 @@ When reporting back, provide:
 - latest-head CI status;
 - AI review status;
 - tests/benchmarks run;
-- any local branches/worktrees created;
+- local branches/worktrees created and their cleanup status;
 - any risks that remain.
 
 Keep it evidence-backed and do not overclaim.
