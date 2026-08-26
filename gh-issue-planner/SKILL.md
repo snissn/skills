@@ -37,7 +37,7 @@ Do not create an umbrella, dependency graph, milestone ledger, or tracker-form i
 ## Shared Workflow
 
 1. Identify the requested operating mode and target repository with user input, `gh repo view`, or the current checkout.
-2. Inspect any named reference issue and only the adjacent live state needed to classify the work. Use `gh issue view <number> --repo <owner>/<repo> --json number,title,body,url,state,labels` plus live linked state as needed. A new candidate without a reference issue is valid input.
+2. Inspect any named reference issue, pull request, or review discussion and only the adjacent live state needed to classify the work. Use `gh issue view <number> --repo <owner>/<repo> --json number,title,body,url,state,labels` for issues, or `gh pr view` plus live review-thread state for PR-derived work. A new candidate without a reference artifact is valid input.
 3. Run the [Issue Shape Preflight](#issue-shape-preflight), then follow only the matching workflow below.
 
 ## Standalone Issue Workflow
