@@ -1,59 +1,73 @@
 ---
-name: gh-tracker-issue
-description: Design, draft, create, update, reorganize, or review durable GitHub tracker issues and dependency graphs for multi-PR engineering work. Use when Codex needs to model parent/child issue graphs, decide whether to reuse or supersede existing trackers, or author implementation trackers with goals, boundaries, milestones, test-first development, contextual performance evidence, branch/PR process, AI review, CI handling, and completion criteria.
+name: gh-issue-planner
+description: Inspect, plan, draft, create, update, reorganize, or review durable GitHub issues. Use for either a focused standalone engineering ticket or a multi-PR tracker and dependency graph, including deciding which shape fits and how existing issues should be reused or dispositioned.
 ---
 
-# GitHub Tracker Issue
+# GitHub Issue Planner
 
-Use this skill for durable GitHub issues that are meant to coordinate multi-PR engineering work, not for small bug reports or one-off tasks.
+Use this skill to choose and produce the smallest durable GitHub issue structure that fits the work: one focused issue or a multi-PR tracker graph.
 
 ## Operating Modes And Write Boundary
 
 Match the user's requested mode and do not advance beyond it automatically:
 
-- **Inspect/review:** read live issue state and report findings; do not draft or write.
-- **Graph sketch:** propose nodes, dependencies, gate ownership, and existing-issue dispositions; do not write to GitHub.
+- **Inspect/review:** read live issue state, classify the issue shape, and report findings; do not draft or write.
+- **Structure sketch:** propose a standalone scope or tracker graph; do not write to GitHub.
 - **Local draft:** prepare issue bodies or graph artifacts for review; do not write to GitHub.
 - **Apply:** create or edit GitHub issues only when the user explicitly requests those writes.
 
 For graph work, preserve the distinction between a clean execution graph and historical/evidence issues. A request to plan, synthesize, sketch, or review is not authorization to create or edit issues.
 
-## Tracker Fit Preflight
+## Issue Shape Preflight
 
 Before loading the tracker template or designing an issue graph, classify the requested work:
 
 - **Standalone issue:** one repository, one coherent outcome, normally one PR, and no independently owned dependency or evidence gates.
 - **Tracker:** multiple independently mergeable PRs, cross-repository sequencing, existing-issue reorganization, or multiple authoritative completion gates.
 
-If the work is standalone, stop the tracker workflow after reporting:
+Route standalone work to the [Standalone Issue Workflow](#standalone-issue-workflow) and tracker work to the [Tracker Workflow](#tracker-workflow). In inspect/review mode, report:
 
 - the fit decision and rationale;
 - relevant existing-issue dispositions;
 - coordination or ordering constraints; and
-- a compact recommended scope for a normal issue.
+- the recommended standalone scope or tracker shape.
 
 Do not create an umbrella, dependency graph, milestone ledger, or tracker-form issue for standalone work. Explicit invocation of this skill does not require forcing a standalone request into tracker form.
 
-## Workflow
+## Shared Workflow
 
 1. Identify the requested operating mode and target repository with user input, `gh repo view`, or the current checkout.
 2. Inspect any named reference issue and only the adjacent live state needed to classify the work. Use `gh issue view <number> --repo <owner>/<repo> --json number,title,body,url,state,labels` plus live linked state as needed. A new candidate without a reference issue is valid input.
-3. Run the [Tracker Fit Preflight](#tracker-fit-preflight). For standalone work, return the compact fit report and do not continue into tracker drafting or apply steps.
-4. Read repo-local governance before drafting when available: `AGENTS.md`, `CONTRIBUTING.md`, PR templates, branch policy docs, and workstream-specific roadmap files. Repo-local rules override this skill.
-5. Load a repo extension from [Repo Extensions](#repo-extensions) when one matches the repository; otherwise use the generic workflow.
-6. For umbrella, dependency-graph, reorganization, or supersession work, read [references/issue-graph-planning.md](references/issue-graph-planning.md) and produce the graph preflight before drafting issue bodies.
-7. Classify each existing issue as retain, narrow, supersede, close, or defer. Assign every completion gate exactly one authoritative owner.
-8. Identify the exact workstream, current evidence, non-goals, milestone order, owner boundaries, expected proof, and adjacent in-flight work that must not be disturbed.
-9. Read [references/tracker-issue-template.md](references/tracker-issue-template.md) for the reusable issue structure.
-10. Draft with concrete, current facts. Do not overstate what the code proves or convert every reported metric into an optimization target.
-11. For every PR-bearing milestone, define the behavior or invariant that drives its test-first loop. Require a failing test before implementation, or an explicit exception with the alternative correctness evidence.
-12. Classify each PR or milestone as **not performance-relevant**, **possibly performance-relevant**, **performance-sensitive**, or **performance-objective**. State the evidence required for that class and the metrics that match the affected path.
-13. Include checkbox milestones that can serve as a work log, plus test-first start, implementation, and close phases for every PR.
-14. Include required tests and context-relevant benchmarks for each milestone. Performance-sensitive and performance-objective milestones must require a before/after comparison against the pre-change baseline, not only a current benchmark snapshot, and must treat material regressions as blocking until optimized or explicitly accepted.
-15. For performance-optimization trackers, define explicit **north-star gates** and per-milestone **exit gates** with current value, target value, required evidence, and the action if the gate fails. Classify non-target metrics as guardrails, observational metrics, or explicitly accepted gaps.
-16. Include branch, PR, AI review, and CI process requirements when the workstream requires mergeable PRs.
-17. In apply mode, create or update issues with `gh issue create` or `gh issue edit`, link every child to its parent, backfill the parent's graph ledger, and add concise disposition comments to superseded issues.
-18. Verify the live graph after writes, then return issue URLs, repo, labels, edges, existing-issue dispositions, gate ownership, and main scope boundaries.
+3. Run the [Issue Shape Preflight](#issue-shape-preflight), then follow only the matching workflow below.
+
+## Standalone Issue Workflow
+
+Do not load the tracker template or design a dependency graph.
+
+1. Read repo-local governance before drafting when available. Repo-local rules override this skill.
+2. From concrete current evidence, define a concise title, problem, goal, scope, non-goals, acceptance criteria, risk-relevant tests or other proof, and related-issue or ordering constraints. Do not overstate what the code or linked evidence proves.
+3. Reuse or update an existing issue when it already owns the outcome; otherwise recommend or draft one new issue.
+4. Add only validation, performance evidence, branch, PR, review, or CI requirements that are relevant to this issue. Do not add tracker milestones or process boilerplate.
+5. In apply mode, create or update the issue with `gh issue create` or `gh issue edit` after checking available labels.
+6. Verify any write, then return the issue URL, disposition, scope boundaries, and coordination constraints.
+
+## Tracker Workflow
+
+1. Read repo-local governance before drafting when available: `AGENTS.md`, `CONTRIBUTING.md`, PR templates, branch policy docs, and workstream-specific roadmap files. Repo-local rules override this skill.
+2. Load a repo extension from [Repo Extensions](#repo-extensions) when one matches the repository; otherwise use the generic workflow.
+3. For umbrella, dependency-graph, reorganization, or supersession work, read [references/issue-graph-planning.md](references/issue-graph-planning.md) and produce the graph preflight before drafting issue bodies.
+4. Classify each existing issue as retain, narrow, supersede, close, or defer. Assign every completion gate exactly one authoritative owner.
+5. Identify the exact workstream, current evidence, non-goals, milestone order, owner boundaries, expected proof, and adjacent in-flight work that must not be disturbed.
+6. Read [references/tracker-issue-template.md](references/tracker-issue-template.md) for the reusable issue structure.
+7. Draft with concrete, current facts. Do not overstate what the code proves or convert every reported metric into an optimization target.
+8. For every PR-bearing milestone, define the behavior or invariant that drives its test-first loop. Require a failing test before implementation, or an explicit exception with the alternative correctness evidence.
+9. Classify each PR or milestone as **not performance-relevant**, **possibly performance-relevant**, **performance-sensitive**, or **performance-objective**. State the evidence required for that class and the metrics that match the affected path.
+10. Include checkbox milestones that can serve as a work log, plus test-first start, implementation, and close phases for every PR.
+11. Include required tests and context-relevant benchmarks for each milestone. Performance-sensitive and performance-objective milestones must require a before/after comparison against the pre-change baseline, not only a current benchmark snapshot, and must treat material regressions as blocking until optimized or explicitly accepted.
+12. For performance-optimization trackers, define explicit **north-star gates** and per-milestone **exit gates** with current value, target value, required evidence, and the action if the gate fails. Classify non-target metrics as guardrails, observational metrics, or explicitly accepted gaps.
+13. Include branch, PR, AI review, and CI process requirements when the workstream requires mergeable PRs.
+14. In apply mode, create or update issues with `gh issue create` or `gh issue edit`, link every child to its parent, backfill the parent's graph ledger, and add concise disposition comments to superseded issues.
+15. Verify the live graph after writes, then return issue URLs, repo, labels, edges, existing-issue dispositions, gate ownership, and main scope boundaries.
 
 ## Repo Extensions
 
@@ -68,7 +82,7 @@ Repo extensions preserve project-specific conventions without hardcoding them in
 - Only use labels that already exist unless the user has explicitly authorized label management.
 - When label management is authorized, create narrowly scoped labels needed by the tracker before creating or updating issues. Use clear descriptions and stable colors; do not rename or delete existing labels unless explicitly requested.
 
-## Rules
+## Tracker Rules
 
 - Keep the issue body authoritative and buildoutable.
 - Separate product goals from substrate work and experiments.
@@ -105,10 +119,7 @@ Prefer a temp body file and `--body-file` for long issues:
 ```sh
 gh issue create \
   --repo <owner>/<repo> \
-  --title "<tracker title>" \
-  --label enhancement \
-  --label performance \
-  --label tracking \
+  --title "<issue title>" \
   --body-file /tmp/<issue-body>.md
 ```
 

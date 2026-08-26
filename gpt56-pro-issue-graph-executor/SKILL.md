@@ -47,7 +47,7 @@ Resolve missing repository identity from the parent issue or current checkout. A
 
 Load and apply these skills when available:
 
-- `gh-tracker-issue` for tracker structure, authoritative gate ownership, and graph mutation;
+- `gh-issue-planner` for tracker structure, authoritative gate ownership, and graph mutation;
 - `github-pr-mergeable` for latest-head CI, review, performance, and merge gates;
 - `github:gh-fix-ci` for GitHub Actions diagnosis;
 - `github:gh-address-comments` for actionable PR review findings;

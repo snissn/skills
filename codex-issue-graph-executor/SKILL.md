@@ -41,7 +41,7 @@ explicitly narrowed the request to planning or no-merge execution.
 - `github:gh-fix-ci` when GitHub Actions failures need targeted diagnosis.
 - `github:gh-address-comments` when unresolved PR review threads must be
   inspected and fixed.
-- `gh-tracker-issue` when a graph needs a durable parent tracker or issue body
+- `gh-issue-planner` when a graph needs a durable parent tracker or issue body
   updates before implementation.
 
 At startup, verify which helper skills/tools are available and record any

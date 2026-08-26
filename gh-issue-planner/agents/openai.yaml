@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Issue Planner"
+  short_description: "Plan standalone issues and tracker graphs"
+  default_prompt: "Use $gh-issue-planner to inspect the repository, choose a standalone issue or tracker graph, and draft or apply the appropriate GitHub issue structure."

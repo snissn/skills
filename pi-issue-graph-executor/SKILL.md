@@ -63,7 +63,7 @@ Load these skills when available:
   performance evidence, merge execution, and cleanup. Run its bundled
   `scripts/codex_review_gate.py`; do not infer Codex completion from formal
   reviews alone.
-- `gh-tracker-issue` when a durable parent tracker or dependency ledger needs
+- `gh-issue-planner` when a durable parent tracker or dependency ledger needs
   creation or restructuring.
 - `github:gh-fix-ci` for targeted GitHub Actions diagnosis.
 - `github:gh-address-comments` for unresolved review-thread work.

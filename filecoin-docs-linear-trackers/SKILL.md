@@ -20,7 +20,7 @@ Use this skill when the user asks to:
 - comment Linear issues with PR links, validation evidence, or closeout status.
 
 Do not use this skill for generic GitHub tracker issues; use
-`gh-tracker-issue` for those. Do not use it for non-Filecoin Docs Linear work
+`gh-issue-planner` for those. Do not use it for non-Filecoin Docs Linear work
 unless the user explicitly asks to adapt the workflow.
 
 ## References

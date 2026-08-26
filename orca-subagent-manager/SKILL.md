@@ -176,7 +176,7 @@ Use `orca terminal send --interrupt` only when a subagent is clearly stuck or ru
 
 ## When To Create Real GitHub Child Issues
 
-Create or update GitHub tracker issues only when the subtask is durable beyond the current PR, has independent acceptance criteria, or needs product/backlog tracking. Use `/skill:gh-tracker-issue` for that. Otherwise, Orca orchestration tasks and manager checklists are enough.
+Create or update GitHub issues only when the subtask is durable beyond the current PR, has independent acceptance criteria, or needs product/backlog tracking. Use `/skill:gh-issue-planner` for that. Otherwise, Orca orchestration tasks and manager checklists are enough.
 
 ## Final Report Format
 

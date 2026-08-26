@@ -1,4 +1,0 @@
-interface:
-  display_name: "GitHub Tracker Issue"
-  short_description: "Plan and create repo-aware GitHub issue graphs"
-  default_prompt: "Use $gh-tracker-issue to inspect, sketch, draft, or apply a repo-aware GitHub tracker issue graph with explicit dependencies, gate ownership, accepted gaps, test-first PR phases, contextual performance classification and evidence, branch/PR process, mature-PR-gated AI review requirements, and completion criteria."
