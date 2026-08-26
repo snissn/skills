@@ -28,9 +28,10 @@ Land shared cache invalidation for API read paths
 
 Before using the body structure:
 
-1. Confirm whether the request is inspect/review, graph sketch, local draft, or GitHub apply.
-2. For umbrella or migration work, complete the preflight in [issue-graph-planning.md](issue-graph-planning.md).
-3. Do not write to GitHub unless apply mode was explicitly requested.
+1. Confirm the request passed the skill's Tracker Fit Preflight. A standalone issue must not use this template.
+2. Confirm whether the request is inspect/review, graph sketch, local draft, or GitHub apply.
+3. For umbrella or migration work, complete the preflight in [issue-graph-planning.md](issue-graph-planning.md).
+4. Do not write to GitHub unless apply mode was explicitly requested.
 
 ## Body Structure
 
