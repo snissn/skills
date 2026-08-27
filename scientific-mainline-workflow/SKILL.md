@@ -130,6 +130,20 @@ Absent a repository-specific cap, a non-execution analytic candidate gets one in
 See [the status taxonomy](references/execution-status-taxonomy.md) for the
 required execution/disposition separation.
 
+## Retained Execution Evidence
+
+When an expensive run will be retained as scientific or performance evidence:
+
+- review and land its harness/schema before collection; focused pre-review MUST cover provenance binding, concurrency/isolation, fail-closed validation, and public evidence wording;
+- freeze exact product/scientific-runtime and harness/schema commits plus explicit subtree/blob identities after that review. Product or harness drift invalidates affected evidence;
+- where repository dependency policy permits, order separate product/scientific-definition, harness/schema, and artifact-only result commits or PRs. If decision code is part of the scientific identity, keep the required joint freeze rather than forcing an artificial split;
+- prefer a dedicated high-capacity runner with persistent build cache and durable artifact storage. Record `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` and the actual fallback instead of implying unavailable infrastructure exists;
+- classify candidate failures separately from proven unrelated CI flakes, rerun only affected gates, and retain current-head merge/integration gates; and
+- accept artifact-only descendants only when explicit runtime/harness subtree identities and implementation blob provenance match the freeze exactly.
+
+Apply the canonical retained-evidence policy from `github-pr-mergeable` when
+that skill is composed.
+
 ## Critical-Path Discipline
 
 Name the single load-bearing question. Separate blockers, parallel controls,

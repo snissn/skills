@@ -187,6 +187,12 @@ A representation-only or execution-only repair may use a focused semantic
 review, but the repair must still demonstrate that all scientific values and
 decision surfaces are unchanged.
 
+Artifact-only descendants may retain the accepted candidate evidence only when
+their recorded runtime/scientific and harness/schema subtree identities plus
+implementation blob provenance exactly match the accepted freeze. Any product,
+scientific-runtime, or harness/schema drift invalidates affected evidence and
+requires renewed review, freeze, and collection.
+
 ## Base-drift rule
 
 Immediately before integration, fetch the remote and compare the accepted base

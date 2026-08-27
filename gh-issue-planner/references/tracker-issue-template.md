@@ -149,6 +149,12 @@ Changes to hot paths, storage or wire layouts, encoding, concurrency, I/O, cachi
 
 Hard numeric thresholds require a stable harness, fixture, repetition policy, and noise tolerance. If those do not exist yet, require reproducible human-reviewed evidence and make harness stabilization an owned prerequisite; do not invent precise automation gates.
 
+## Retained-Evidence Velocity
+
+For expensive retained runs, define the dependency chain `product -> reviewed/landed harness or schema -> artifact-only evidence` where repository policy permits. Require pre-review of provenance, concurrency/isolation, fail-closed validation, and wording; freeze exact product/runtime and harness/schema subtree/blob identities before collection. Prefer a dedicated high-capacity runner, persistent build cache, and durable storage, or record typed `INFRASTRUCTURE_UNAVAILABLE` plus the actual fallback.
+
+Unrelated CI flakes do not invalidate retained evidence when classified with evidence; rerun only affected gates and still require current-head merge gates. Artifact-only descendants remain valid only under explicit product/runtime, harness/schema, and implementation-blob identity; any product or harness drift invalidates affected evidence.
+
 ## Branch And PR Policy
 
 State the repo-specific policy discovered from `AGENTS.md`, `CONTRIBUTING.md`, PR templates, or equivalent files.

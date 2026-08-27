@@ -96,6 +96,12 @@ Predecessor #A changed:
 - A worker waiting on hosted CI does not justify another worker for the same
   node; the coordinator polls CI and uses the lane for useful independent work.
 
+## Retained Evidence Gate
+
+For retained performance evidence, order product, reviewed/landed harness or schema, then artifact-only evidence nodes where dependency policy permits. Complete focused provenance, concurrency/isolation, fail-closed validation, and wording review before freezing exact runtime and harness subtree/blob identities and starting expensive collection. Prefer a dedicated high-capacity runner, persistent build cache, and durable artifact storage; otherwise record typed `INFRASTRUCTURE_UNAVAILABLE` and the real fallback.
+
+Classify proven unrelated CI flakes separately and rerun only affected gates while preserving current-head merge gates. Artifact-only descendants remain valid only under exact runtime/harness subtree and implementation-blob identity; product or harness drift invalidates affected evidence.
+
 ## Merge Gate
 
 A node can be declared mergeable only when:

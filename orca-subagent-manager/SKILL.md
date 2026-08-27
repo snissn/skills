@@ -18,6 +18,13 @@ Use this skill when a task should be delegated to multiple Pi agents in Orca-man
 - Managers must treat insufficient improvement against explicit optimization gates as blocking too. A neutral/no-regression result is not enough unless the chunk is instrumentation/safety-only; otherwise iterate, profile, or propose a linked blocker issue before claiming readiness.
 - Default user intent is to merge PRs after mergeable gates pass, but managers/subagents normally do not merge directly. The coordinator owns merge execution unless it explicitly delegates merge authority.
 
+## Retained Evidence Work
+
+- Apply the canonical Retained Evidence Velocity policy linked from `/skill:github-pr-mergeable`.
+- Where dependency policy permits, split and order product, reviewed/landed harness or schema, and artifact-only evidence work. Focused pre-review MUST cover provenance, concurrency/isolation, fail-closed validation, and wording; freeze exact runtime and harness subtree/blob identities before expensive collection.
+- Prefer a dedicated high-capacity runner with persistent build cache and durable artifact storage. Otherwise record `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` and the actual fallback; never invent infrastructure.
+- Classify candidate failures separately from proven unrelated CI flakes, rerun only affected gates, and require current-head merge gates. Artifact-only descendants preserve evidence only under exact runtime/harness subtree and implementation-blob identity; product or harness drift invalidates affected evidence.
+
 ## Thinking-Level Policy
 
 Managers must justify subagent thinking levels in the plan.

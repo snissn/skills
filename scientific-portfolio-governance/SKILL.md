@@ -57,6 +57,12 @@ A handoff preserves the exact remote branch and head, WIP status, changed paths,
 
 Keep scientific construction, qualification engineering, and parent synthesis separate when they are distinct decisions. Hosted Codex quota may use the repository-approved exact-candidate GPT-5.6 Pro fallback. Git mergeability alone is not scientific acceptance.
 
+## Retained evidence lanes
+
+- Where dependency policy permits, keep product/scientific-runtime, reviewed and landed harness/schema, and artifact-only evidence changes in that order and in separate commits or PRs. Complete focused review of provenance, concurrency/isolation, fail-closed validation, and evidence wording before freezing exact source and harness subtree/blob identities and starting expensive collection.
+- Prefer a dedicated high-capacity runner with persistent build cache and durable artifact storage. Record typed `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` and the actual fallback; do not invent infrastructure.
+- Treat proven unrelated CI flakes independently and rerun only affected gates while retaining current-head merge gates. Artifact-only descendants preserve evidence only under exact runtime/harness subtree and implementation-blob identity; product or harness drift invalidates affected evidence.
+
 ## Stale coordination metadata
 
 When issue text, old boards, or comments disagree, do not globally halt unrelated work. Resolve the affected lane from live branch, PR, and merge facts plus the owner's current instruction. Archive or correct stale scheduling metadata separately; never rewrite scientific history to make coordination prose agree.

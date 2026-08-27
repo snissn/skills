@@ -61,6 +61,13 @@ If dependency edges are ambiguous, ask a concise clarifying question before disp
 - Insufficient improvement is also a blocker for optimization nodes: if a node's stated gate or the parent north-star metric does not move enough, the coordinator must not treat the node as complete merely because CI/reviews pass. Keep it `fix-needed`, revise the implementation, or create/link a replacement blocker before successors/final gates proceed.
 - Do not "give up" by closing a graph as insufficient unless the user explicitly asks to stop. Default behavior is iterative: diagnose the failed gate, update the manifest, dispatch fixes or new blocker nodes, and continue until the gate passes, is explicitly waived, or the user stops execution.
 
+## Retained Evidence Nodes
+
+- Apply the canonical Retained Evidence Velocity policy linked from `/skill:github-pr-mergeable`.
+- Where dependency policy permits, model `product -> reviewed/landed harness or schema -> artifact-only evidence`. Focused pre-review MUST cover provenance, concurrency/isolation, fail-closed validation, and wording; freeze exact runtime and harness subtree/blob identities before expensive collection.
+- Prefer a dedicated high-capacity runner with persistent build cache and durable artifact storage. Otherwise record `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` and the actual fallback; never invent infrastructure.
+- Classify candidate failures separately from proven unrelated CI flakes, rerun only affected gates, and require current-head merge gates. Artifact-only descendants preserve evidence only under exact runtime/harness subtree and implementation-blob identity; product or harness drift invalidates affected evidence.
+
 ## Workflow
 
 ### 1. Load contracts and inspect requirements

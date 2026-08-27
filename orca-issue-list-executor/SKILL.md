@@ -45,6 +45,13 @@ Before executing the list:
 6. Prefer a clean coordinator worktree; never overwrite unrelated user edits.
 7. For a long tracker/foundation stack, create a local execution manifest with: parent tracker, ordered issues, dependency mode, merge intent/opt-out status, current base SHA, cross-issue invariants, required evidence, and known non-goals. Update it after every merge.
 
+## Retained Evidence Nodes
+
+- Apply the canonical Retained Evidence Velocity policy linked from `/skill:github-pr-mergeable`.
+- Where dependency policy permits, execute `product -> reviewed/landed harness or schema -> artifact-only evidence`. Focused pre-review MUST cover provenance, concurrency/isolation, fail-closed validation, and wording; freeze exact runtime and harness subtree/blob identities before expensive collection.
+- Prefer a dedicated high-capacity runner with persistent build cache and durable artifact storage. Otherwise record `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` and the actual fallback; never invent infrastructure.
+- Classify candidate failures separately from proven unrelated CI flakes, rerun only affected gates, and require current-head merge gates. Artifact-only descendants preserve evidence only under exact runtime/harness subtree and implementation-blob identity; product or harness drift invalidates affected evidence.
+
 ## Merge Authorization Rule
 
 Default assumption: the user wants PRs merged after they pass all mergeable/final-review gates. Managers must not merge unless the coordinator explicitly delegates merge authority. The coordinator may merge only when:

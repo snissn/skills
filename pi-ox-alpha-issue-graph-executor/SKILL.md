@@ -90,6 +90,13 @@ not alternate model routing: if a required local reviewer or fallback would need
 a different agent model, record the conflict and stop for an allowed human or
 external-policy handoff rather than violating this skill's model lock.
 
+## Retained Evidence Nodes
+
+- Apply the canonical Retained Evidence Velocity policy linked from `github-pr-mergeable`.
+- Where dependency policy permits, model `product -> reviewed/landed harness or schema -> artifact-only evidence`. Focused pre-review MUST cover provenance, concurrency/isolation, fail-closed validation, and wording; freeze exact runtime and harness subtree/blob identities before expensive collection.
+- Prefer a dedicated high-capacity runner with persistent build cache and durable artifact storage. Otherwise record `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` and the actual fallback; never invent infrastructure.
+- Classify candidate failures separately from proven unrelated CI flakes, rerun only affected gates, and require current-head merge gates. Artifact-only descendants preserve evidence only under exact runtime/harness subtree and implementation-blob identity; product or harness drift invalidates affected evidence.
+
 ## Conservative Execution Budget
 
 Optimize completed graph nodes per usage window, not maximum fan-out.

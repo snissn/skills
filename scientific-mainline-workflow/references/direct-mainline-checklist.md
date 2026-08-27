@@ -102,6 +102,22 @@ does not silently promote SHOULD or COULD work into a broader theorem.
   run ID and attempt, event, Python version, runner image, logs, and retained
   artifacts are captured. A green job is recorded as process evidence only.
 - The changed-file list is exactly the intended artifact set.
+- For retained performance or scientific execution evidence, the harness/schema
+  was focused-reviewed and landed before expensive collection; review covered
+  provenance, concurrency/isolation, fail-closed validation, and evidence
+  wording.
+- Exact product/scientific-runtime and harness/schema commits plus subtree/blob
+  identities are frozen. The ordered product, harness/schema, and artifact-only
+  changes remain separate where repository dependency policy permits.
+- A dedicated high-capacity runner, persistent build cache, and durable artifact
+  storage are used when available; otherwise typed
+  `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` records the real
+  fallback.
+- Artifact-only descendants preserve evidence only under exact runtime/harness
+  subtree and implementation-blob identity. Product or harness drift
+  invalidates affected evidence.
+- Proven unrelated CI flakes are classified separately and only affected gates
+  are rerun; current-head integration gates still pass.
 - No unrelated user work or live artifact is included.
 - If a steering note was applied, the issue comment or closure is already part
   of the plan rather than an afterthought.

@@ -139,6 +139,10 @@ Report exact commands and outcomes in the PR body or comment.
 
 If the PR touches a hot path, storage/read path, cache, search, decode, query, serialization, or materialization path, include benchmark evidence.
 
+If a run will be retained as merge or acceptance evidence, MUST read and apply
+[Retained Evidence Velocity](references/retained-evidence-velocity.md) before
+scheduling expensive collection.
+
 Benchmark comments/descriptions should include domain-appropriate metrics. For Go/Rust microbenchmarks this often includes:
 
 - exact command;

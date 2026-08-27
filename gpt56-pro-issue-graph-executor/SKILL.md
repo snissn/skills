@@ -62,6 +62,13 @@ Read:
 - [state and resume](references/state-and-resume.md) before writing graph state;
 - [gomap local execution](references/gomap-local-execution.md) before modifying or testing `snissn/gomap`.
 
+## Retained Evidence Nodes
+
+- Apply the canonical Retained Evidence Velocity policy linked from `github-pr-mergeable`.
+- Where dependency policy permits, model `product -> reviewed/landed harness or schema -> artifact-only evidence`. Focused pre-review MUST cover provenance, concurrency/isolation, fail-closed validation, and wording; freeze exact runtime and harness subtree/blob identities before expensive collection.
+- Prefer a dedicated high-capacity runner with persistent build cache and durable artifact storage. Otherwise record `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` and the actual fallback; never invent infrastructure.
+- Classify candidate failures separately from proven unrelated CI flakes, rerun only affected gates, and require current-head merge gates. Artifact-only descendants preserve evidence only under exact runtime/harness subtree and implementation-blob identity; product or harness drift invalidates affected evidence.
+
 ## Default Authorization And Scope
 
 A request such as “implement as much of #4051 as you can” authorizes implementation, PR creation, review/fix loops, and merge of PRs that are:
