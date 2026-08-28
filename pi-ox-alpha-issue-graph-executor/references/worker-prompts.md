@@ -119,9 +119,11 @@ infer state from formal reviews alone and do not request another review. Run
 only bounded read-only checks tied to a concrete risk. Do not edit, push,
 launch Pi/subagents, request reviews, or merge.
 
-Return blockers first, then concise evidence and a recommendation. If the
-PR-lifetime churn cap is exhausted, recommend review-scope-reset and include
-counts; never recommend another trigger.
+Return blockers first, then concise evidence and a recommendation. Report
+advisory lifetime churn without changing node state. Recommend
+review-scope-reset only for an exhausted explicit hard cap or a
+coordinator-supplied recurring material contract/architecture failure; never
+recommend another trigger while that explicit stop remains active.
 ```
 
 ## Speculative Descendant (Explicit User Opt-In Only)

@@ -182,24 +182,34 @@ Cancel only stale/non-head runs unless the user explicitly authorizes broader cl
 
 ## Cross-Head Review Churn Breaker
 
-Review budgets apply across the lifetime of the PR, not only to one head SHA. A repair commit does not erase earlier finding-bearing review rounds.
+Review history applies across the PR lifetime, but is advisory by default. A
+repair commit does not erase earlier requests or finding-bearing heads; those
+counts help detect churn without automatically blocking a new mature head.
 
 Before every new Codex request:
 
 1. inventory total PR-lifetime review requests, distinct finding-bearing heads, and review threads;
-2. apply any lower repository-local review-round cap;
+2. apply an explicit repository-local or user-authorized hard review cap, if one exists;
 3. classify findings as claim/contract blockers, implementation defects inside the declared scope, claim/authority mismatches, nonblocking hardening, or incorrect findings;
 4. batch all current fixes and audit sibling invariants before asking for another review.
 
-Absent a lower repository rule, stop automatically after either **three finding-bearing heads** or **six total Codex requests** across the PR. Run the classifier with `--max-finding-heads` and `--max-total-requests` when local policy specifies lower limits. When it reports `review_churn_blocked`, or reports unresolved findings with `review_churn_exhausted=true`:
+Absent an explicit hard cap, six total requests or three finding-bearing heads
+produce a `review_churn_warning`, not a stop. Resolved minor, rejected, or
+nonblocking findings must not automatically force an architecture reset. Once
+threads are dispositioned and a new head is mature, the exact-head retry budget
+governs whether another review may be requested.
 
-- disposition the current threads, but do not request another review;
-- transition the PR to an architecture/claim/scope reset;
-- prefer rejecting an incorrect finding, narrowing emitted authority, splitting the PR, or deferring nonblocking hardening over expanding the implementation for every counterexample;
-- update the PR/tracker with the stop reason and next decision;
-- obtain explicit project-owner authorization before using `--allow-after-churn`.
+Repositories or users may opt into hard PR-lifetime caps with
+`--max-total-requests` and `--max-finding-heads`; both defaults are disabled.
+Only an exhausted explicit hard cap may produce `review_churn_blocked`. In that
+case, disposition current threads, update the PR/tracker, and obtain the
+authorization required by that explicit policy before using
+`--allow-after-churn`.
 
-A clean exact-head result remains terminal even when the historical budget was exceeded. The churn breaker prevents another request; it does not permit unresolved findings to be ignored.
+Provider latency, quota failure, or request-only exhaustion is reviewer
+unavailability, not evidence of an unstable architecture. Record it separately
+and follow the effective repository fallback. A clean exact-head result remains
+terminal even when advisory or explicit historical thresholds were exceeded.
 
 ## Mature PR Before AI Review
 
@@ -233,7 +243,7 @@ is terminal for the unchanged head; a later duplicate trigger does not make it
 pending again. A later Codex findings review or unresolved Codex thread does
 supersede the earlier clean result.
 
-Default to one initial request and at most two retries for the same head, with at least ten minutes between triggers, subject to the stricter PR-lifetime churn budget above. After that, record Codex as unavailable instead of spamming the PR. A user may explicitly raise a cap, but may not bypass re-inventory, a repository-local stop rule, the cross-head churn reset, or the stop-on-clean rule without explicit authorization for that exception.
+Default to one initial request and at most two retries for the same head, with at least ten minutes between triggers, subject only to an explicit stricter repository-local cap. After that, record Codex as unavailable for that head instead of spamming the PR; do not convert provider exhaustion into `review-scope-reset`. A user may explicitly raise the exact-head cap, but may not bypass re-inventory, a repository-local stop rule, or the stop-on-clean rule without explicit authorization for that exception.
 
 If one of those bots uses a different repo-specific trigger, follow the repo convention. If a bot is unavailable, say so explicitly and do not claim it passed.
 

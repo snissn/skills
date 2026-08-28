@@ -60,7 +60,7 @@ Rules:
   authority.
 - Do not spawn subagents.
 
-Return milestone handoffs for: implementation plan, PR opened, dependency-ready candidate, review-scope-reset, mergeable-candidate, blocker. Use `review-scope-reset` when the PR-lifetime review cap is reached; do not request another review or relabel it as a generic blocker.
+Return milestone handoffs for: implementation plan, PR opened, dependency-ready candidate, review-scope-reset, mergeable-candidate, blocker. Use `review-scope-reset` only for an exhausted explicit hard cap or coordinator-confirmed recurring material contract/architecture failure; advisory review history does not change node state.
 
 If the time box expires without a visible milestone, stop expensive work and
 return the current HEAD, dirty files, commands/results, blocker, and exact next
@@ -142,7 +142,7 @@ Time box: 10 minutes. Check only this PR:
 - PR body accuracy;
 - whether AI reviews were requested only after a mature head.
 
-Use `github-pr-mergeable/scripts/codex_review_gate.py --check` for Codex state. Do not inspect only formal reviews, and do not request another review when an exact-head clean issue comment already exists. If it reports PR-lifetime churn exhaustion, recommend `review-scope-reset`, include the effective root/nested policy and counts, and do not recommend another trigger.
+Use `github-pr-mergeable/scripts/codex_review_gate.py --check` for Codex state. Do not inspect only formal reviews, and do not request another review when an exact-head clean issue comment already exists. Report advisory lifetime churn without changing node state. Recommend `review-scope-reset` only for an exhausted explicit hard cap or a coordinator-supplied recurring material contract/architecture failure.
 
 Run only bounded tests tied to a concrete risk; do not repeat a broad suite that
 already has exact-head evidence. Do not edit, spawn subagents, request reviews,

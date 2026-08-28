@@ -32,16 +32,18 @@ parallel workers inventing incompatible contracts.
 | `running` | Worker or coordinator is implementing/reviewing. | No | No |
 | `dependency-ready` | Public contract is stable enough for speculative descendants. | Yes | No |
 | `fix-needed` | Review, CI, tests, or performance evidence found blockers. | No new descendants unless safe | No |
-| `review-scope-reset` | PR-lifetime review cap was reached; current findings need disposition and the owner must choose narrow, split, defer, reject, or explicitly resume. | No | No |
+| `review-scope-reset` | An explicit hard review cap or coordinator-confirmed recurring material contract/architecture failure requires owner scope disposition. Advisory churn counts and provider exhaustion do not enter this state. | No | No |
 | `mergeable-candidate` | Worker believes PR is ready; graph gates still apply. | Yes | Only after predecessors merged and final revalidation passes |
 | `merged` | Coordinator merged PR. | Yes | Completed |
 | `blocked` | Waiting for decision, predecessor, CI, conflict, or external state. | No | No |
 
-On `review-scope-reset`, do not request another AI review, start descendants, or
-coerce the node back to `fix-needed`. Record the effective repository review
-rule, lifetime request/finding counts, unresolved-thread dispositions, owner,
-and required decision. Exit only after the scoped artifact is accepted under
-repository policy, narrowed/split/deferred, or explicitly authorized to resume.
+On `review-scope-reset`, do not request another AI review or start actual
+descendants of the affected node; independent graph nodes continue. Record the
+explicit hard policy or material-failure rationale, lifetime counts, thread
+dispositions, owner, and required decision. Exit after the scoped artifact is
+accepted, narrowed, split, deferred, rejected, or explicitly authorized to
+resume. A `review_churn_warning` remains telemetry and does not change node
+state.
 
 ## Sync Windows
 

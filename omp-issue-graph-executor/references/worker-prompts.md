@@ -118,9 +118,11 @@ Inspect only: exact-head CI; unresolved threads/requested changes; required
 tests/benchmarks evidence; PR body accuracy; whether AI reviews were requested
 only after a mature head. Use github-pr-mergeable/scripts/codex_review_gate.py
 for Codex state; do not request another review when an exact-head clean comment
-exists; if lifetime churn is exhausted recommend review-scope-reset with counts.
-Run only bounded checks tied to concrete risk. Return blockers first, then
-evidence and a mergeability recommendation.
+exists. Report advisory lifetime churn without changing node state. Recommend
+review-scope-reset only when the classifier names an exhausted explicit hard
+cap or the coordinator supplied a recurring material contract/architecture
+failure. Run only bounded checks tied to concrete risk. Return blockers first,
+then evidence and a mergeability recommendation.
 ```
 
 ## Speculative Descendant (explicit user opt-in only)

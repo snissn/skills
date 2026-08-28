@@ -33,16 +33,17 @@ invent incompatible contracts.
 | `running` | Coordinator or child Pi is working. | No | No |
 | `dependency-ready` | Contract is stable enough for explicitly authorized speculative work. | Yes, with user opt-in | No |
 | `fix-needed` | Review, tests, CI, or performance found a blocker. | No new descendants unless the blocker is proven local/non-contract | No |
-| `review-scope-reset` | PR-lifetime review cap was reached and owner scope/claim disposition is required. | No | No |
+| `review-scope-reset` | An explicit hard review cap or coordinator-confirmed recurring material contract/architecture failure requires owner scope disposition. Advisory counts and provider exhaustion do not enter this state. | No | No |
 | `mergeable-candidate` | Implementation lane recommends readiness; coordinator gates remain. | No by default | Only after final coordinator gate |
 | `merged` | Coordinator merged the PR. | Yes | Complete |
 | `blocked` | Waiting for policy, decision, predecessor, conflict, CI, credentials, or external state. | No | No |
 
-On `review-scope-reset`, do not request another AI review or start descendants.
-Record the effective repository review rule, lifetime request/finding counts,
-thread dispositions, owner, and required decision. Exit only after the scoped
-artifact is accepted, narrowed, split, deferred, rejected, or explicitly
-allowed to resume under repository policy.
+On `review-scope-reset`, do not request another AI review or start actual
+descendants of the affected node; independent nodes continue. Record the
+explicit hard policy or material-failure rationale, lifetime counts, thread
+dispositions, owner, and required decision. Exit after the artifact is
+accepted, narrowed, split, deferred, rejected, or explicitly authorized to
+resume. `review_churn_warning` is telemetry and does not change node state.
 
 ## Conflict And Contract Table
 

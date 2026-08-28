@@ -163,11 +163,14 @@ routing fallback.
   justified, PR body current, no known local blocker, and exact-head CI running
   or green.
 - Before every `@codex review`, run the `github-pr-mergeable` classifier. Stop
-  immediately on an exact-head clean result. Apply lower repository review caps
-  first and enforce PR-lifetime churn limits across repair SHAs.
-- On `review_churn_blocked`, disposition current findings, transition to
-  `review-scope-reset`, update durable state, and stop new review requests until
-  the project owner authorizes a narrowed, split, deferred, or resumed path.
+  immediately on an exact-head clean result. Keep the three-request exact-head
+  anti-spam cap. PR-lifetime counts are advisory by default: six requests or
+  three finding-bearing heads emit `review_churn_warning` without blocking a
+  resolved, mature new head. Lower explicit repository caps still win.
+- Enter `review-scope-reset` only for an exhausted explicit hard cap or a
+  coordinator-confirmed recurring material contract/architecture failure.
+  Provider exhaustion is reviewer unavailability. Continue independent nodes;
+  only the affected node and actual descendants wait on its required review.
 - Material regressions in runtime, throughput, latency, allocations, memory,
   storage/rebuild/checkpoint/recovery cost, or relevant domain counters block
   mergeability until optimized away or explicitly accepted with evidence.
@@ -261,8 +264,10 @@ execution; otherwise descendants wait for merge.
 ## Completion And Failure Handling
 
 Continue until every selected node is `merged`, intentionally deferred to a
-linked owner, `blocked` by external state with an exact next action, or paused at
-`review-scope-reset` under repository policy.
+linked owner, or `blocked` by external state with an exact next action. Pause at
+`review-scope-reset` only under an explicit hard review policy or a
+coordinator-confirmed recurring material scope failure, never advisory counts
+or provider unavailability alone.
 
 Pause and report rather than guessing when the DAG has an unsafe ambiguous edge,
 a policy/branch-protection gate requires unavailable human action, credentials

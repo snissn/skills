@@ -161,11 +161,13 @@ external AI reviews.
   coherent code pushed, tests/benchmarks run or justified, PR body current, no
   known local blocker, latest-head CI running or green. Before each review
   request, run the `github-pr-mergeable` classifier; stop on an exact-head
-  clean result. Enforce PR-lifetime churn caps (default: 3 requests per exact
-  head, 6 per PR, 3 finding-bearing heads; lower repo-local caps win). On
-  `review_churn_blocked`, disposition current threads, move the node to
-  `review-scope-reset`, update durable state, and stop new requests until the
-  project owner authorizes resumption.
+  clean result. Keep the three-request exact-head anti-spam cap. PR-lifetime
+  counts are advisory by default: 6 total requests or 3 finding-bearing heads
+  emit `review_churn_warning` but do not block a new mature head. Only an
+  explicit repository-local or user-authorized hard cap may produce
+  `review_churn_blocked` and `review-scope-reset`. Provider exhaustion is
+  reviewer unavailability, not a scope reset. Continue independent graph nodes;
+  only the affected node and its actual descendants wait on a required review.
 - Material regressions in runtime, throughput, latency, allocations, memory,
   storage/recovery cost, or relevant domain counters block mergeability until
   optimized away or explicitly accepted with evidence.
@@ -231,9 +233,11 @@ execution; otherwise descendants wait for merge.
 
 ## Completion And Failure Handling
 
-Continue until every selected node is `merged`, intentionally deferred to a
-linked owner, `blocked` by external state with an exact next action, or paused
-at `review-scope-reset` under repository policy.
+Continue until every node is `merged`, intentionally deferred to a linked
+owner, or `blocked` by external state with an exact next action. A node may
+pause at `review-scope-reset` only under an explicit repository/user hard cap
+or a coordinator-dispositioned recurring material contract/architecture
+failure, never from advisory counts or reviewer unavailability alone.
 
 Pause and report rather than guessing when the DAG has an unsafe ambiguous
 edge, a policy gate requires unavailable human action, credentials or GitHub

@@ -90,8 +90,10 @@ def classify(
     codex_logins: set[str] | None = None,
     retry_after_minutes: int = 10,
     max_requests: int = 3,
-    max_total_requests: int = 6,
-    max_finding_heads: int = 3,
+    max_total_requests: int = 0,
+    max_finding_heads: int = 0,
+    warn_total_requests: int = 6,
+    warn_finding_heads: int = 3,
     allow_after_churn: bool = False,
     now: dt.datetime | None = None,
 ) -> dict[str, Any]:
@@ -194,11 +196,16 @@ def classify(
     latest_clean = clean_artifacts[-1] if clean_artifacts else None
     request_count = len(requests)
     latest_request = requests[-1] if requests else None
+    warning_reasons = []
+    if warn_total_requests > 0 and len(all_requests) >= warn_total_requests:
+        warning_reasons.append(f"total review requests {len(all_requests)} reached warning {warn_total_requests}")
+    if warn_finding_heads > 0 and len(finding_heads) >= warn_finding_heads:
+        warning_reasons.append(f"finding-bearing heads {len(finding_heads)} reached warning {warn_finding_heads}")
     churn_reasons = []
     if max_total_requests > 0 and len(all_requests) >= max_total_requests:
-        churn_reasons.append(f"total review requests {len(all_requests)} reached limit {max_total_requests}")
+        churn_reasons.append(f"total review requests {len(all_requests)} reached hard limit {max_total_requests}")
     if max_finding_heads > 0 and len(finding_heads) >= max_finding_heads:
-        churn_reasons.append(f"finding-bearing heads {len(finding_heads)} reached limit {max_finding_heads}")
+        churn_reasons.append(f"finding-bearing heads {len(finding_heads)} reached hard limit {max_finding_heads}")
     churn_exhausted = bool(churn_reasons)
 
     if unresolved_threads:
@@ -268,12 +275,16 @@ def classify(
         "total_request_count": len(all_requests),
         "finding_head_count": len(finding_heads),
         "total_codex_thread_count": total_codex_threads,
+        "review_churn_warning": bool(warning_reasons),
+        "review_churn_warning_reasons": warning_reasons,
         "review_churn_exhausted": churn_exhausted,
         "review_churn_reasons": churn_reasons,
         "review_churn_override_applied": churn_exhausted and allow_after_churn,
         "review_churn_limits": {
             "max_total_requests": max_total_requests,
             "max_finding_heads": max_finding_heads,
+            "warn_total_requests": warn_total_requests,
+            "warn_finding_heads": warn_finding_heads,
         },
         "latest_request": latest_request,
         "unresolved_codex_threads": unresolved_threads,
@@ -414,10 +425,15 @@ def self_test() -> None:
     ]
     churn_fixture = _fixture(head=head, comments=historical_requests, reviews=historical_reviews)
     result = classify(churn_fixture)
-    assert result["state"] == "review_churn_blocked" and not result["should_request"]
+    assert result["state"] == "not_requested" and result["should_request"]
+    assert result["review_churn_warning"] and not result["review_churn_exhausted"]
     assert result["finding_head_count"] == 3 and result["total_request_count"] == 3
 
-    result = classify(churn_fixture, allow_after_churn=True)
+    result = classify(churn_fixture, max_finding_heads=3)
+    assert result["state"] == "review_churn_blocked" and not result["should_request"]
+    assert result["review_churn_exhausted"]
+
+    result = classify(churn_fixture, max_finding_heads=3, allow_after_churn=True)
     assert result["state"] == "not_requested" and result["should_request"]
     assert result["review_churn_override_applied"]
 
@@ -432,16 +448,20 @@ def self_test() -> None:
         ],
     )
     result = classify(request_only_churn)
-    assert result["state"] == "review_churn_blocked"
+    assert result["state"] == "not_requested" and result["should_request"]
+    assert result["review_churn_warning"] and not result["review_churn_exhausted"]
     assert result["total_request_count"] == 6
-    assert result["review_churn_reasons"] == ["total review requests 6 reached limit 6"]
+
+    result = classify(request_only_churn, max_total_requests=6)
+    assert result["state"] == "review_churn_blocked"
+    assert result["review_churn_reasons"] == ["total review requests 6 reached hard limit 6"]
 
     result = classify(churn_fixture, max_finding_heads=2)
     assert result["review_churn_limits"]["max_finding_heads"] == 2
     assert result["state"] == "review_churn_blocked"
 
     churn_with_clean = _fixture(head=head, comments=[*historical_requests, clean_comment], reviews=historical_reviews)
-    result = classify(churn_with_clean)
+    result = classify(churn_with_clean, max_finding_heads=3)
     assert result["state"] == "clean" and result["review_churn_exhausted"]
 
     print("codex_review_gate self-test: PASS")
@@ -454,12 +474,14 @@ def main() -> int:
     parser.add_argument("--codex-login", action="append", default=[])
     parser.add_argument("--retry-after-minutes", type=int, default=10)
     parser.add_argument("--max-requests", type=int, default=3, help="maximum requests attributed to one exact head")
-    parser.add_argument("--max-total-requests", type=int, default=6, help="PR-lifetime review-request churn limit; 0 disables")
-    parser.add_argument("--max-finding-heads", type=int, default=3, help="PR-lifetime finding-bearing-head churn limit; 0 disables")
+    parser.add_argument("--max-total-requests", type=int, default=0, help="explicit PR-lifetime hard request cap; 0 disables")
+    parser.add_argument("--max-finding-heads", type=int, default=0, help="explicit PR-lifetime hard finding-head cap; 0 disables")
+    parser.add_argument("--warn-total-requests", type=int, default=6, help="advisory PR-lifetime request threshold; 0 disables")
+    parser.add_argument("--warn-finding-heads", type=int, default=3, help="advisory PR-lifetime finding-head threshold; 0 disables")
     parser.add_argument(
         "--allow-after-churn",
         action="store_true",
-        help="override the lifetime churn stop only after explicit user/repository authorization",
+        help="override an explicit hard lifetime cap only after user/repository authorization",
     )
     parser.add_argument("--check", action="store_true", help="exit 2 unless the review gate is clean")
     parser.add_argument("--self-test", action="store_true")
@@ -480,6 +502,8 @@ def main() -> int:
             max_requests=args.max_requests,
             max_total_requests=args.max_total_requests,
             max_finding_heads=args.max_finding_heads,
+            warn_total_requests=args.warn_total_requests,
+            warn_finding_heads=args.warn_finding_heads,
             allow_after_churn=args.allow_after_churn,
         )
     except (AttributeError, KeyError, RuntimeError, TypeError, ValueError, json.JSONDecodeError) as error:
