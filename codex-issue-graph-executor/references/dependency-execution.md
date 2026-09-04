@@ -30,11 +30,11 @@ parallel managers inventing incompatible contracts.
 | --- | --- | --- | --- |
 | `pending` | Not started. | No | No |
 | `running` | Worker or coordinator is implementing/reviewing. | No | No |
-| `dependency-ready` | Public contract is stable enough for speculative descendants. | Yes | No |
-| `fix-needed` | Review, CI, tests, or performance evidence found blockers. | No new descendants unless safe | No |
+| `dependency-ready` | Contract stable; speculation still requires user opt-in and repo permission. | Only with that authorization | No |
+| `fix-needed` | Review, CI, tests, or performance evidence found blockers. | No, except authorized speculation | No |
 | `review-scope-reset` | An explicit hard review cap or coordinator-confirmed recurring material contract/architecture failure requires owner scope disposition. Advisory counts and provider exhaustion do not enter this state. | No | No |
-| `mergeable-candidate` | Worker believes PR is ready, graph gates still apply. | Yes | Only after predecessors merged and final revalidation passes |
-| `merged` | Coordinator merged PR. | Yes | Completed |
+| `mergeable-candidate` | Worker believes PR is ready, graph gates still apply. | Only with authorized speculation | Only after predecessors merged and final revalidation passes |
+| `merged` | Merge verified. | Eligible; scientific successor needs its own assignment | Completed |
 | `blocked` | Waiting for decision, predecessor, CI, conflict, or external state. | No | No |
 
 On `review-scope-reset`, do not request another AI review or start actual descendants of the affected node; independent nodes continue. Record the explicit hard policy or material-failure rationale, lifetime counts, thread dispositions, owner, and required decision. Exit after the artifact is accepted, narrowed, split, deferred, rejected, or explicitly authorized to resume. `review_churn_warning` is telemetry and does not change node state.
@@ -64,17 +64,18 @@ Predecessor #A changed since snapshot:
 
 - Keep agent depth at one. The coordinator owns all fan-out and follow-up
   routing.
-- Prefer parallel inventory, exploration, test runs, CI triage, and independent
-  review because their outputs are easy to reconcile.
-- Parallelize implementation only when workers have isolated worktrees or
+- Apply SKILL.md's budget: one useful worker, at most two independent
+  assignments normally. Keep routine inventory and polling with the coordinator.
+- Parallelize implementation only when workers have isolated worktrees and
   disjoint ownership boundaries and no shared contract decision remains.
 - Serialize nodes that touch the same public API, storage format, migration,
   benchmark interpretation, hot-loop helper, or frequently conflicting files.
 - Set the active worker count to the minimum of the runtime limit, the number of
-  safely independent tasks, and the machine/repository resource limit. Preserve
+  safely independent tasks, the skill budget, and the machine/repository resource limit. Preserve
   coordinator capacity.
 - Stop or steer a worker when its base SHA, ownership boundary, or predecessor
-  contract becomes stale; do not let it continue accumulating speculative work.
+  contract changes in a way that affects its assignment. Unrelated mainline
+  changes alone do not invalidate a scientific lane.
 
 ## Retained Evidence Gate
 
@@ -92,7 +93,10 @@ A node can be declared mergeable only when:
 - required tests/benchmarks were rerun after that update;
 - PR body and comments no longer rely on speculative predecessor facts;
 - latest-head CI and review state are acceptable;
-- when Codex is required by the effective repository/workstream policy, the shared `github-pr-mergeable/scripts/codex_review_gate.py --check` classifier reports clean for the exact head; a clean Codex issue comment is sufficient, while any later unresolved Codex thread blocks;
+- when Codex is required and no policy-permitted replacement applies, the shared `github-pr-mergeable/scripts/codex_review_gate.py --check` classifier reports clean for the exact head; a clean Codex issue comment is sufficient, while any later unresolved Codex thread blocks;
+- for hosted quota/service unavailability, apply SKILL.md's
+  `CODEX_REVIEW_UNAVAILABLE_QUOTA` and policy-permitted independent fallback;
+  never count an unavailable review as clean;
 - when repository-local proportional scientific policy replaces Codex, the bounded review disposition and exact acceptance evidence required by that policy are recorded, and all existing threads are fixed or explicitly rejected;
 - AI reviews, if used, were requested only after the PR was mature;
 - coordinator final review passes.
@@ -101,7 +105,10 @@ Independent nodes may merge in any order after their own gates pass.
 
 ## Manifest Fields
 
-Use this shape for working notes or a temp manifest:
+Use only fields needed for resumable evidence; this example is not a required
+checked-in schema, scheduler, roster, or scientific activation mechanism.
+Record owner assignment for scientific nodes; never synthesize authority from
+tracker status or predecessor completion. Use working notes or a temp manifest:
 
 ```yaml
 repo: owner/name
@@ -113,8 +120,8 @@ max_parallel_agents: N
 max_agent_depth: 1
 coordinator:
   agent_role: graph-coordinator
-  requested_model: gpt-5.6-sol
-  requested_effort: xhigh
+  requested_model: inherited
+  requested_effort: inherited
   actual_model: ...
   actual_effort: ...
   routing_fallback: ...
@@ -132,7 +139,7 @@ nodes:
     state: pending
     agent: ...
     agent_role: inventory|implementation|high-risk-specialist|readiness-review
-    requested_model: gpt-5.6-luna|gpt-5.6-terra|gpt-5.6-sol
+    requested_model: gpt-6-astra|gpt-5.6-terra|gpt-5.6-luna|policy-required-reviewer
     requested_effort: low|medium|high|xhigh
     actual_model: ...
     actual_effort: ...

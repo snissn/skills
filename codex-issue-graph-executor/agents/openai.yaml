@@ -1,4 +1,4 @@
 interface:
   display_name: "Codex Issue Graph Executor"
-  short_description: "Execute issue graphs with conservative delegation"
-  default_prompt: "Use $codex-issue-graph-executor to execute and merge this issue graph with one subagent by default and no speculative fan-out."
+  short_description: "Execute issue graphs with Astra-aware delegation"
+  default_prompt: "Use $codex-issue-graph-executor to execute and merge this issue graph with Astra-aware routing, at most one useful subagent by default, and no speculative fan-out."

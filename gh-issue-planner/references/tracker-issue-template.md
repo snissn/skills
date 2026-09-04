@@ -1,6 +1,6 @@
 # GitHub Tracker Issue Template
 
-Use this as a structure guide. Keep sections that matter for the requested workstream and remove sections that do not.
+Use this as a structure guide. Keep sections that matter for the requested workstream and remove sections that do not. Milestones below are examples, not a required correctness-then-performance-then-docs sequence; each feature owns its performance and documentation exit gates.
 
 ## Contents
 
@@ -58,10 +58,28 @@ Use the metrics that fit the workstream. Examples: wall time, per-unit latency, 
 ## Current State
 
 Describe how the code works today. Separate implementation facts from assumptions.
+Name canonical docs/sections read at the base SHA, relevant caller/dispatch/hot-path
+symbols, reusable optimized primitives, and any unresolved doc/code discrepancy.
 
 ## Desired State
 
 Describe the target architecture or workflow.
+
+## Feature Path, Allocation, And Documentation Contract
+
+For each performance-sensitive feature, name the public path and existing optimized
+implementation to extend, selection/fallback proof, allocation sites and frequency,
+ownership/lifetime, and the allocation budget or evidence-based exit criterion.
+Require minimization before completion, including retained-memory tradeoffs.
+
+For new behavior without a pre-change equivalent, measure enabled incremental
+cost and scaling, preserve old-path regression evidence, and compare equivalent
+semantics when a reference exists. Do not compare less work to more work as proof
+of improvement. Carry these requirements into each owning child.
+
+Name the docs/specs/examples and generated sources to update in that feature's PR,
+or explain why none change. Separate documentation ownership requires an explicit
+completion gate and predecessor edge when downstream work consumes the contract.
 
 ## Issue Graph And Gate Ownership
 
@@ -71,7 +89,7 @@ For umbrella work, keep a compact authoritative ledger. Omit this section for a 
 | --- | --- | --- | --- | --- | --- |
 | child or existing issue | substrate, experiment, integration, residual, evidence, or history | explicit blockers | explicit successors | one owned gate | create, retain, narrow, supersede, close, or defer |
 
-State conditional edges and the evidence that activates them. Do not duplicate one completion gate across multiple issues.
+State conditional edges and eligibility evidence; scientific successors also need their own owner direction/assignment and merged predecessor authority. Do not duplicate one completion gate across multiple issues.
 
 ## North-Star Gates
 
@@ -142,7 +160,7 @@ Performance classes:
 | --- | --- |
 | Not performance-relevant | Concise rationale; no ceremonial benchmark. |
 | Possibly performance-relevant | Focused benchmark, allocation check, profile, or equivalent guardrail on the affected path. |
-| Performance-sensitive | Identical before/after measurements for relevant throughput or latency, allocation efficiency, memory pressure, and domain counters. |
+| Performance-sensitive | Equivalent before/after measurements for throughput/latency, allocation, memory, and path counters; use the feature contract above when no pre-change equivalent exists. |
 | Performance-objective | Performance-sensitive evidence plus a declared target, repeated measurements, profile-backed attribution when needed, and explicit failure action. |
 
 Changes to hot paths, storage or wire layouts, encoding, concurrency, I/O, caching, query execution, ingestion, compaction, or bulk processing default to at least possibly performance-relevant unless the issue records a concrete rationale otherwise.
@@ -173,6 +191,8 @@ State the repo-specific policy discovered from `AGENTS.md`, `CONTRIBUTING.md`, P
 - [ ] Start-phase failing-test evidence, including the expected failure reason, or an explicit test-first exception and alternative correctness evidence.
 - [ ] Performance classification and metric rationale.
 - [ ] Start-phase performance plan when the class requires one.
+- [ ] Optimized production-path proof, allocation audit and minimized residual costs for performance-sensitive features.
+- [ ] Affected documentation updates/validation or no-change rationale.
 - [ ] Close-phase test evidence.
 - [ ] Close-phase benchmark/profile evidence or the not-performance-relevant rationale.
 - [ ] Performance regression assessment: any material regression is blocking until optimized away or explicitly accepted with evidence.
@@ -184,6 +204,7 @@ State the repo-specific policy discovered from `AGENTS.md`, `CONTRIBUTING.md`, P
 
 Start phase:
 
+- [ ] Recheck relevant canonical docs and trace the production path and fallback callers at the assigned base.
 - [ ] Name the externally meaningful behavior, invariant, or regression being changed.
 - [ ] Add or update the smallest appropriate test and run it before implementation to capture a failure for the intended reason.
 - [ ] If a meaningful red test is impractical, document the allowed exception and the characterization, contract, review, or other evidence that bounds behavior.
@@ -193,7 +214,9 @@ Start phase:
 
 Implementation phase:
 
-- [ ] Implement the smallest coherent change that makes the test pass.
+- [ ] Implement the smallest coherent change through the applicable existing optimized path.
+- [ ] Audit and remove avoidable hot-path allocations/copies; preserve ownership and bounded retention.
+- [ ] Update affected contracts, usage/performance guides, examples, and generated-doc sources with the change.
 - [ ] Refactor while the focused and affected suites remain green.
 - [ ] Fix failures without weakening assertions, changing the intended behavior, or masking the original regression.
 - [ ] Keep benchmarks scoped to the PR’s actual risk.
@@ -203,13 +226,14 @@ Close phase:
 - [ ] Re-run focused tests.
 - [ ] Re-run broader affected, race, recovery, reopen, or integration tests as the risk requires.
 - [ ] Re-run the evidence required by the performance classification.
-- [ ] For performance-sensitive or performance-objective work, compare identical before/after commands and report the relevant throughput or latency, `B/op`, `allocs/op`, peak/live memory, and domain counters; mark irrelevant axes `N/A` with rationale.
+- [ ] For performance-sensitive or performance-objective work, apply the feature-contract comparison (identical before/after commands for equivalent behavior) and report the relevant throughput or latency, `B/op`, `allocs/op`, peak/live memory, and domain counters; mark irrelevant axes `N/A` with rationale.
 - [ ] Treat material regressions as blocking: profile, optimize, rerun, and do not merge unless eliminated or explicitly accepted as minimized/correctness-required.
-- [ ] Request iterative AI reviews only after the PR is mature, then repeat after meaningful fixes until passing or intentionally resolved.
+- [ ] Verify public-path selection, allocation minimization, and affected docs before feature completion.
+- [ ] Follow repo-required review identities and the shared skill's maturity, stop, and quota-fallback rules; repeat only when changed evidence requires review.
 
 ## CI Backlog Directive
 
-- [ ] Cancel stale runs that are not for the current head of an active PR.
+- [ ] Only when authorized and permitted, cancel superseded runs of the selected PR; preserve other lanes.
 - [ ] Keep latest-head CI active for relevant PR branches.
 - [ ] Do not use stale green checks from older heads as mergeability proof.
 
@@ -219,6 +243,7 @@ Close phase:
 
 Purpose: establish facts before implementation.
 
+- [ ] Record docs/code preflight evidence and optimized-path reuse decisions.
 - [ ] Inventory current code paths.
 - [ ] Record baseline tests.
 - [ ] Record baseline benchmarks when required by the milestone performance class.
@@ -257,7 +282,8 @@ Required benchmarks:
 
 ### M2. Core Correctness Implementation
 
-Purpose: implement the main behavior without broad optimization drift.
+Purpose: implement the main behavior through the optimized production path, with
+its allocation audit/minimization and documentation complete in this milestone.
 
 - [ ] Implement the real path through existing architecture.
 - [ ] Avoid fake parallel formats or private sidecars unless explicitly scoped.
@@ -277,7 +303,8 @@ Required benchmarks:
 
 ### M3. Performance And Scaling Follow-Through
 
-Purpose: remove measured local overhead introduced or exposed by the implementation.
+Purpose: optional further scaling work on a measured bottleneck beyond completed
+feature exit gates. Do not defer avoidable feature allocations or path integration here.
 
 - [ ] Profile the implementation.
 - [ ] Rank bottlenecks by measured cost.
@@ -304,7 +331,8 @@ Required benchmarks:
 
 ### M4. Documentation, Demos, And Closeout
 
-Purpose: leave the work understandable and auditable.
+Purpose: reconcile cross-feature guidance, demos, and final evidence. Feature
+contract and performance-guide updates belong to their implementation milestones.
 
 - [ ] Update docs or examples.
 - [ ] Add commands for users/developers.
@@ -368,7 +396,8 @@ State evidence required before closing the tracker:
 - [ ] Current evidence proves the goal, not just a subset.
 - [ ] North-star gates are satisfied, or any failed gates have explicit user/coordinator acceptance plus linked replacement blockers that prevent false completion.
 - [ ] PRs are mergeable under the repo policy: latest-head CI green, required tests pass, benchmark evidence is posted when relevant, and AI/code-review findings are passing, resolved, or explicitly rejected with rationale.
-- [ ] Docs/examples are updated when user-facing behavior changed.
+- [ ] Affected architecture/contracts, performance/usage guides, examples, and generated docs are current and validated; no required update is deferred to closeout.
+- [ ] Every performance-sensitive feature has optimized production-path proof and an allocation audit with avoidable overhead removed and residual costs inside the agreed budget or explicitly accepted.
 
 ## Deferred Follow-Ups
 
@@ -381,6 +410,7 @@ Before creating or editing the issue, verify:
 
 - [ ] The requested operating mode is explicit and no GitHub write exceeds it.
 - [ ] Umbrella or migration work has a reviewed graph preflight.
+- [ ] Canonical docs were studied before graph design and checked against production code.
 - [ ] The issue distinguishes current state from desired state.
 - [ ] The issue distinguishes implementation work from evidence work.
 - [ ] Existing issues have explicit retain, narrow, supersede, close, or defer dispositions.

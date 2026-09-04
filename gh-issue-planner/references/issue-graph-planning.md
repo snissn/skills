@@ -29,7 +29,8 @@ Do not infer apply authorization from a request to plan, synthesize, model, sket
 
 ## Graph Preflight
 
-Before drafting an umbrella graph, produce a compact preflight with:
+Complete SKILL.md's documentation/code preflight before selecting nodes or
+edges. Then produce a compact graph preflight with:
 
 1. The product outcome and final evidence owner.
 2. A small hierarchy or dependency diagram.
@@ -39,6 +40,10 @@ Before drafting an umbrella graph, produce a compact preflight with:
 6. Conditional branches and their activation evidence.
 7. Adjacent in-flight work and frozen boundaries.
 8. The test-first seam and performance-relevance class for every executable node.
+9. Canonical docs read at the intended base, the optimized production path to
+   reuse, and doc/code conflicts or evidence gaps that affect sequencing.
+10. Each performance-sensitive feature's allocation audit/budget and path proof,
+    plus the owning node for affected documentation updates.
 
 Use a ledger like this:
 
@@ -117,7 +122,7 @@ Do not create an optimization child solely because a metric is measurable. Accep
 - Draw only real blocking edges. A related issue is not automatically a dependency.
 - Prefer an acyclic execution graph with one clearly identified final gate.
 - Put measurement or contract work before irreversible format or architecture choices when evidence can select the path.
-- A conditional child must state its activation evidence and failure action.
+- A conditional child must state its eligibility evidence and failure action. Scientific successors also require owner direction/assignment and merged predecessor authority; evidence alone never activates them.
 - Keep inactive conditional children out of the critical path.
 - If evidence changes the graph, update the parent ledger and affected child bodies rather than continuing a stale plan.
 - Avoid ticket explosion. A child should own a coherent, independently reviewable slice, not every function or anticipated PR.
@@ -155,6 +160,9 @@ Use quoted body files or safely replaced placeholders. Never rely on shell inter
 - After a merge, update the child first, then the parent ledger and any newly unblocked successors.
 - When a gate moves, record the evidence and why the graph changed.
 - Keep latest-head evidence distinct from historical baselines.
+- When implementation changes a contract, optimized route, or usage recommendation,
+  update its owning docs and affected child assumptions. Contract docs needed by
+  descendants must land with their predecessor or as an explicit prerequisite.
 - Do not let closed, stale, or merely related issues remain implicit blockers.
 
 Before handoff, verify that the graph has one final evidence owner, every blocking edge is explicit, each existing issue has a disposition, accepted gaps are non-blocking, and no GitHub write exceeded the requested mode.

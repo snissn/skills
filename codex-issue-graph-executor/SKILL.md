@@ -1,6 +1,6 @@
 ---
 name: codex-issue-graph-executor
-description: "Execute and merge dependency graphs of GitHub issues and PRs with conservative Codex-native delegation. Default to one subagent, cap normal concurrency at two, avoid speculative fan-out, enforce mature-PR reviews, latest-head CI and performance evidence, and merge the selected graph in topological order."
+description: "Execute and merge dependency graphs of GitHub issues and PRs with Astra-aware Codex delegation, conservative concurrency, mature-PR review, and current-head CI and performance gates. Use for graph execution, not requests to review or edit this skill."
 ---
 
 # Codex Issue Graph Executor
@@ -11,11 +11,30 @@ counterpart to Orca graph execution: do not use Orca or Pi commands. Use Codex
 subagent tools for bounded work that benefits from delegation, with this rollout
 remaining the graph coordinator and sole owner of final merge decisions.
 
-Invocation of this skill means `execute-and-merge`: inspect live state,
+For a graph execution request, invocation means `execute-and-merge`: inspect live state,
 delegate safe independent work, open/update PRs, drive each PR through readiness
 gates, and merge in topological order after gates pass. Do not stop at a plan or
 after opening PRs. Do not ask for separate merge approval unless the user
 explicitly narrowed the request to planning or no-merge execution.
+
+## Astra Execution Guidance
+
+Apply the [official Astra prompting guidance](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices)
+(checked 2026-09-04) to this workflow:
+
+- Resolve routine choices and finish authorized work. Clarify only consequential
+  unknowns; keep independent work moving. Preserve prior authorization.
+- User direction overrides skill defaults. If a rule blocks progress, cite its
+  exact file and wording; distinguish a requirement from your interpretation.
+- Treat new messages as steering; propagate corrections to affected workers.
+  Answer status questions briefly and resume unless the user cancels the task.
+- Delegate a bounded task when useful coordinator work can proceed alongside it.
+  Otherwise work locally. The budget below governs every reference/template.
+- Run required and risk-relevant checks. After they pass, repeat or broaden them
+  only for changed code, failures, or unresolved risks. Avoid redundant tests.
+- Keep updates and handoffs concise, readable, and evidence-linked. On resume,
+  recover scope, authorization, heads, completed checks, and next actions from
+  durable state, then refresh live facts that may have changed.
 
 ## Default Authorization
 
@@ -41,6 +60,12 @@ explicitly narrowed the request to planning or no-merge execution.
 - `github:gh-fix-ci` when GitHub Actions failures need targeted diagnosis.
 - `github:gh-address-comments` when unresolved PR review threads must be
   inspected and fixed.
+- `scientific-portfolio-governance` for scientific lanes: owner direction or a
+  clear issue assignment, one writer per issue branch, and overlap checks. No
+  scheduler, slot pool, activation PR, or workflow-authored scientific/governance
+  authority. One scientific decision per PR; unrelated main changes do not
+  invalidate a lane. Scientific successors need merged predecessor authority
+  and their own owner direction or assignment; merging does not activate them.
 - `gh-issue-planner` when a graph needs a durable parent tracker or issue body
   updates before implementation.
 
@@ -59,11 +84,12 @@ their absence makes a required gate impossible to verify.
 
 Optimize for completed graph nodes per usage window, not maximum parallelism.
 
-- Default to **one active subagent**. The coordinator handles live inventory,
+- Default to **one active subagent when useful work can run in parallel**,
+  otherwise zero. The coordinator handles live inventory,
   DAG/state updates, CI polling, straightforward diagnosis, integration, and
   merge execution locally.
-- Raise to **two active subagents** only when two ready nodes are independent,
-  use isolated worktrees, have disjoint contract/conflict surfaces, and each is
+- Raise to **two active subagents** only when two ready assignments are independent,
+  use isolated worktrees for writes, have disjoint contract/conflict surfaces, and each is
   expected to save substantial elapsed time. Two is the normal hard ceiling.
 - Never use three or more concurrent subagents unless the user explicitly opts
   into high-concurrency execution for the current graph.
@@ -78,49 +104,54 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
   exception before speculative work.
 - Do not duplicate evidence. If exact-head CI or a worker already ran a broad
   suite, reviewers run only bounded tests that target a concrete risk.
-- Close completed, blocked, capacity-starved, or no-longer-needed agents
-  immediately. An open idle agent still consumes the concurrency budget.
+- Reuse completed workers for their fix loops. Stop blocked, capacity-starved,
+  or unnecessary work through the available lifecycle tools. Close/release agents
+  when supported; interruption alone does not prove a runtime slot was freed.
 - Do not keep an agent pending for model capacity. After one capacity error or
-  two minutes without starting useful work, close it and either fall back once
+  two minutes without starting useful work, stop its work and either fall back once
   to an available lower-cost route or perform the task locally. Never cycle
   through several frontier models for the same assignment.
 - Time-box delegated read/review work to about 10 minutes and implementation
   milestones to about 25 minutes without visible progress. Request a concise
   handoff once; if no useful handoff arrives promptly, preserve the worktree,
-  close the agent, and continue locally or defer the node.
+  stop the agent, and continue locally or defer the node.
 - Prefer sequential depth on the critical path over keeping every slot busy.
 
 ## Agent and Model Routing
 
-At startup, inspect the active coordinator model/effort, the available model
-catalog, configured custom agents, spawn controls, and concurrency limit. Keep
-model choice and reasoning effort separate: raising effort is not a substitute
-for choosing the right model.
+Inspect the runtime's exposed model catalog, spawn schema, and concurrency
+limit once. Record unavailable facts as unknown; do not change global config.
+Keep the current coordinator and its effective effort. For an Astra session,
+inherit `gpt-6-astra` unless a bounded role below warrants an explicit override.
+These routes are workflow choices, not guaranteed cost or quality rankings.
 
-Use this routing only when delegation passes the budget above and the exact
-GPT-5.6 variant is immediately available:
-
-| Role | Preferred route | Use for |
+| Role | Preferred route when available | Use for |
 | --- | --- | --- |
-| Coordinator and final gate | current coordinator model | DAG inference, contract ownership, live state, integration, review, blocker resolution, and merge decisions. Do not spawn a coordinator substitute. |
-| High-risk specialist | `gpt-5.6-sol`, `high` | One bounded architecture, persistence/concurrency, security, public-contract, or disputed benchmark question. Never keep Sol waiting on capacity. |
-| Default implementation worker | `gpt-5.6-terra`, `medium` | One ready issue implementation, focused tests, PR updates, and its fix loop. Raise effort only for demonstrated semantic complexity. |
-| Fast support worker | `gpt-5.6-luna`, `low` | Rare bounded mapping or CI-triage sidecar that can run concurrently with implementation and save meaningful time. |
+| Coordinator and final gate | current model/effort | Graph, integration, blockers, and merge decisions. Never spawn a replacement coordinator. |
+| Complex implementation or specialist | `gpt-6-astra`, inherited effort | Ambiguous multi-file work, architecture, persistence/concurrency, security, or disputed evidence. Use `medium` for a fresh unconfigured worker; `high` for demonstrated complexity. |
+| Routine implementation | `gpt-5.6-terra`, `medium` | A bounded issue with a clear contract, focused tests, and its fix loop. |
+| Fast support | `gpt-5.6-luna`, `low` | A substantial independent inventory or triage task that saves elapsed time. |
+| Independent review | `gpt-6-astra`, `high` | A mature high-risk candidate or disputed finding, read-only in fresh context. Required reviewer identity is governed by repo policy. |
 
-Do not use `max` or `ultra` by default. Use Sol `xhigh` only for a genuinely
-exceptional one-off decision with a written reason. Keep agent depth at one;
-workers must not spawn descendants.
+Preserve explicitly selected models/efforts. Do not escalate to `max` or `ultra`
+as a default; use higher effort only for a named unresolved difficulty. Keep
+agent depth at one. If Astra is unavailable, use an immediately available
+`gpt-5.6-sol` for complex work or execute locally; never relabel the fallback.
 
-Pin `model` and `model_reasoning_effort` through custom-agent configuration or
-spawn parameters when the runtime supports them. If the spawn surface does not
-support model selection, use the available agent, record requested versus actual
-routing when observable, and do not claim a model was pinned.
+Use actual tool fields: this collaboration runtime exposes `model` and
+`reasoning_effort`; custom-agent config may use `model_reasoning_effort`.
+Full-history forks inherit model/effort and cannot take overrides here. For an
+explicit override use `fork_turns="none"` or a supported bounded history and
+supply the task context. An independent reviewer gets fresh context, the exact
+candidate, requirements, and raw evidence, without the implementer's conclusions.
+Record requested versus actual routing only when observable. Never invent model
+selection, async flags, lifecycle tools, or capacity that the harness lacks.
 
 Delegate only work with a clear outcome, ownership boundary, base SHA, non-goals,
 required evidence, stop conditions, time box, and handoff format. Prefer a
 single implementation worker in an isolated worktree. Serialize shared
 contract and conflict surfaces, and leave the second slot unused unless a
-specific independent node justifies it.
+specific independent assignment justifies it.
 
 If subagent tools are unavailable or no task has a safe delegation boundary,
 execute locally and record why. Do not pretend work was delegated.
@@ -131,11 +162,11 @@ execute locally and record why. Do not pretend work was delegated.
 - Workers may open or update PRs, but they must not merge unless explicitly
   delegated by the coordinator.
 - Workers are direct children by default and may not delegate recursively.
-- Normal subagent concurrency is one, may rise to two under the conservative
+- Normal subagent concurrency is at most one, may rise to two under the conservative
   budget, and may not exceed two without explicit user opt-in.
 - Keep one writer per contract/conflict surface. A named `contract_owner`
   resolves cross-node decisions before parallel workers continue.
-- Do not declare or merge a dependent PR until all predecessors are merged and
+- Do not declare a dependent PR mergeable or merge it until all predecessors are merged and
   the dependent branch has been updated/revalidated on the final base.
 - Downstream speculative work is disabled unless the user explicitly opts in;
   `dependency-ready` alone does not authorize a speculative worker.
@@ -143,6 +174,13 @@ execute locally and record why. Do not pretend work was delegated.
 - Avoid review-credit churn: do not request Codex, Copilot, CodeRabbit, or other AI reviews until the PR is mature. Mature means coherent code pushed, focused tests and required benchmarks run or explicitly justified, PR body/status is current, no known local blockers remain, and latest-head CI is running or green.
 - Before every `@codex review`, run the `github-pr-mergeable` Codex gate classifier. An exact-head no-findings issue comment is a completed clean result even without a formal review object. Stop requesting immediately when clean; any later unresolved Codex finding supersedes it. Keep the three-request exact-head anti-spam cap. PR-lifetime counts are advisory by default: six requests or three finding-bearing heads emit `review_churn_warning`, but a resolved, mature new head may continue.
 - A new repair SHA does not erase review history, but advisory history does not change node state. Enter `review-scope-reset` only for an exhausted explicit repository/user hard cap or a coordinator-confirmed recurring material contract/architecture failure. Provider exhaustion is reviewer unavailability. Continue independent nodes; only the affected node and actual descendants wait when its required review is unavailable.
+- Record hosted Codex quota, usage-limit, rate-limit, capacity, or service
+  unavailability as `CODEX_REVIEW_UNAVAILABLE_QUOTA`: the review did not run.
+  When repo policy permits, use an independent read-only GPT-5.6 Pro reviewer or
+  documented clean-room `LOCAL_GPT56_REVIEW` bound to the exact candidate. Record
+  paths/claims, checks, findings, `ACCEPT` or `REJECT`, and no candidate edits.
+  Later scientific edits invalidate it. An Astra review is not that named
+  fallback unless policy explicitly permits it; self-review is not independent.
 - Treat material performance regressions as blockers unless the user or
   coordinator explicitly accepts them with evidence.
 - Keep user changes safe. Do not revert unrelated local changes. Do not use
@@ -165,8 +203,8 @@ execute locally and record why. Do not pretend work was delegated.
    otherwise use a local manifest and report the fallback.
 6. Present a concise graph snapshot and proceed immediately. Do not wait for
    plan approval because this skill defaults to execute-and-merge.
-7. Dispatch at most one ready issue to a bounded implementation worker. Add a
-   second worker only when the conservative budget permits it. Keep inventory,
+7. Delegate one ready issue when useful local work can proceed alongside it;
+   otherwise implement locally. Add a second worker only when the conservative budget permits it. Keep inventory,
    graph state, integration, routine review, CI triage, blocker resolution, and
    merge gates with the coordinator. Use an independent review agent only for a
    high-risk mature PR or a concrete disputed finding, and never concurrently
@@ -205,7 +243,7 @@ by descendants.
 
 ## Final Report
 
-Report:
+Lead with the outcome; summarize evidence and link detailed state. Report:
 
 - Graph nodes and final state.
 - PRs merged, merge commits if available, and any issues closed/updated.
