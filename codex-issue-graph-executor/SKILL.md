@@ -19,8 +19,9 @@ explicitly narrowed the request to planning or no-merge execution.
 
 ## Astra Execution Guidance
 
-Apply the [official Astra prompting guidance](https://developers.openai.com/api/docs/guides/latest-model#prompting-best-practices)
-(checked 2026-09-04) to this workflow:
+Apply the [official Astra skills and prompting guidance](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
+and [latest model guidance](https://developers.openai.com/api/docs/guides/latest-model)
+(checked 2026-09-15) to this workflow:
 
 - Resolve routine choices and finish authorized work. Clarify only consequential
   unknowns; keep independent work moving. Preserve prior authorization.
@@ -30,6 +31,8 @@ Apply the [official Astra prompting guidance](https://developers.openai.com/api/
   Answer status questions briefly and resume unless the user cancels the task.
 - Delegate a bounded task when useful coordinator work can proceed alongside it.
   Otherwise work locally. The budget below governs every reference/template.
+- Keep delegation prompts as small routers: provide the outcome, boundaries,
+  evidence, and stop conditions; load only the references needed for that role.
 - Run required and risk-relevant checks. After they pass, repeat or broaden them
   only for changed code, failures, or unresolved risks. Avoid redundant tests.
 - Keep updates and handoffs concise, readable, and evidence-linked. On resume,
@@ -85,9 +88,9 @@ their absence makes a required gate impossible to verify.
 Optimize for completed graph nodes per usage window, not maximum parallelism.
 
 - Default to **one active subagent when useful work can run in parallel**,
-  otherwise zero. The coordinator handles live inventory,
-  DAG/state updates, CI polling, straightforward diagnosis, integration, and
-  merge execution locally.
+  otherwise zero. The coordinator handles live inventory, DAG/state updates,
+  straightforward diagnosis, integration, and merge execution locally. A
+  delegated PR finalizer owns its assigned PR's active readiness loop.
 - Raise to **two active subagents** only when two ready assignments are independent,
   use isolated worktrees for writes, have disjoint contract/conflict surfaces, and each is
   expected to save substantial elapsed time. Two is the normal hard ceiling.
@@ -97,8 +100,8 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
   fix loop; do not launch parallel implementer, benchmark, and review agents for
   the same PR.
 - Do not delegate inventory, status polling, simple CI log extraction, tracker
-  edits, branch synchronization, or merge commands unless the coordinator is
-  genuinely blocked and delegation will save meaningful time.
+  edits, branch synchronization, or merge commands as standalone work. PR
+  finalization is active ownership, not an agent assigned only to wait for CI.
 - Disable speculative descendant implementation by default. Start a node only
   after its direct predecessors merge. Record an explicit user-approved
   exception before speculative work.
@@ -111,10 +114,10 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
   two minutes without starting useful work, stop its work and either fall back once
   to an available lower-cost route or perform the task locally. Never cycle
   through several frontier models for the same assignment.
-- Time-box delegated read/review work to about 10 minutes and implementation
-  milestones to about 25 minutes without visible progress. Request a concise
-  handoff once; if no useful handoff arrives promptly, preserve the worktree,
-  stop the agent, and continue locally or defer the node.
+- Time-box delegated read/review work to about 10 minutes. Treat about 25
+  minutes without visible implementation progress as a checkpoint, not a
+  push, review, or handoff boundary. Request a concise status once; stop only
+  when the worker is blocked, outside scope, or no longer useful.
 - Prefer sequential depth on the critical path over keeping every slot busy.
 
 ## Agent and Model Routing
@@ -130,6 +133,7 @@ These routes are workflow choices, not guaranteed cost or quality rankings.
 | Coordinator and final gate | current model/effort | Graph, integration, blockers, and merge decisions. Never spawn a replacement coordinator. |
 | Complex implementation or specialist | `gpt-6-astra`, inherited effort | Ambiguous multi-file work, architecture, persistence/concurrency, security, or disputed evidence. Use `medium` for a fresh unconfigured worker; `high` for demonstrated complexity. |
 | Routine implementation | `gpt-5.6-terra`, `medium` | A bounded issue with a clear contract, focused tests, and its fix loop. |
+| PR finalization owner | `gpt-5.6-terra`, `medium` | One mature PR's mutable review/CI repair loop. Use Astra only when the PR itself requires the high-risk route. |
 | Fast support | `gpt-5.6-luna`, `low` | A substantial independent inventory or triage task that saves elapsed time. |
 | Independent review | `gpt-6-astra`, `high` | A mature high-risk candidate or disputed finding, read-only in fresh context. Required reviewer identity is governed by repo policy. |
 
@@ -156,11 +160,34 @@ specific independent assignment justifies it.
 If subagent tools are unavailable or no task has a safe delegation boundary,
 execute locally and record why. Do not pretend work was delegated.
 
+### Bounded Astra Advisers
+
+Use Astra as a read-only adviser, not a shadow implementer:
+
+- At ticket start, use at most one roughly ten-minute consultation only when
+  architecture, persistence, concurrency, security, benchmark semantics, or a
+  consequential unknown could change the design. Ask one concrete question.
+- If the same material blocker category survives two coherent repair batches
+  or repair heads, stop before a third micro-fix loop and ask Astra one concrete
+  root-cause or architecture question. Include both failed approaches and raw
+  evidence.
+- The coordinator owns the decision and records whether the advice was used.
+  No consultation is required when the issue is already well specified.
+
 ## Hard Invariants
 
 - The coordinator owns the dependency graph and final merge decisions.
 - Workers may open or update PRs, but they must not merge unless explicitly
   delegated by the coordinator.
+- An issue worker owns the total issue completion packet through a stable
+  `dependency-ready` candidate or a real blocker. A plan, opened PR, first test,
+  or isolated code change is not a handoff boundary.
+- Once a PR is mature and issue-complete, hand its active readiness loop to one
+  direct-child finalization owner. That owner may edit, test, commit, push,
+  update the PR, and resolve review threads, but may not merge. The coordinator
+  must not poll or message it more often than once every 15 minutes unless it
+  reports completion or a blocker, and should advance an independent ready node
+  meanwhile.
 - Workers are direct children by default and may not delegate recursively.
 - Normal subagent concurrency is at most one, may rise to two under the conservative
   budget, and may not exceed two without explicit user opt-in.
@@ -204,17 +231,28 @@ execute locally and record why. Do not pretend work was delegated.
 6. Present a concise graph snapshot and proceed immediately. Do not wait for
    plan approval because this skill defaults to execute-and-merge.
 7. Delegate one ready issue when useful local work can proceed alongside it;
-   otherwise implement locally. Add a second worker only when the conservative budget permits it. Keep inventory,
-   graph state, integration, routine review, CI triage, blocker resolution, and
-   merge gates with the coordinator. Use an independent review agent only for a
-   high-risk mature PR or a concrete disputed finding, and never concurrently
-   with that PR's implementation worker.
+   otherwise implement locally. Add a second worker only when the conservative
+   budget permits it. Keep inventory, graph state, integration, and merge
+   decisions with the coordinator. Use a bounded Astra adviser only under the
+   triggers above.
 8. Track node state transitions in durable graph state and any local manifest: `pending`, `running`, `dependency-ready`, `fix-needed`, `review-scope-reset`, `mergeable-candidate`, `merged`, or `blocked`. Track requested and actual agent routing separately.
 9. Use sync windows instead of constant rebasing or polling: initial snapshot,
-   predecessor contract change, predecessor merge, pre-final-review, and
-   conflict/test trigger. Poll remote CI locally at coarse intervals while
-   doing other work; do not dedicate an agent to waiting.
-10. Use `github-pr-mergeable` for each PR before final merge, including its deterministic Codex classifier across issue comments, formal reviews, and threads. Apply the node's effective repository policy when deciding whether Codex is required. Record `review_churn_warning` as telemetry and continue a mature head. Stop at `review-scope-reset` only when the classifier reports an exhausted explicit hard cap or the coordinator confirms recurring material contract/architecture failure. Merge only after latest-head CI/reviews are acceptable under that policy, required evidence is current, and all predecessors are merged.
+   predecessor contract change, predecessor merge, one pre-final-review sync,
+   and conflict/test trigger. Advance the existing PR; replace it only when its
+   branch is genuinely irreparable under repo policy. Prefer a merge queue or
+   server-generated merge candidate when available instead of repeatedly
+   chasing the default branch.
+10. When an issue worker produces a mature, issue-complete PR, hand it to one
+    direct-child finalization owner using `github-pr-mergeable`. The finalizer
+    inventories all current CI/review findings, repairs them in coherent
+    batches, and owns the PR until `mergeable-candidate` or a named blocker.
+    Do not poll it more often than once per 15 minutes; continue another safe
+    node when possible. It must stop before a third repair head for the same
+    material failure category and return one named question for bounded Astra
+    advice. The coordinator then performs the final exact-head recheck and is
+    the only normal merge owner. Apply the node's effective repository policy,
+    record `review_churn_warning` as telemetry, and merge only when latest-head
+    CI/reviews and required evidence are current and all predecessors are merged.
 11. Merge in topological order. After each merge, update descendants to the
     final base and rerun their required checks before declaring them mergeable.
 12. When a merged node is resolved and no descendant or provenance obligation

@@ -37,6 +37,18 @@ Route standalone work to the [Standalone Issue Workflow](#standalone-issue-workf
 
 Do not create an umbrella, dependency graph, milestone ledger, or tracker-form issue for standalone work. Explicit invocation of this skill does not require forcing a standalone request into tracker form.
 
+## Total Completion Packet
+
+Every executable issue owns one coherent completion packet: affected production
+entry points/callers and fallback behavior, implementation, risk-relevant
+tests, required documentation, performance evidence when relevant, and explicit
+acceptance. Keep that packet in the same issue and normally the same PR unless a
+separately owned dependency or evidence gate is genuinely required.
+
+Test-first start, implementation, and close are logical phases inside this
+packet. They are not instructions to create separate PRs, push every small
+change, or wait for CI/review after each phase.
+
 ## Shared Workflow
 
 1. Identify the requested operating mode and target repository with user input, `gh repo view`, or the current checkout.
@@ -110,7 +122,9 @@ issue; a later performance-polish child is not a substitute.
 Do not load the tracker template or design a dependency graph.
 
 1. Use the shared documentation/code preflight and matching repo extension. Apply repo-local requirements and user direction before skill defaults.
-2. From concrete current evidence, define a concise title, problem, goal, scope, non-goals, acceptance criteria, risk-relevant tests or other proof, and related-issue or ordering constraints. Do not overstate what the code or linked evidence proves.
+2. From concrete current evidence, define a concise title, problem, goal, scope,
+   non-goals, total completion packet, and related-issue or ordering
+   constraints. Do not overstate what the code or linked evidence proves.
 3. Reuse or update an existing issue when it already owns the outcome; otherwise recommend or draft one new issue.
 4. Add relevant validation, performance, documentation, branch, PR, review, and CI requirements. Performance-sensitive standalone features must include the shared feature contract. Do not add tracker milestones or process boilerplate.
 5. In apply mode, create or update the issue with `gh issue create` or `gh issue edit` after checking available labels.
@@ -121,13 +135,17 @@ Do not load the tracker template or design a dependency graph.
 1. Use the shared documentation/code preflight, including policy, relevant contracts, optimized paths, and evidence gaps. User direction overrides skill defaults; preserve applicable repo requirements.
 2. Apply the matching repo extension already loaded during preflight; otherwise use the generic workflow.
 3. For umbrella, dependency-graph, reorganization, or supersession work, read [references/issue-graph-planning.md](references/issue-graph-planning.md) and produce the graph preflight before drafting issue bodies.
-4. Classify each existing issue as retain, narrow, supersede, close, or defer. Assign every completion gate exactly one authoritative owner.
+4. Classify each existing issue as retain, narrow, supersede, close, or defer.
+   Narrow or supersede overlapping executable scope before execution, and
+   assign every completion gate exactly one authoritative owner.
 5. Identify the exact workstream, current evidence, non-goals, milestone order, owner boundaries, expected proof, and adjacent in-flight work that must not be disturbed.
 6. Read [references/tracker-issue-template.md](references/tracker-issue-template.md) for the reusable issue structure.
 7. Draft with concrete, current facts. Do not overstate what the code proves or convert every reported metric into an optimization target.
 8. For every PR-bearing milestone, define the behavior or invariant that drives its test-first loop. Require a failing test before implementation, or an explicit exception with the alternative correctness evidence.
 9. Classify each PR or milestone as **not performance-relevant**, **possibly performance-relevant**, **performance-sensitive**, or **performance-objective**. State the evidence required for that class and the metrics that match the affected path. Include the shared feature contract for performance-sensitive/objective nodes, with allocation and documentation exit gates in each owning child.
-10. Include checkbox milestones that can serve as a work log, plus test-first start, implementation, and close phases for every PR.
+10. Include checkbox milestones that can serve as a work log. Keep test-first
+    start, implementation, and close as phases of one completion packet, not
+    separate PR, push, CI, or review cycles.
 11. Include required tests and context-relevant benchmarks for each milestone. Performance-sensitive and performance-objective milestones require before/after evidence for equivalent existing behavior and the shared feature-contract comparison for new behavior; a current snapshot alone is insufficient. Material regressions block until optimized or explicitly accepted.
 12. For performance-optimization trackers, define explicit **north-star gates** and per-milestone **exit gates** with current value, target value, required evidence, and the action if the gate fails. Classify non-target metrics as guardrails, observational metrics, or explicitly accepted gaps.
 13. Include branch, PR, AI review, and CI process requirements when the workstream requires mergeable PRs.
@@ -152,7 +170,10 @@ Repo extensions preserve project-specific conventions without hardcoding them in
 - Keep the issue body authoritative and buildoutable.
 - Separate product goals from substrate work and experiments.
 - State non-goals explicitly to avoid drift.
-- Keep the graph minimal: every child must own an executable slice, a decision gate, or final evidence. Do not create parallel issues that own the same completion gate.
+- Keep the graph minimal: every child must own a total executable packet, a
+  decision gate, or final evidence. Before execution, narrow or supersede
+  overlapping issues; do not let parallel issues own the same scope or
+  completion gate.
 - Distinguish the execution graph from evidence/history issues. Preserve useful history with cross-links and concise disposition comments instead of rewriting mature issue narratives into unrelated architecture.
 - Make dependencies directional and explicit. Conditional children name eligibility evidence and remain non-blocking until it exists. For scientific lanes, use `scientific-portfolio-governance`: owner direction or a clear issue assignment, one writer per issue branch, overlap checks, and merged predecessor authority. No automatic successor activation, scheduler, slot pool, activation PR, or workflow-authored authority; unrelated mainline changes do not invalidate a lane.
 - Classify measured metrics as north-star gates, milestone exit gates, guardrails, observational metrics, or explicitly accepted gaps. An accepted gap must record its evidence basis and revisit trigger and must not remain an accidental completion blocker.
@@ -173,7 +194,11 @@ Repo extensions preserve project-specific conventions without hardcoding them in
 - State a performance regression gate: material regressions in runtime, throughput, latency, memory, allocation, storage/rebuild overhead, or relevant counters are not acceptable by default; the PR must profile and optimize before mergeability can be claimed, or document that the remaining minimized regression is correctness-required and explicitly accepted by the coordinator/user.
 - For optimization work, state an insufficient-improvement gate: if the claimed/north-star metric does not move by the tracker-defined threshold, the issue remains incomplete even when tests and CI pass. The PR or issue must either fix the gate, narrow itself to instrumentation-only, or open/link a blocking follow-up that owns the measured next bottleneck before downstream/final-gate work can claim completion. Default tracker behavior is iterative and thorough: do not close as "insufficient" unless the user explicitly stops or accepts an open-blocker outcome.
 - Require per-milestone exit gates with numeric targets or explicit qualitative pass/fail evidence. Each gate should include: intended path/counter proof, reproducible comparison commands, success threshold, and failure action.
-- Require PR start, implementation, and close phases: establish and capture the red test first (or document the exception), implement to green, refactor while green, then rerun affected tests and context-required performance evidence.
+- Require PR start, implementation, and close phases inside one coherent
+  completion packet: establish and capture the red test first (or document the
+  exception), implement to green, refactor while green, then rerun affected
+  tests and context-required performance evidence. Do not turn these phases
+  into separate pushes or review waits.
 - Derive required reviewers and stop rules from repo/user policy; do not mandate all AI providers. Use `github-pr-mergeable` when available for exact-head review classification. Request review only on mature PRs (coherent code, relevant tests/benchmarks, current body, no known blockers, CI running or green); stop on a clean required result and renew only when changes or unresolved findings require it. Respect explicit review caps.
 - Record hosted Codex quota, usage-limit, rate-limit, capacity, or service unavailability as `CODEX_REVIEW_UNAVAILABLE_QUOTA`, never acceptance or a finding. Where policy permits, require an independent read-only GPT-5.6 Pro reviewer or documented clean-room `LOCAL_GPT56_REVIEW` at the exact candidate: paths/claims, checks, findings, `ACCEPT` or `REJECT`, and no candidate edits. Later scientific edits invalidate the review. If no permitted required review is available, record that blocker.
 - If CI is backed up, scope any proposed stale-run cancellation to superseded runs of the selected PR, subject to execution authorization and repo policy. Issue planning does not authorize cancelling CI or disturbing other lanes.

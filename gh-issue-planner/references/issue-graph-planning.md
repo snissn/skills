@@ -57,6 +57,11 @@ Keep the preflight approximate when the user requests a sketch. Do not fill it w
 
 Every executable node should name the first behavior or invariant its implementation PR must drive from red to green, or an explicit allowed exception. Also classify the node as not performance-relevant, possibly performance-relevant, performance-sensitive, or performance-objective so benchmark requirements are deliberate rather than copied uniformly across the graph.
 
+Each executable node should also own one total completion packet: production
+callers/fallback, implementation, tests, documentation, required performance
+evidence, and acceptance. Treat start, implementation, and close as phases of
+that packet, not separate PRs or review cycles.
+
 ## Reuse Versus Net-New
 
 Reuse an existing tracker when:
@@ -94,6 +99,8 @@ Use only roles the work actually needs:
 - **Evidence/history anchor:** preserves prior experiments or benchmark attribution without blocking the new graph by default.
 
 Assign every completion gate exactly one authoritative issue. Other issues may contribute evidence but must link to the owner rather than restating the same closure criterion.
+Before execution, narrow or supersede any overlapping executable issue whose
+scope or completion gate is already owned elsewhere.
 
 ## Gate Classification
 

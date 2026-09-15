@@ -29,7 +29,7 @@ parallel managers inventing incompatible contracts.
 | State | Meaning | May Unblock Descendants | May Merge |
 | --- | --- | --- | --- |
 | `pending` | Not started. | No | No |
-| `running` | Worker or coordinator is implementing/reviewing. | No | No |
+| `running` | Worker or coordinator is implementing or actively finalizing. | No | No |
 | `dependency-ready` | Contract stable; speculation still requires user opt-in and repo permission. | Only with that authorization | No |
 | `fix-needed` | Review, CI, tests, or performance evidence found blockers. | No, except authorized speculation | No |
 | `review-scope-reset` | An explicit hard review cap or coordinator-confirmed recurring material contract/architecture failure requires owner scope disposition. Advisory counts and provider exhaustion do not enter this state. | No | No |
@@ -65,7 +65,7 @@ Predecessor #A changed since snapshot:
 - Keep agent depth at one. The coordinator owns all fan-out and follow-up
   routing.
 - Apply SKILL.md's budget: one useful worker, at most two independent
-  assignments normally. Keep routine inventory and polling with the coordinator.
+  assignments normally. Do not create a worker solely to poll.
 - Parallelize implementation only when workers have isolated worktrees and
   disjoint ownership boundaries and no shared contract decision remains.
 - Serialize nodes that touch the same public API, storage format, migration,
@@ -76,6 +76,22 @@ Predecessor #A changed since snapshot:
 - Stop or steer a worker when its base SHA, ownership boundary, or predecessor
   contract changes in a way that affects its assignment. Unrelated mainline
   changes alone do not invalidate a scientific lane.
+
+## Finalization Ownership
+
+An issue worker owns its total completion packet until a mature
+`dependency-ready` PR or a real blocker. Then assign one direct-child
+finalization owner to that PR. It may mutate the candidate and owns complete
+finding inventory, coherent repair batches, latest-head CI/review, and thread
+resolution, but never merge. The coordinator checks no more often than once
+every 15 minutes unless completion or a blocker arrives, advances another safe
+node when possible, and performs the final exact-head gate.
+
+If the same material blocker category survives two repair heads, stop before a
+third and route one named question through the bounded Astra adviser. Keep the
+same PR across base advancement; sync once pre-finalization or on a real
+conflict/predecessor trigger, and replace it only when genuinely irreparable
+under repository policy.
 
 ## Retained Evidence Gate
 
@@ -138,7 +154,7 @@ nodes:
     layer: 0
     state: pending
     agent: ...
-    agent_role: inventory|implementation|high-risk-specialist|readiness-review
+    agent_role: inventory|implementation|high-risk-specialist|finalization
     requested_model: gpt-6-astra|gpt-5.6-terra|gpt-5.6-luna|policy-required-reviewer
     requested_effort: low|medium|high|xhigh
     actual_model: ...

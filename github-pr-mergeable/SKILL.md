@@ -180,18 +180,44 @@ gh run watch <RUN_ID> --repo <OWNER>/<REPO>
 
 Cancel only stale/non-head runs unless the user explicitly authorizes broader cleanup. Do not cancel the only active CI for a PR head unless you are about to push or have already pushed a newer head.
 
-## Cross-Head Review Churn Breaker
+## Base Advancement Without PR Replacement
+
+Keep the same PR while its base advances. Sync once before final review and
+again only for an actual conflict, predecessor-contract change, or failing
+merge-candidate test; do not continuously chase the default branch. Prefer a
+repository merge queue or server-generated merge candidate when available.
+Replace the PR only when its branch is genuinely irreparable under repository
+policy. Any changed candidate head still requires fresh exact-head evidence.
+
+## Coherent Repair Batches And Cross-Head Churn
 
 Review history applies across the PR lifetime, but is advisory by default. A
 repair commit does not erase earlier requests or finding-bearing heads; those
 counts help detect churn without automatically blocking a new mature head.
 
-Before every new Codex request:
+Before every push or new review request, run one coherent repair batch:
 
-1. inventory total PR-lifetime review requests, distinct finding-bearing heads, and review threads;
-2. apply an explicit repository-local or user-authorized hard review cap, if one exists;
-3. classify findings as claim/contract blockers, implementation defects inside the declared scope, claim/authority mismatches, nonblocking hardening, or incorrect findings;
-4. batch all current fixes and audit sibling invariants before asking for another review.
+1. Inventory all current local findings, latest-head check failures, review
+   comments, unresolved threads, total PR-lifetime review requests, and
+   distinct finding-bearing heads. After requesting multiple reviewers, wait
+   for all to complete or for the configured bounded collection window to
+   expire unless an urgent correctness issue requires immediate repair.
+2. Apply any explicit repository/user hard cap and classify every finding as a
+   claim/contract blocker, in-scope implementation defect, claim/authority
+   mismatch, nonblocking hardening, incorrect finding, or unrelated failure.
+3. Repair all accepted in-scope findings locally; comment on rejected or
+   deferred findings and resolve their threads where appropriate.
+4. Audit sibling invariants, run focused validation for the whole batch, and
+   update the PR body/evidence.
+5. Push once, then start one latest-head CI/review cycle. A batch may contain
+   multiple local commits. New external information may start the next batch,
+   but do not push and wait one finding at a time.
+
+Keep the PR draft until its issue-wide implementation packet is complete. If
+the same material blocker category returns on the second repair head, stop
+before creating a third and return one named root-cause or architecture
+question to the coordinator. This escalation does not weaken the final
+exact-head review gate.
 
 Absent an explicit hard cap, six total requests or three finding-bearing heads
 produce a `review_churn_warning`, not a stop. Resolved minor, rejected, or
@@ -215,7 +241,8 @@ terminal even when advisory or explicit historical thresholds were exceeded.
 
 Do not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviewers merely because a PR exists. Codex is the required final AI reviewer by default only when repository/workstream policy does not define a different proportional review or scientific acceptance gate; CodeRabbit and Copilot are optional unless repo policy makes their checks required. First make the PR mature enough that the requested review is likely to inspect the intended final shape:
 
-- coherent code for the scoped issue is pushed;
+- the issue-wide implementation packet is complete and coherent: production
+  path/fallback, tests, required docs, and performance evidence;
 - focused tests and required benchmarks have run, or the PR body states why a required benchmark is not yet applicable;
 - the PR body or status comment includes current scope, tests, benchmark evidence, known risks, and non-goals;
 - internal deep review has found no known blocking correctness, performance, CI, or scope issues;
@@ -247,17 +274,11 @@ Default to one initial request and at most two retries for the same head, with a
 
 If one of those bots uses a different repo-specific trigger, follow the repo convention. If a bot is unavailable, say so explicitly and do not claim it passed.
 
-For each AI review that produces comments, checks, review threads, or findings:
-
-- read all findings, not just summaries;
-- verify each suggested patch before applying;
-- classify whether each finding affects the declared claim/contract and authority;
-- fix real in-scope blockers with minimal, scoped changes;
-- reject incorrect findings with a PR comment explaining why;
-- narrow claims or defer nonblocking hardening instead of silently expanding scope;
-- mark review threads resolved after fixing or explicitly dismissing;
-- run a sibling-invariant/internal review over the whole batch;
-- re-request at most once for the mature batch when both local and PR-lifetime review budgets permit it.
+For each AI review that produces comments, checks, review threads, or findings,
+add every artifact to the next coherent repair batch above. Verify suggested
+patches, narrow claims or explicitly defer nonblocking hardening instead of
+silently expanding scope, and re-request at most once for the mature batch when
+both local and PR-lifetime review budgets permit it.
 
 ### Final AI Review Completion Gate
 
