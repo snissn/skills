@@ -93,6 +93,22 @@ same PR across base advancement; sync once pre-finalization or on a real
 conflict/predecessor trigger, and replace it only when genuinely irreparable
 under repository policy.
 
+When the user explicitly authorizes work-ahead, predecessor finalization is a
+pipeline handoff, not an idle barrier. Start the successor against the exact
+recorded predecessor snapshot while the finalizer owns CI/review. Label it
+provisional, do not claim mergeability, and inventory which outputs are:
+
+- reusable after a tree/contract-equivalent merge;
+- required to be resynced or rerun on the final base; or
+- invalid until an actual merge identity exists (for example VCS-stamped
+  binaries, candidate-bound provenance, and official retained-evidence runs).
+
+For retained-evidence successors, work ahead on constructor review, immutable
+input staging, environment/toolchain setup, hostile/preflight validation, and
+an explicitly nonqualifying rehearsal when it materially reduces risk. Never
+relabel a rehearsal as qualification evidence; refreeze and rerun every
+merge-identity-bound stage after the predecessor merge.
+
 ## Retained Evidence Gate
 
 For retained performance evidence, order product, reviewed/landed harness or schema, then artifact-only evidence nodes where dependency policy permits. Complete focused provenance, concurrency/isolation, fail-closed validation, and wording review before freezing exact runtime and harness subtree/blob identities and starting expensive collection. Prefer a dedicated high-capacity runner, persistent build cache, and durable artifact storage; otherwise record typed `INFRASTRUCTURE_UNAVAILABLE` and the real fallback.
