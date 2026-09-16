@@ -39,6 +39,49 @@ parallel managers inventing incompatible contracts.
 
 On `review-scope-reset`, do not request another AI review or start actual descendants of the affected node; independent nodes continue. Record the explicit hard policy or material-failure rationale, lifetime counts, thread dispositions, owner, and required decision. Exit after the artifact is accepted, narrowed, split, deferred, rejected, or explicitly authorized to resume. `review_churn_warning` is telemetry and does not change node state.
 
+A failed benchmark or performance gate normally moves a candidate to
+`fix-needed`; it does not make the issue `blocked`, completed, or intentionally
+deferred. Those terminal dispositions require evidence that the issue premise
+is false, the accepted objective is infeasible within its contract, a linked
+successor owns the remaining work, or an external dependency prevents the next
+causal test.
+
+## Failed Candidate Intervention
+
+When a coherent performance candidate fails a hard gate:
+
+1. Revert or quarantine the failed product change when appropriate, but retain
+   its exact base/head, raw artifacts, commands, and correctness results.
+2. Separate the hard rejection reason from noise. Unchanged physical work,
+   wrong-route counters, debt, or a contract failure is stronger evidence than
+   a small single-run throughput delta.
+3. Trace the actual measured workload end to end. Identify the caller-facing
+   entrypoint, service or gateway admission, active coalescer, backend batch,
+   physical sync, root publication, acknowledgement, and final drain. Verify
+   activation with counters or one bounded event trace; do not infer it from a
+   similarly named lower layer.
+4. Recheck the issue premise against current main. Distinguish logical frames,
+   physical syncs, publications, and deferred debt. If current code already
+   satisfies part of the ticket, narrow or disposition that part before coding.
+5. Prefer an existing knob, queue, coordinator, batch API, or test seam for one
+   predeclared causal matrix. Freeze values, repetitions, promotion gates, and
+   stop conditions before running it. Do not tune one yield, delay, or threshold
+   per CI cycle.
+6. If that probe identifies a viable mechanism, produce one completion packet:
+   deterministic mechanism test, implementation, correctness/recovery tests,
+   benchmark provenance, and the full performance matrix. Open a PR only after
+   the local hard gates pass unless repository policy requires an earlier draft.
+7. If the probe helps but the simplest mechanism violates another gate, try at
+   most one evidence-motivated follow-on mechanism by default. If both fail,
+   stop micro-tuning and make an explicit architecture, scope, or measured-no-go
+   disposition. Further candidates require materially new evidence.
+
+Record in durable graph state: retired mechanism, hard failure evidence, active
+stack boundary, issue-premise changes, adviser input used or rejected, the next
+experiment and stop conditions, and which independent node proceeds meanwhile.
+Keep independent graph work moving while this diagnosis or a mature PR
+finalizer runs.
+
 ## Sync Windows
 
 Do not continuously rebase downstream branches. Sync at:
@@ -92,6 +135,12 @@ third and route one named question through the bounded Astra adviser. Keep the
 same PR across base advancement; sync once pre-finalization or on a real
 conflict/predecessor trigger, and replace it only when genuinely irreparable
 under repository policy.
+
+At each repair head, inventory every current review thread and failed gate
+before editing. Batch compatible fixes, update tests and PR evidence together,
+run proportional local checks, and push one coherent repair head. A serial
+comment-by-comment push-and-wait loop is justified only when an earlier finding
+changes the contract or makes the remaining fixes unknowable.
 
 ## Retained Evidence Gate
 

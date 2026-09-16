@@ -171,6 +171,12 @@ Use Astra as a read-only adviser, not a shadow implementer:
   or repair heads, stop before a third micro-fix loop and ask Astra one concrete
   root-cause or architecture question. Include both failed approaches and raw
   evidence.
+- After the first coherent performance candidate fails a hard gate, consult
+  Astra once when the measured result contradicts the proposed mechanism,
+  suggests work happened at the wrong stack boundary, or leaves the next
+  causal experiment unclear. Provide the workload entrypoint, active counters,
+  logical-versus-physical operation counts, and retained artifacts. This is a
+  stack diagnosis, not permission for another implementation.
 - The coordinator owns the decision and records whether the advice was used.
   No consultation is required when the issue is already well specified.
 
@@ -210,6 +216,13 @@ Use Astra as a read-only adviser, not a shadow implementer:
   fallback unless policy explicitly permits it; self-review is not independent.
 - Treat material performance regressions as blockers unless the user or
   coordinator explicitly accepts them with evidence.
+- A failed implementation candidate retires that mechanism, not automatically
+  the issue or graph node. Before deferring or blocking the node, trace the
+  measured workload through its real service/admission, batching, durability,
+  publication, and acknowledgement boundaries; prove which layers were active
+  from counters or a bounded trace; and record the smallest next causal test.
+  If the evidence instead invalidates the issue premise, reconcile its scope
+  with `gh-issue-planner` rather than forcing another implementation.
 - Keep user changes safe. Do not revert unrelated local changes. Do not use
   destructive git commands unless explicitly requested.
 - Continue until every node is merged, intentionally deferred to a linked follow-up, or blocked by external state with an exact next action. Pause at `review-scope-reset` only under an explicit hard review policy or coordinator-confirmed recurring material scope failure, never from advisory counts alone.
@@ -236,6 +249,9 @@ Use Astra as a read-only adviser, not a shadow implementer:
    decisions with the coordinator. Use a bounded Astra adviser only under the
    triggers above.
 8. Track node state transitions in durable graph state and any local manifest: `pending`, `running`, `dependency-ready`, `fix-needed`, `review-scope-reset`, `mergeable-candidate`, `merged`, or `blocked`. Track requested and actual agent routing separately.
+   A performance no-go normally leaves the node `fix-needed` while the
+   failed-candidate intervention in `references/dependency-execution.md` runs;
+   it is not a terminal state by itself.
 9. Use sync windows instead of constant rebasing or polling: initial snapshot,
    predecessor contract change, predecessor merge, one pre-final-review sync,
    and conflict/test trigger. Advance the existing PR; replace it only when its
@@ -249,7 +265,11 @@ Use Astra as a read-only adviser, not a shadow implementer:
     Do not poll it more often than once per 15 minutes; continue another safe
     node when possible. It must stop before a third repair head for the same
     material failure category and return one named question for bounded Astra
-    advice. The coordinator then performs the final exact-head recheck and is
+    advice. The finalizer inventories all current review notes before editing,
+    repairs compatible findings in one coherent batch, runs the proportional
+    local checks, and then pushes once. Do not pay a CI cycle per comment unless
+    a finding changes the contract or invalidates the remaining repair plan.
+    The coordinator then performs the final exact-head recheck and is
     the only normal merge owner. Apply the node's effective repository policy,
     record `review_churn_warning` as telemetry, and merge only when latest-head
     CI/reviews and required evidence are current and all predecessors are merged.
