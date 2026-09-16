@@ -104,8 +104,9 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
   finalization is active ownership, not an agent assigned only to wait for CI.
 - Disable speculative descendant implementation by default. Start a node only
   after its direct predecessors merge unless the user explicitly opts into
-  work-ahead/speculation. Once that opt-in exists and a predecessor finalizer
-  owns the stable PR, do not idle on its CI/review loop: start the highest-priority
+  work-ahead/speculation. Once that opt-in exists, repository/dependency policy
+  permits provisional work, and a predecessor finalizer owns the stable PR, do
+  not idle on its CI/review loop: start the highest-priority
   successor against the recorded exact snapshot. Mark the lane provisional,
   keep it unmergeable, and separate reusable construction/implementation from
   merge-identity-bound evidence. Resync and revalidate after the predecessor
@@ -198,8 +199,9 @@ Use Astra as a read-only adviser, not a shadow implementer:
   direct-child finalization owner. That owner may edit, test, commit, push,
   update the PR, and resolve review threads, but may not merge. The coordinator
   must not poll or message it more often than once every 15 minutes unless it
-  reports completion or a blocker, and should advance an independent ready node
-  meanwhile.
+  reports completion or a blocker, and should advance a safe node meanwhile.
+  With explicit work-ahead authorization and policy permission, that node may
+  be the provisional successor.
 - Workers are direct children by default and may not delegate recursively.
 - Normal subagent concurrency is at most one, may rise to two under the conservative
   budget, and may not exceed two without explicit user opt-in.
@@ -209,9 +211,10 @@ Use Astra as a read-only adviser, not a shadow implementer:
   the dependent branch has been updated/revalidated on the final base.
 - Downstream speculative work is disabled unless the user explicitly opts in;
   `dependency-ready` alone does not authorize a speculative worker. When the
-  user has opted in, delegated predecessor finalization is the normal pipeline
-  boundary: begin the successor optimistically rather than waiting for merge,
-  while preserving its final-base and mergeability gates.
+  user has opted in and repository/dependency policy permits provisional work,
+  delegated predecessor finalization is the normal pipeline boundary: begin
+  the successor optimistically rather than waiting for merge, while preserving
+  its final-base and mergeability gates.
 - Audit policy for every node from that PR's actual worktree or head commit, not only from the coordinator checkout. Enumerate all root/nested `AGENTS.md` files at that head and map every changed path to its applicable policy chain, including policy files added by the PR. Record local review-round caps and scientific acceptance/stop rules in graph state before review.
 - Avoid review-credit churn: do not request Codex, Copilot, CodeRabbit, or other AI reviews until the PR is mature. Mature means coherent code pushed, focused tests and required benchmarks run or explicitly justified, PR body/status is current, no known local blockers remain, and latest-head CI is running or green.
 - Before every `@codex review`, run the `github-pr-mergeable` Codex gate classifier. An exact-head no-findings issue comment is a completed clean result even without a formal review object. Stop requesting immediately when clean; any later unresolved Codex finding supersedes it. Keep the three-request exact-head anti-spam cap. PR-lifetime counts are advisory by default: six requests or three finding-bearing heads emit `review_churn_warning`, but a resolved, mature new head may continue.
@@ -272,8 +275,9 @@ Use Astra as a read-only adviser, not a shadow implementer:
     inventories all current CI/review findings, repairs them in coherent
     batches, and owns the PR until `mergeable-candidate` or a named blocker.
     Do not poll it more often than once per 15 minutes. Continue another safe
-    node when possible; with explicit work-ahead authorization, begin the next
-    successor optimistically from the recorded predecessor snapshot. It must
+    node when possible; with explicit work-ahead authorization and policy
+    permission, begin the next successor optimistically from the recorded
+    predecessor snapshot. It must
     stop before a third repair head for the same
     material failure category and return one named question for bounded Astra
     advice. The finalizer inventories all current review notes before editing,

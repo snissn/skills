@@ -143,9 +143,10 @@ run proportional local checks, and push one coherent repair head. A serial
 comment-by-comment push-and-wait loop is justified only when an earlier finding
 changes the contract or makes the remaining fixes unknowable.
 
-When the user explicitly authorizes work-ahead, predecessor finalization is a
-pipeline handoff, not an idle barrier. Start the successor against the exact
-recorded predecessor snapshot while the finalizer owns CI/review. Label it
+When the user explicitly authorizes work-ahead and repository/dependency policy
+permits provisional work, predecessor finalization is a pipeline handoff, not
+an idle barrier. Start the successor against the exact recorded predecessor
+snapshot while the finalizer owns CI/review. Label it
 provisional, do not claim mergeability, and inventory which outputs are:
 
 - reusable after a tree/contract-equivalent merge;
