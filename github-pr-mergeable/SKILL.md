@@ -104,11 +104,18 @@ For Codex review state, use the bundled classifier instead of inspecting only
 the pull-request `reviews` array:
 
 ```sh
-python "${CODEX_HOME:-${HOME}/.codex}/skills/github-pr-mergeable/scripts/codex_review_gate.py" \
+python3 "${CODEX_HOME:-${HOME}/.codex}/skills/github-pr-mergeable/scripts/codex_review_gate.py" \
   --repo <OWNER>/<REPO> --pr <PR> --check
 ```
 
-The classifier inventories paginated issue comments, formal reviews, and review threads. Exit `0` means the Codex-specific gate is clean; exit `2` means its JSON result names the pending request, findings, unresolved threads, retry exhaustion, or PR-lifetime churn stop. A churn-stop result is an action boundary, not permission to ignore threads. If repository policy supplies a bounded alternative scientific acceptance path, evaluate and record that path separately. CI and the other merge gates remain separate.
+The classifier inventories explicitly paginated issue comments, formal reviews,
+and review threads without requiring version-specific `gh api --slurp` support.
+Exit `0` means the Codex-specific gate is clean; exit `2` means its JSON result
+names the pending request, findings, unresolved threads, retry exhaustion, or
+PR-lifetime churn stop. A churn-stop result is an action boundary, not
+permission to ignore threads. If repository policy supplies a bounded
+alternative scientific acceptance path, evaluate and record that path
+separately. CI and the other merge gates remain separate.
 
 ## Internal Deep Review
 

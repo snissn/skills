@@ -304,9 +304,20 @@ def _gh_json(args: list[str]) -> Any:
     return json.loads(process.stdout)
 
 
-def _rest_pages(endpoint: str) -> list[dict[str, Any]]:
-    pages = _gh_json(["api", "--paginate", "--slurp", endpoint])
-    return [item for page in pages for item in page]
+def _rest_pages(endpoint: str, fetch: Any = None) -> list[dict[str, Any]]:
+    """Fetch REST arrays explicitly; older gh releases lack --slurp."""
+    fetch = fetch or _gh_json
+    items: list[dict[str, Any]] = []
+    page_number = 1
+    while True:
+        separator = "&" if "?" in endpoint else "?"
+        page = fetch(["api", f"{endpoint}{separator}per_page=100&page={page_number}"])
+        if not isinstance(page, list) or any(not isinstance(item, dict) for item in page):
+            raise RuntimeError("GitHub REST pagination returned a non-object array")
+        items.extend(page)
+        if len(page) < 100:
+            return items
+        page_number += 1
 
 
 def _review_threads(owner: str, name: str, number: int) -> list[dict[str, Any]]:
@@ -357,8 +368,8 @@ def fetch_live(repo: str, number: int) -> dict[str, Any]:
     return {
         "head": head,
         "head_commit_at": head_commit_at,
-        "comments": _rest_pages(f"repos/{repo}/issues/{number}/comments?per_page=100"),
-        "reviews": _rest_pages(f"repos/{repo}/pulls/{number}/reviews?per_page=100"),
+        "comments": _rest_pages(f"repos/{repo}/issues/{number}/comments"),
+        "reviews": _rest_pages(f"repos/{repo}/pulls/{number}/reviews"),
         "threads": _review_threads(owner, name, number),
     }
 
@@ -463,6 +474,26 @@ def self_test() -> None:
     churn_with_clean = _fixture(head=head, comments=[*historical_requests, clean_comment], reviews=historical_reviews)
     result = classify(churn_with_clean, max_finding_heads=3)
     assert result["state"] == "clean" and result["review_churn_exhausted"]
+
+    rest_calls: list[list[str]] = []
+    first_page = [{"id": index} for index in range(100)]
+    second_page = [{"id": 100}]
+
+    def fake_rest(args: list[str]) -> Any:
+        rest_calls.append(args)
+        if args[-1].endswith("page=1"):
+            return first_page
+        if args[-1].endswith("page=2"):
+            return second_page
+        raise AssertionError(f"unexpected REST page: {args}")
+
+    assert _rest_pages("repos/example/project/issues/1/comments", fake_rest) == [
+        *first_page, *second_page,
+    ]
+    assert rest_calls == [
+        ["api", "repos/example/project/issues/1/comments?per_page=100&page=1"],
+        ["api", "repos/example/project/issues/1/comments?per_page=100&page=2"],
+    ]
 
     print("codex_review_gate self-test: PASS")
 
