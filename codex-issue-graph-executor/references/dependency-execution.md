@@ -136,11 +136,28 @@ same PR across base advancement; sync once pre-finalization or on a real
 conflict/predecessor trigger, and replace it only when genuinely irreparable
 under repository policy.
 
+
 At each repair head, inventory every current review thread and failed gate
 before editing. Batch compatible fixes, update tests and PR evidence together,
 run proportional local checks, and push one coherent repair head. A serial
 comment-by-comment push-and-wait loop is justified only when an earlier finding
 changes the contract or makes the remaining fixes unknowable.
+
+When the user explicitly authorizes work-ahead, predecessor finalization is a
+pipeline handoff, not an idle barrier. Start the successor against the exact
+recorded predecessor snapshot while the finalizer owns CI/review. Label it
+provisional, do not claim mergeability, and inventory which outputs are:
+
+- reusable after a tree/contract-equivalent merge;
+- required to be resynced or rerun on the final base; or
+- invalid until an actual merge identity exists (for example VCS-stamped
+  binaries, candidate-bound provenance, and official retained-evidence runs).
+
+For retained-evidence successors, work ahead on constructor review, immutable
+input staging, environment/toolchain setup, hostile/preflight validation, and
+an explicitly nonqualifying rehearsal when it materially reduces risk. Never
+relabel a rehearsal as qualification evidence; refreeze and rerun every
+merge-identity-bound stage after the predecessor merge.
 
 ## Retained Evidence Gate
 

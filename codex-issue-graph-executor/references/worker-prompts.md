@@ -140,6 +140,10 @@ You may implement against this contract snapshot:
 Rules:
 - Keep PR draft/WIP or clearly blocked.
 - Do not claim final mergeability.
+- Begin useful implementation or validation immediately; do not wait on the
+  predecessor finalizer merely because the lane is provisional.
+- Classify outputs as reusable, final-base-rerun, or merge-identity-invalid.
+  Retained evidence and VCS-stamped artifacts require a fresh final-base freeze.
 - Do not request AI reviews or merge.
 - Do not spawn subagents.
 - Report any predecessor contract mismatch immediately.
