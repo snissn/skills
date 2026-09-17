@@ -189,8 +189,12 @@ suite that already has valid exact-head evidence. If the same material blocker
 category survives two repair heads, stop before creating a third and return one
 named root-cause or architecture question with both attempts and raw evidence.
 
-Send completion or blocker immediately. Otherwise send at most one compact
-progress update per 15 minutes while active. Return the current head, complete
+Send completion or an actionable blocker immediately. Do not send unchanged
+CI/review heartbeats merely to keep the coordinator active; it may have yielded
+after exhausting useful work-ahead. Answer explicit status requests concisely.
+Preserve the assigned readiness
+and merge authority across that yield; do not wait for another approval or
+grant yourself permission to merge. Return the current head, complete
 finding disposition, tests/benchmarks, latest-head CI/review state, and either
 `mergeable-candidate` or the named blocker. The coordinator retains the final
 exact-head gate and merge decision.

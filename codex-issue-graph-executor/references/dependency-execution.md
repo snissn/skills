@@ -130,6 +130,14 @@ resolution, but never merge. The coordinator checks no more often than once
 every 15 minutes unless completion or a blocker arrives, advances another safe
 node when possible, and performs the final exact-head gate.
 
+When no useful authorized work-ahead remains, apply SKILL.md's **Async Tail:
+Yield Instead of Spin**: persist the owner/head, outstanding gate and exact
+resume action, then end the coordinator turn with one pending handoff. Do not
+replace agent polling with GitHub polling, sleep loops or repeated unchanged
+updates. Completion/actionable-blocker notifications or user continuation drive
+resume; never claim an unsupported automatic wake or treat ordinary CI wait as
+graph completion. All predecessor and evidence gates still apply.
+
 If the same material blocker category survives two repair heads, stop before a
 third and route one named question through the bounded Astra adviser. Keep the
 same PR across base advancement; sync once pre-finalization or on a real

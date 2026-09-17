@@ -14,7 +14,9 @@ remaining the graph coordinator and sole owner of final merge decisions.
 For a graph execution request, invocation means `execute-and-merge`: inspect live state,
 delegate safe independent work, open/update PRs, drive each PR through readiness
 gates, and merge in topological order after gates pass. Do not stop at a plan or
-after opening PRs. Do not ask for separate merge approval unless the user
+after opening PRs. Yielding an idle coordinator while a delegated finalizer
+continues is not abandonment; follow **Async Tail: Yield Instead of Spin** below.
+Do not ask for separate merge approval unless the user
 explicitly narrowed the request to planning or no-merge execution.
 
 ## Astra Execution Guidance
@@ -126,6 +128,30 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
   push, review, or handoff boundary. Request a concise status once; stop only
   when the worker is blocked, outside scope, or no longer useful.
 - Prefer sequential depth on the critical path over keeping every slot busy.
+
+## Async Tail: Yield Instead of Spin
+
+When a finalizer owns the remaining CI/review/merge-readiness work, first advance
+useful authorized work-ahead. Once that work is exhausted:
+
+- Persist the finalizer, exact PR/head, completed preparation, outstanding gate,
+  merge authority, and concrete next action after completion.
+- Send one concise pending handoff and **end the coordinator turn**. Do not loop
+  on `wait_agent`, sleeps, GitHub status reads, or unchanged commentary merely to
+  keep the coordinator alive. A minimum polling interval is not a polling target.
+- Resume on an actual completion/actionable-blocker notification or an explicit
+  user continuation. Use a scheduled wake only if the harness provides it and
+  its use is authorized; otherwise state the resume trigger honestly. Do not
+  invent automatic continuation or create a goal just to wait.
+- On resume, refresh live facts once when due or prompted by a substantive event;
+  do not duplicate the finalizer's readiness loop. An unchanged heartbeat does
+  not justify another coordinator work loop. Report pending, never complete or
+  terminally blocked merely because external CI/review is still running.
+
+Yielding does not waive predecessor merges, exact-head reviews, current-head CI,
+or landed-source requirements for retained evidence. Do not yield while useful
+authorized work remains, and do not grant a finalizer new merge authority by
+implication.
 
 ## Agent and Model Routing
 
@@ -275,7 +301,9 @@ Use Astra as a read-only adviser, not a shadow implementer:
     inventories all current CI/review findings, repairs them in coherent
     batches, and owns the PR until `mergeable-candidate` or a named blocker.
     Do not poll it more often than once per 15 minutes. Continue another safe
-    node when possible; with explicit work-ahead authorization and policy
+    node when possible; when useful coordinator work is exhausted, apply
+    **Async Tail: Yield Instead of Spin**, not an idle wait/status loop.
+    With explicit work-ahead authorization and policy
     permission, begin the next successor optimistically from the recorded
     predecessor snapshot. It must
     stop before a third repair head for the same
