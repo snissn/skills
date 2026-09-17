@@ -123,16 +123,20 @@ Predecessor #A changed since snapshot:
 ## Finalization Ownership
 
 An issue worker owns its total completion packet until a mature
-`dependency-ready` PR or a real blocker. Then assign one direct-child
-finalization owner to that PR. It may mutate the candidate and owns complete
-finding inventory, coherent repair batches, latest-head CI/review, and thread
-resolution, but never merge. The coordinator checks no more often than once
-every 15 minutes unless completion or a blocker arrives, advances another safe
-node when possible, and performs the final exact-head gate.
+`dependency-ready` PR or a real blocker. Finalize locally unless a delegated
+direct-child finalizer enables concrete useful parallel work. The active owner
+handles complete finding inventory, coherent repair batches, latest-head
+CI/review and thread resolution; merge authority remains explicit. While
+delegation is useful, the coordinator checks no more often than every 15 minutes
+unless completion, a blocker or an ownership transfer occurs.
 
 When no useful authorized work-ahead remains, apply SKILL.md's **Async Tail:
-Yield Instead of Spin**: persist the owner/head, outstanding gate and exact
-resume action, then end the coordinator turn with one pending handoff. Do not
+Yield Instead of Spin**: obtain a compact checkpoint, stop/release the delegated
+owner, establish any in-flight command outcome, then reclaim local finalization
+without repeating completed reviews/tests. Never keep two active readiness or
+writer owners. If only external CI/review remains, use a native watch/event
+mechanism; otherwise persist the owner/head, outstanding gate and exact resume
+action and end the coordinator turn with one pending handoff. Do not
 replace agent polling with GitHub polling, sleep loops or repeated unchanged
 updates. Completion/actionable-blocker notifications or user continuation drive
 resume; never claim an unsupported automatic wake or treat ordinary CI wait as

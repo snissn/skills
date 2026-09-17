@@ -131,10 +131,25 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
 
 ## Async Tail: Yield Instead of Spin
 
-When a finalizer owns the remaining CI/review/merge-readiness work, first advance
-useful authorized work-ahead. Once that work is exhausted:
+Keep finalization in the main thread when it is the only critical-path work.
+Delegate a finalizer only when concrete useful authorized work can run alongside
+it, not merely because a PR is mature. If that parallel work finishes and the
+coordinator is only waiting on the delegated reviewer/finalizer, reclaim ownership:
 
-- Persist the finalizer, exact PR/head, completed preparation, outstanding gate,
+- Obtain one compact checkpoint (head, findings, checks/retries, dirty files,
+  in-flight commands and merge authority), then stop/release the worker before
+  taking over writes or merge execution. If a command was in flight, establish
+  its outcome first. There must be exactly one active readiness/writer owner.
+- Reuse exact-head completed reviews and tests; refresh outstanding facts once.
+  Continue the same PR locally without another review, push, implementer or
+  approval request unless changed code, a real finding or policy requires it.
+
+This ownership transfer overrides the normal finalizer polling cadence; it is
+not permission for more frequent status polling. If only an external reviewer
+or CI job remains pending, use a native watch/event mechanism when available,
+not repeated model-driven checks. When no productive action remains:
+
+- Persist the current owner, exact PR/head, completed preparation, outstanding gate,
   merge authority, and concrete next action after completion.
 - Send one concise pending handoff and **end the coordinator turn**. Do not loop
   on `wait_agent`, sleeps, GitHub status reads, or unchanged commentary merely to
@@ -144,7 +159,7 @@ useful authorized work-ahead. Once that work is exhausted:
   its use is authorized; otherwise state the resume trigger honestly. Do not
   invent automatic continuation or create a goal just to wait.
 - On resume, refresh live facts once when due or prompted by a substantive event;
-  do not duplicate the finalizer's readiness loop. An unchanged heartbeat does
+  do not recreate a delegated readiness loop. An unchanged heartbeat does
   not justify another coordinator work loop. Report pending, never complete or
   terminally blocked merely because external CI/review is still running.
 
@@ -221,9 +236,12 @@ Use Astra as a read-only adviser, not a shadow implementer:
 - An issue worker owns the total issue completion packet through a stable
   `dependency-ready` candidate or a real blocker. A plan, opened PR, first test,
   or isolated code change is not a handoff boundary.
-- Once a PR is mature and issue-complete, hand its active readiness loop to one
-  direct-child finalization owner. That owner may edit, test, commit, push,
-  update the PR, and resolve review threads, but may not merge. The coordinator
+- Finalize a mature issue-complete PR locally unless delegation enables concrete
+  useful parallel work. A delegated direct-child finalizer may edit, test,
+  commit, push, update the PR and resolve threads; merge needs explicit delegated
+  authority. Reclaim sole ownership when parallel work is exhausted, as specified
+  in **Async Tail: Yield Instead of Spin**. While delegation remains useful, the
+  coordinator
   must not poll or message it more often than once every 15 minutes unless it
   reports completion or a blocker, and should advance a safe node meanwhile.
   With explicit work-ahead authorization and policy permission, that node may
@@ -296,13 +314,15 @@ Use Astra as a read-only adviser, not a shadow implementer:
    branch is genuinely irreparable under repo policy. Prefer a merge queue or
    server-generated merge candidate when available instead of repeatedly
    chasing the default branch.
-10. When an issue worker produces a mature, issue-complete PR, hand it to one
-    direct-child finalization owner using `github-pr-mergeable`. The finalizer
+10. When an issue worker produces a mature, issue-complete PR, use
+    `github-pr-mergeable` locally. Delegate one direct-child finalizer only when
+    concrete useful parallel work exists. The active readiness owner
     inventories all current CI/review findings, repairs them in coherent
     batches, and owns the PR until `mergeable-candidate` or a named blocker.
-    Do not poll it more often than once per 15 minutes. Continue another safe
-    node when possible; when useful coordinator work is exhausted, apply
-    **Async Tail: Yield Instead of Spin**, not an idle wait/status loop.
+    Do not poll a delegated owner more often than once per 15 minutes. Continue another safe
+    node when possible; when useful parallel work is exhausted, reclaim sole
+    local ownership via **Async Tail: Yield Instead of Spin**, not an idle
+    parent/child wait/status loop.
     With explicit work-ahead authorization and policy
     permission, begin the next successor optimistically from the recorded
     predecessor snapshot. It must

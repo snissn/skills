@@ -153,6 +153,13 @@ Rules:
 
 ## PR Finalization Owner
 
+Use this delegation only when the coordinator has concrete useful work to do
+in parallel. Otherwise the coordinator finalizes locally. If that parallel
+work is exhausted, transfer back once: provide the exact head, findings,
+completed/pending checks and retries, dirty files, in-flight command/session
+and merge authority, then stop. Do not continue writes or merge after transfer;
+the coordinator reuses completed evidence instead of restarting review.
+
 ```text
 You are the active finalization owner for PR <PR_URL>.
 
