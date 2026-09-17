@@ -13,9 +13,9 @@ remaining the graph coordinator and sole owner of final merge decisions.
 
 For a graph execution request, invocation means `execute-and-merge`: inspect live state,
 delegate safe independent work, open/update PRs, drive each PR through readiness
-gates, and merge in topological order after gates pass. Do not stop at a plan or
-after opening PRs. Yielding an idle coordinator while a delegated finalizer
-continues is not abandonment; follow **Async Tail: Yield Instead of Spin** below.
+gates, and merge in topological order after gates pass. Do not stop at a plan,
+opened PR, or ordinary pending CI/review. Follow **Critical-Path Finalization
+and Monitoring** below; keep monitoring until the gate resolves.
 Do not ask for separate merge approval unless the user
 explicitly narrowed the request to planning or no-merge execution.
 
@@ -129,7 +129,7 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
   when the worker is blocked, outside scope, or no longer useful.
 - Prefer sequential depth on the critical path over keeping every slot busy.
 
-## Async Tail: Yield Instead of Spin
+## Critical-Path Finalization and Monitoring
 
 Keep finalization in the main thread when it is the only critical-path work.
 Delegate a finalizer only when concrete useful authorized work can run alongside
@@ -144,29 +144,23 @@ coordinator is only waiting on the delegated reviewer/finalizer, reclaim ownersh
   Continue the same PR locally without another review, push, implementer or
   approval request unless changed code, a real finding or policy requires it.
 
-This ownership transfer overrides the normal finalizer polling cadence; it is
-not permission for more frequent status polling. If only an external reviewer
-or CI job remains pending, use a native watch/event mechanism when available,
-not repeated model-driven checks. When no productive action remains:
+After transfer, the main thread owns the continuous readiness loop. Ordinary
+pending CI/review is not a reason to end the turn or require the user to say
+"resume" again. Use one native watch/event mechanism when available, or repeated
+bounded status polling with waits. Keep tool output compact and updates brief;
+avoid duplicate monitors, fresh reviews, pushes or tests just because time passed.
+The delegated-owner polling cadence does not prohibit monitoring external CI
+after reclaiming ownership. Keep individual blocking waits within harness limits.
 
-- Persist the current owner, exact PR/head, completed preparation, outstanding gate,
-  merge authority, and concrete next action after completion.
-- Send one concise pending handoff and **end the coordinator turn**. Do not loop
-  on `wait_agent`, sleeps, GitHub status reads, or unchanged commentary merely to
-  keep the coordinator alive. A minimum polling interval is not a polling target.
-- Resume on an actual completion/actionable-blocker notification or an explicit
-  user continuation. Use a scheduled wake only if the harness provides it and
-  its use is authorized; otherwise state the resume trigger honestly. Do not
-  invent automatic continuation or create a goal just to wait.
-- On resume, refresh live facts once when due or prompted by a substantive event;
-  do not recreate a delegated readiness loop. An unchanged heartbeat does
-  not justify another coordinator work loop. Report pending, never complete or
-  terminally blocked merely because external CI/review is still running.
-
-Yielding does not waive predecessor merges, exact-head reviews, current-head CI,
-or landed-source requirements for retained evidence. Do not yield while useful
-authorized work remains, and do not grant a finalizer new merge authority by
-implication.
+Persist the owner, exact head, outstanding gate and next action. On completion,
+refresh the exact-head readiness gates and merge/proceed immediately when
+authorized. On failure, diagnose and repair or retry only the affected gate
+within existing policy; waiting is not permission for unbounded retry churn.
+End the turn for completion, an explicit pause, a genuine blocker requiring new
+authority/input, or a harness limit—not merely an unchanged pending status.
+Do not invent automatic wake or create a goal just to wait. Continuous monitoring
+does not waive predecessor merges, exact-head reviews, current-head CI or
+landed-source evidence requirements, or grant new merge authority.
 
 ## Agent and Model Routing
 
@@ -240,7 +234,7 @@ Use Astra as a read-only adviser, not a shadow implementer:
   useful parallel work. A delegated direct-child finalizer may edit, test,
   commit, push, update the PR and resolve threads; merge needs explicit delegated
   authority. Reclaim sole ownership when parallel work is exhausted, as specified
-  in **Async Tail: Yield Instead of Spin**. While delegation remains useful, the
+  in **Critical-Path Finalization and Monitoring**. While delegation remains useful, the
   coordinator
   must not poll or message it more often than once every 15 minutes unless it
   reports completion or a blocker, and should advance a safe node meanwhile.
@@ -321,8 +315,8 @@ Use Astra as a read-only adviser, not a shadow implementer:
     batches, and owns the PR until `mergeable-candidate` or a named blocker.
     Do not poll a delegated owner more often than once per 15 minutes. Continue another safe
     node when possible; when useful parallel work is exhausted, reclaim sole
-    local ownership via **Async Tail: Yield Instead of Spin**, not an idle
-    parent/child wait/status loop.
+    local ownership via **Critical-Path Finalization and Monitoring**, then
+    continuously monitor the outstanding gates locally.
     With explicit work-ahead authorization and policy
     permission, begin the next successor optimistically from the recorded
     predecessor snapshot. It must

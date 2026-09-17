@@ -130,17 +130,18 @@ CI/review and thread resolution; merge authority remains explicit. While
 delegation is useful, the coordinator checks no more often than every 15 minutes
 unless completion, a blocker or an ownership transfer occurs.
 
-When no useful authorized work-ahead remains, apply SKILL.md's **Async Tail:
-Yield Instead of Spin**: obtain a compact checkpoint, stop/release the delegated
+When no useful authorized work-ahead remains, apply SKILL.md's **Critical-Path
+Finalization and Monitoring**: obtain a compact checkpoint, stop/release the delegated
 owner, establish any in-flight command outcome, then reclaim local finalization
 without repeating completed reviews/tests. Never keep two active readiness or
-writer owners. If only external CI/review remains, use a native watch/event
-mechanism; otherwise persist the owner/head, outstanding gate and exact resume
-action and end the coordinator turn with one pending handoff. Do not
-replace agent polling with GitHub polling, sleep loops or repeated unchanged
-updates. Completion/actionable-blocker notifications or user continuation drive
-resume; never claim an unsupported automatic wake or treat ordinary CI wait as
-graph completion. All predecessor and evidence gates still apply.
+writer owners. If only external CI/review remains, continue monitoring with one
+native watch/event mechanism or bounded polling/waits. Persist owner/head, gate
+and next action, but do not end the turn just because the gate is still pending.
+The delegated-owner polling cadence does not apply to external CI after transfer.
+Keep output compact, reuse completed evidence, and proceed immediately when
+the gate resolves; do not restart reviews/tests or duplicate monitors. Completion,
+explicit pause, a genuine authority/input blocker or harness limit can end the
+turn. All predecessor and evidence gates still apply.
 
 If the same material blocker category survives two repair heads, stop before a
 third and route one named question through the bounded Astra adviser. Keep the
