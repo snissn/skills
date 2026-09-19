@@ -86,6 +86,18 @@ For both standalone issues and graphs:
   approved changes into the graph and downstream issues within the requested
   mode; documentation edits do not themselves authorize a scientific decision.
 
+## High-Capability Planning Advisory Pass
+
+When the user explicitly requests Astra or another high-capability planning
+advisor, or when a compact architecture synthesis would materially reduce
+implementation rediscovery, read
+[references/high-capability-planning.md](references/high-capability-planning.md).
+Use one bounded, read-only advisory pass after the coordinator has assembled the
+repo policy, live-issue state, canonical docs, and production-path context. The
+advisor proposes and critiques implementation-ready issue blueprints; the
+coordinator verifies current facts, chooses the graph, and retains sole GitHub
+write authority. Do not make this pass routine for ordinary issue drafting.
+
 ## Performance-Sensitive Feature Contract
 
 Apply this to every performance-sensitive or performance-objective implementation,
@@ -135,22 +147,26 @@ Do not load the tracker template or design a dependency graph.
 1. Use the shared documentation/code preflight, including policy, relevant contracts, optimized paths, and evidence gaps. User direction overrides skill defaults; preserve applicable repo requirements.
 2. Apply the matching repo extension already loaded during preflight; otherwise use the generic workflow.
 3. For umbrella, dependency-graph, reorganization, or supersession work, read [references/issue-graph-planning.md](references/issue-graph-planning.md) and produce the graph preflight before drafting issue bodies.
-4. Classify each existing issue as retain, narrow, supersede, close, or defer.
+4. When the high-capability advisory mode applies, give the advisor the bounded
+   context packet required by its reference and require one integrated synthesis
+   plus self-critique. Verify its paths, symbols, issue dispositions, and claims
+   against the intended base before using them.
+5. Classify each existing issue as retain, narrow, supersede, close, or defer.
    Narrow or supersede overlapping executable scope before execution, and
    assign every completion gate exactly one authoritative owner.
-5. Identify the exact workstream, current evidence, non-goals, milestone order, owner boundaries, expected proof, and adjacent in-flight work that must not be disturbed.
-6. Read [references/tracker-issue-template.md](references/tracker-issue-template.md) for the reusable issue structure.
-7. Draft with concrete, current facts. Do not overstate what the code proves or convert every reported metric into an optimization target.
-8. For every PR-bearing milestone, define the behavior or invariant that drives its test-first loop. Require a failing test before implementation, or an explicit exception with the alternative correctness evidence.
-9. Classify each PR or milestone as **not performance-relevant**, **possibly performance-relevant**, **performance-sensitive**, or **performance-objective**. State the evidence required for that class and the metrics that match the affected path. Include the shared feature contract for performance-sensitive/objective nodes, with allocation and documentation exit gates in each owning child.
-10. Include checkbox milestones that can serve as a work log. Keep test-first
+6. Identify the exact workstream, current evidence, non-goals, milestone order, owner boundaries, expected proof, and adjacent in-flight work that must not be disturbed.
+7. Read [references/tracker-issue-template.md](references/tracker-issue-template.md) for the reusable issue structure.
+8. Draft with concrete, current facts. Do not overstate what the code proves or convert every reported metric into an optimization target.
+9. For every PR-bearing milestone, define the behavior or invariant that drives its test-first loop. Require a failing test before implementation, or an explicit exception with the alternative correctness evidence.
+10. Classify each PR or milestone as **not performance-relevant**, **possibly performance-relevant**, **performance-sensitive**, or **performance-objective**. State the evidence required for that class and the metrics that match the affected path. Include the shared feature contract for performance-sensitive/objective nodes, with allocation and documentation exit gates in each owning child.
+11. Include checkbox milestones that can serve as a work log. Keep test-first
     start, implementation, and close as phases of one completion packet, not
     separate PR, push, CI, or review cycles.
-11. Include required tests and context-relevant benchmarks for each milestone. Performance-sensitive and performance-objective milestones require before/after evidence for equivalent existing behavior and the shared feature-contract comparison for new behavior; a current snapshot alone is insufficient. Material regressions block until optimized or explicitly accepted.
-12. For performance-optimization trackers, define explicit **north-star gates** and per-milestone **exit gates** with current value, target value, required evidence, and the action if the gate fails. Classify non-target metrics as guardrails, observational metrics, or explicitly accepted gaps.
-13. Include branch, PR, AI review, and CI process requirements when the workstream requires mergeable PRs.
-14. In apply mode, create or update issues with `gh issue create` or `gh issue edit`, link every child to its parent, backfill the parent's graph ledger, and add concise disposition comments to superseded issues.
-15. Verify the live graph after writes, then return issue URLs, repo, labels, edges, existing-issue dispositions, gate ownership, and main scope boundaries.
+12. Include required tests and context-relevant benchmarks for each milestone. Performance-sensitive and performance-objective milestones require before/after evidence for equivalent existing behavior and the shared feature-contract comparison for new behavior; a current snapshot alone is insufficient. Material regressions block until optimized or explicitly accepted.
+13. For performance-optimization trackers, define explicit **north-star gates** and per-milestone **exit gates** with current value, target value, required evidence, and the action if the gate fails. Classify non-target metrics as guardrails, observational metrics, or explicitly accepted gaps.
+14. Include branch, PR, AI review, and CI process requirements when the workstream requires mergeable PRs.
+15. In apply mode, create or update issues with `gh issue create` or `gh issue edit`, link every child to its parent, backfill the parent's graph ledger, and add concise disposition comments to superseded issues.
+16. Verify the live graph after writes, then return issue URLs, repo, labels, edges, existing-issue dispositions, gate ownership, and main scope boundaries.
 
 ## Repo Extensions
 
