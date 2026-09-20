@@ -9,7 +9,7 @@ Use this skill when the user asks Codex to execute a dependency graph of GitHub
 issues, tickets, or PRs and drive them to completion. This is the Codex-native
 counterpart to Orca graph execution: do not use Orca or Pi commands. Use Codex
 subagent tools for bounded work that benefits from delegation, with this rollout
-remaining the graph coordinator and sole owner of final merge decisions.
+remaining the graph coordinator and owner of merge-authority allocation.
 
 For a graph execution request, invocation means `execute-and-merge`: inspect live state,
 delegate safe independent work, open/update PRs, drive each PR through readiness
@@ -91,8 +91,9 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
 
 - Default to **one active subagent when useful work can run in parallel**,
   otherwise zero. The coordinator handles live inventory, DAG/state updates,
-  straightforward diagnosis, integration, and merge execution locally. A
-  delegated PR finalizer owns its assigned PR's active readiness loop.
+  straightforward diagnosis, integration, and merge-authority allocation. A
+  delegated PR finalizer owns its assigned PR's active readiness loop and may
+  merge it only when given explicit per-PR authority.
 - Raise to **two active subagents** only when two ready assignments are independent,
   use isolated worktrees for writes, have disjoint contract/conflict surfaces, and each is
   expected to save substantial elapsed time. Two is the normal hard ceiling.
@@ -103,7 +104,9 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
   the same PR.
 - Do not delegate inventory, status polling, simple CI log extraction, tracker
   edits, branch synchronization, or merge commands as standalone work. PR
-  finalization is active ownership, not an agent assigned only to wait for CI.
+  finalization is active ownership, not an agent assigned only to wait for CI;
+  a merge may be the final action of an explicitly authorized end-to-end
+  finalization assignment.
 - Disable speculative descendant implementation by default. Start a node only
   after its direct predecessors merge unless the user explicitly opts into
   work-ahead/speculation. Once that opt-in exists, repository/dependency policy
@@ -133,7 +136,12 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
 
 Keep finalization in the main thread when it is the only critical-path work.
 Delegate a finalizer only when concrete useful authorized work can run alongside
-it, not merely because a PR is mature. If that parallel work finishes and the
+it, not merely because a PR is mature. When work-ahead is authorized and a
+mature PR has a stable exact head, delegate its complete readiness loop and
+explicitly decide whether that assignment includes merge authority; then begin
+the highest-priority safe successor immediately in an isolated worktree. Do not
+duplicate the finalizer's polling or gate work in the coordinator. If that
+parallel work finishes and the
 coordinator is only waiting on the delegated reviewer/finalizer, reclaim ownership:
 
 - Obtain one compact checkpoint (head, findings, checks/retries, dirty files,
@@ -156,6 +164,12 @@ Persist the owner, exact head, outstanding gate and next action. On completion,
 refresh the exact-head readiness gates and merge/proceed immediately when
 authorized. On failure, diagnose and repair or retry only the affected gate
 within existing policy; waiting is not permission for unbounded retry churn.
+After every push, reset one immutable gate tuple containing the exact head,
+base, required-check set, review-thread state, and required review artifact so
+evidence from an older head cannot satisfy the gate. Before retrying CI, inspect
+the exact failure logs, classify whether the failure intersects changed paths or
+contracts, run the smallest useful reproduction when feasible, and retry only
+failed jobs once; diagnose any repeat instead of cycling reruns.
 End the turn for completion, an explicit pause, a genuine blocker requiring new
 authority/input, or a harness limit—not merely an unchanged pending status.
 Do not invent automatic wake or create a goal just to wait. Continuous monitoring
@@ -172,7 +186,7 @@ These routes are workflow choices, not guaranteed cost or quality rankings.
 
 | Role | Preferred route when available | Use for |
 | --- | --- | --- |
-| Coordinator and final gate | current model/effort | Graph, integration, blockers, and merge decisions. Never spawn a replacement coordinator. |
+| Coordinator and final gate | current model/effort | Graph, integration, blockers, and merge-authority decisions. Never spawn a replacement coordinator. |
 | Complex implementation or specialist | `gpt-6-astra`, inherited effort | Ambiguous multi-file work, architecture, persistence/concurrency, security, or disputed evidence. Use `medium` for a fresh unconfigured worker; `high` for demonstrated complexity. |
 | Routine implementation | `gpt-5.6-terra`, `medium` | A bounded issue with a clear contract, focused tests, and its fix loop. |
 | PR finalization owner | `gpt-5.6-terra`, `medium` | One mature PR's mutable review/CI repair loop. Use Astra only when the PR itself requires the high-risk route. |
@@ -224,7 +238,7 @@ Use Astra as a read-only adviser, not a shadow implementer:
 
 ## Hard Invariants
 
-- The coordinator owns the dependency graph and final merge decisions.
+- The coordinator owns the dependency graph and allocation of final merge authority.
 - Workers may open or update PRs, but they must not merge unless explicitly
   delegated by the coordinator.
 - An issue worker owns the total issue completion packet through a stable
@@ -239,7 +253,9 @@ Use Astra as a read-only adviser, not a shadow implementer:
   must not poll or message it more often than once every 15 minutes unless it
   reports completion or a blocker, and should advance a safe node meanwhile.
   With explicit work-ahead authorization and policy permission, that node may
-  be the provisional successor.
+  be the provisional successor. When a stable predecessor finalizer has
+  explicit merge authority, advancing that successor is the default rather than
+  duplicating final-gate work in the coordinator.
 - Workers are direct children by default and may not delegate recursively.
 - Normal subagent concurrency is at most one, may rise to two under the conservative
   budget, and may not exceed two without explicit user opt-in.
@@ -296,7 +312,7 @@ Use Astra as a read-only adviser, not a shadow implementer:
 7. Delegate one ready issue when useful local work can proceed alongside it;
    otherwise implement locally. Add a second worker only when the conservative
    budget permits it. Keep inventory, graph state, integration, and merge
-   decisions with the coordinator. Use a bounded Astra adviser only under the
+   authority allocation with the coordinator. Use a bounded Astra adviser only under the
    triggers above.
 8. Track node state transitions in durable graph state and any local manifest: `pending`, `running`, `dependency-ready`, `fix-needed`, `review-scope-reset`, `mergeable-candidate`, `merged`, or `blocked`. Track requested and actual agent routing separately.
    A performance no-go normally leaves the node `fix-needed` while the
@@ -313,8 +329,9 @@ Use Astra as a read-only adviser, not a shadow implementer:
     concrete useful parallel work exists. The active readiness owner
     inventories all current CI/review findings, repairs them in coherent
     batches, and owns the PR until `mergeable-candidate` or a named blocker.
-    Do not poll a delegated owner more often than once per 15 minutes. Continue another safe
-    node when possible; when useful parallel work is exhausted, reclaim sole
+    Do not poll a delegated owner more often than once per 15 minutes. When
+    work-ahead is authorized, a stable predecessor handoff starts the highest-priority
+    safe successor immediately; when useful parallel work is exhausted, reclaim sole
     local ownership via **Critical-Path Finalization and Monitoring**, then
     continuously monitor the outstanding gates locally.
     With explicit work-ahead authorization and policy
@@ -326,8 +343,9 @@ Use Astra as a read-only adviser, not a shadow implementer:
     repairs compatible findings in one coherent batch, runs the proportional
     local checks, and then pushes once. Do not pay a CI cycle per comment unless
     a finding changes the contract or invalidates the remaining repair plan.
-    The coordinator then performs the final exact-head recheck and is
-    the only normal merge owner. Apply the node's effective repository policy,
+    The active merge owner then performs the final exact-head recheck. The
+    coordinator is the normal merge owner unless it explicitly delegated merge
+    authority for that PR as part of the complete finalization assignment. Apply the node's effective repository policy,
     record `review_churn_warning` as telemetry, and merge only when latest-head
     CI/reviews and required evidence are current and all predecessors are merged.
 11. Merge in topological order. After each merge, update descendants to the
