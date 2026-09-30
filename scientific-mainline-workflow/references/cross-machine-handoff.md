@@ -43,6 +43,43 @@ ownership by atomically advancing the lease ref to a record with the next
 generation, `owner_token: null`, and `status: released`; do not merely wait for
 expiry.
 
+### Lease liveness
+
+Default to a 30-minute lease and do not exceed 60 minutes merely for
+convenience. Renew only while the owner is actively making branch writes. Each
+renewal must use compare-and-swap, verify the expected remote branch head, and
+record a fresh UTC expiry. A known long calculation may use a longer lease only
+when its protected process and next checkpoint are named in the handoff record.
+
+Before a planned pause, model or machine switch, or end of session, push the
+latest coherent non-decisive checkpoint, publish its exact head, and release
+the lease. Do not leave a lease held around an idle stable checkpoint. Local
+process listings, worktree timestamps, and chat presence are advisory only:
+never seize an unexpired lease from them. Before expiry, takeover requires an
+explicit released or transferred lease record.
+
+After expiry, fetch the lease ref and candidate branch again. Take ownership
+only with compare-and-swap against the expired lease object and only when the
+branch still equals its recorded expected head. If either ref moved, stop and
+reconcile the new state. Record the takeover as a new generation; expiry does
+not authorize rewriting or discarding the prior owner's commits.
+
+### Collision recovery
+
+When two agents discover overlapping branches or path ownership, the loser of
+the lease compare-and-swap becomes read-only and publishes one exact collision
+handoff. The winning owner must inventory both pushed heads before continuing.
+It must either reconcile the sibling's applicable scientific or qualified
+engineering evidence, or explicitly transfer ownership and name why the
+sibling is inapplicable. Do not silently choose one branch, repeat a completed
+qualification campaign, or discard a stronger theorem to make integration
+easier.
+
+Reconcile scientific bytes by semantic diff and renewed review at the effective
+policy boundary. Reconcile execution-only qualification by proving it still
+implements the winning scientific identity, then rerun only the affected tier.
+Publish the selected head and disposition before requesting another review.
+
 Never transfer authority through uncommitted files. Commit and push every
 coherent non-decisive change before switching machines or agents.
 
@@ -77,6 +114,7 @@ lease_ref: dedicated remote Git ref
 lease_generation: positive integer
 lease_token: random owner token, or null when released
 lease_status: held | released
+lease_renewed_at: UTC timestamp
 lease_expires_at: UTC timestamp, or null when released
 ```
 
@@ -94,8 +132,8 @@ Do not write “complete” when only construction is complete. Use
 ## Integrator intake
 
 1. Fetch live GitHub issue, PR, branch, CI, reviews, and default-branch head.
-2. Verify the handoff head and released lease; inspect dirty local paths before
-   checkout.
+2. Verify the handoff head and a released, explicitly transferred, or safely
+   expired lease; inspect dirty local paths before checkout.
 3. Atomically acquire the fenced lease and record the new token and generation.
 4. Recompute the scoped scientific digest and source bindings.
 5. Compare default-branch drift with scientific and owned paths.
