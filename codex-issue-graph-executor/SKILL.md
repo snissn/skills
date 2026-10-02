@@ -55,6 +55,9 @@ and [Codex subagent guidance](https://learn.chatgpt.com/docs/agent-configuration
   adopt necessary nodes within that scope as evidence changes. Map them to the
   agreed parent outcome and preserve acceptance criteria, guardrails, ownership,
   and history; necessary issue maintenance needs no repeated permission.
+- Execution includes removing verified disposable outputs owned by this graph
+  after their consumers release them, under **Asynchronous Disk Cleanup**.
+  Editing this skill does not itself authorize a disk cleanup run.
 - The coordinator may merge after all gates pass; workers may not merge unless
   the coordinator explicitly delegates that action for a specific PR.
 - Do not merge PRs outside the selected graph, even if they are nearby.
@@ -144,6 +147,24 @@ Optimize for verified progress toward the agreed parent outcome per usage window
   when the worker is blocked, outside scope, or no longer useful.
 - Prefer sequential depth on the critical path over keeping every slot busy.
 
+## Asynchronous Disk Cleanup
+
+Use one direct-child `gpt-6.1-sol` cleanup agent for sizeable released batches
+while useful graph work continues. Read
+[references/disk-cleanup.md](references/disk-cleanup.md) before assigning it and
+use the cleanup template in `references/worker-prompts.md`. It counts toward the
+existing concurrency budget; queue cleanup when slots are occupied. Batch and
+reuse this role instead of spawning a cleaner after every command. If delegation
+is unavailable or only cleanup remains, finish the eligible batch locally.
+
+Start after a resolved merge, retired candidate, or completed test/benchmark
+stage releases its worktree or generated outputs. The coordinator assigns exact
+paths and sole deletion ownership; keep active/provisional lanes and retained
+evidence protected. Hand helper-skill post-merge cleanup to that owner rather
+than running two cleaners. Async means an exposed subagent running alongside
+execution, not a detached daemon or invented spawn flag. Collect its outcome
+before the final report; never claim cleanup will continue after the turn ends.
+
 ## Critical-Path Finalization and Monitoring
 
 Keep finalization in the main thread when it is the only critical-path work.
@@ -217,6 +238,7 @@ delegation on `gpt-6.1-sol`.
 | Complex implementation or specialist | `gpt-6.1-sol`, `high` | Ambiguous multi-file work, architecture, persistence/concurrency, security, or disputed evidence. |
 | Routine implementation | `gpt-6.1-sol`, `medium` | A bounded issue with a clear contract, focused tests, and its fix loop. |
 | PR finalization owner | `gpt-6.1-sol`, `medium` | One mature PR's mutable review/CI repair loop; use `high` for a demonstrated correctness, concurrency, or security risk. |
+| Post-execution cleanup | `gpt-6.1-sol`, `medium` | A bounded batch of released worktrees and disposable generated outputs; sole owner of assigned deletion paths. |
 | Fast support | `gpt-6.1-sol`, `low` | A substantial independent inventory or triage task that saves elapsed time. |
 | Independent review or adviser | `gpt-6.1-sol`, `high` | A mature high-risk candidate or disputed finding, read-only in fresh context. Required reviewer identity is governed by repo policy. |
 
@@ -365,7 +387,9 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
    `agent_role`, `requested_model`, `requested_effort`, and routing rationale.
 5. Post or update durable graph state before implementation. Prefer a parent
    issue comment with marker `<!-- codex-issue-graph-executor:state -->`;
-   otherwise use a local manifest and report the fallback.
+   otherwise use a local manifest and report the fallback. Record large generated
+   paths in existing node notes as they are created, with host, owner, purpose,
+   and disposable/retained status; carry them into worker handoffs.
 6. Present a concise graph snapshot and proceed immediately. Do not wait for
    plan approval because this skill defaults to execute-and-merge.
 7. Start ready nodes, including provisional descendants of `dependency-ready`
@@ -412,9 +436,11 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
 11. Merge in topological order. After each merge, update descendants to the
     final base, reassess evidence, and run affected or policy-required checks
     before declaring them mergeable.
-12. When a merged node is resolved and no descendant or provenance obligation
-    still needs its branch/worktree, apply `github-pr-mergeable` post-merge
-    cleanup immediately rather than accumulating completed local streams.
+12. Release eligible worktrees and generated outputs to **Asynchronous Disk
+    Cleanup** as consumers finish; do not accumulate them until graph closeout.
+    Preserve `github-pr-mergeable` branch-cleanup policy and one cleanup owner.
+    Before reporting completion, collect cleanup results or finish locally;
+    record retained paths and blockers honestly.
 
 ## Dependency Ready
 
@@ -449,6 +475,9 @@ Lead with the outcome; summarize evidence and link detailed state. Report:
   review, including any requested-versus-actual fallback.
 - Any deferred nodes with blocker, owner, and next action.
 - Per-node local worktree, local branch, and GitHub remote-branch cleanup status.
+- Disk cleanup owner, removed/retained generated paths with reasons, and measured
+  free-space change per affected filesystem; distinguish size estimates from
+  observed recovery.
 - Durable graph-state location and whether any fallback execution path was used.
 
 Read `references/worker-prompts.md` before dispatching workers. Read

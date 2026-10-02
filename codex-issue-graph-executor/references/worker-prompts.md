@@ -8,6 +8,8 @@ make a worker rediscover coordinator context. Keep handoffs concise and readable
 Select `gpt-6.1-sol` through the spawn/config fields, not the prompt alone.
 Use explicit role effort and follow the runtime's fork restrictions in `SKILL.md`;
 do not inherit a different parent model or automatically substitute another model.
+Include large generated paths and their retention/disposal status in every
+implementation or finalization handoff.
 
 Include this rule in every ready-issue or provisional-descendant assignment:
 challenge the proposed approach when evidence undermines a consequential
@@ -229,4 +231,27 @@ wait for redundant approval or grant yourself permission to merge. Return the cu
 finding disposition, tests/benchmarks, latest-head CI/review state, and either
 `mergeable-candidate` or the named blocker. The coordinator retains the final
 exact-head gate and merge decision.
+```
+
+## Asynchronous Disk Cleanup Agent
+
+```text
+You own one released disk-cleanup batch for <GRAPH>.
+Requested routing: gpt-6.1-sol / medium.
+
+Load <CODEX_HOME>/skills/codex-issue-graph-executor/references/disk-cleanup.md.
+Hosts and exact released paths, sizes, owners, retention decisions, and expected
+path/filesystem identities and content snapshots: <ALLOWLIST>.
+Protected paths, active consumers, and measurement windows: <PROTECTED_CONTEXT>.
+Repository/worktree HEADs and retained evidence locations: <IDENTITIES_AND_EVIDENCE>.
+Time box and stop conditions: <BOUNDS>.
+
+Recheck every target before deleting it. Reclaim only released, verified
+disposable outputs; skip changed, active, dirty, uncertain, or protected paths.
+Keep scans/deletion outside conflicting benchmark measurement windows. Report
+new large candidates to the coordinator for release; do not expand your scope.
+Do not edit source, merge, commit, push, request reviews, or spawn subagents.
+Return removed paths, retained paths with reasons, worktree registration checks,
+and before/after filesystem free space with estimates labeled separately. Stop
+after this batch; the coordinator may reuse you for another released batch.
 ```
