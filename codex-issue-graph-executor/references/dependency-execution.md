@@ -7,6 +7,11 @@ node = GitHub issue, ticket, or PR
 edge A -> B = A must be merged before B can be mergeable/merged
 ```
 
+Edges gate final mergeability, not provisional construction. Always start B
+provisionally from A's recorded `dependency-ready` snapshot within the execution
+budget; do not wait for A's CI/review/merge or ask for work-ahead opt-in.
+Actual repository restrictions and scientific authority gates still apply.
+
 ## Edge Sources
 
 Use dependency signals in this order:
@@ -29,13 +34,13 @@ parallel managers inventing incompatible contracts.
 | State | Meaning | May Unblock Descendants | May Merge |
 | --- | --- | --- | --- |
 | `pending` | Not started. | No | No |
-| `running` | Worker or coordinator is implementing or actively finalizing. | No | No |
-| `dependency-ready` | Contract stable; speculation still requires user opt-in and repo permission. | Only with that authorization | No |
-| `fix-needed` | Review, CI, tests, or performance evidence found blockers. | No, except authorized speculation | No |
+| `running` | Worker or coordinator is implementing or actively finalizing. | Provisionally once a recorded contract is `dependency-ready` | No |
+| `dependency-ready` | Contract stable; provisional descendants start by default. | Yes, provisionally within the execution budget and repository restrictions | No |
+| `fix-needed` | Review, CI, tests, or performance evidence found blockers. | Provisionally if the recorded descendant contract remains usable | No |
 | `review-scope-reset` | An explicit hard review cap or coordinator-confirmed recurring material contract/architecture failure requires owner scope disposition. Advisory counts and provider exhaustion do not enter this state. | No | No |
-| `mergeable-candidate` | Worker believes PR is ready, graph gates still apply. | Only with authorized speculation | Only after predecessors merged and final revalidation passes |
+| `mergeable-candidate` | Worker believes PR is ready, graph gates still apply. | Yes, provisionally by default | Only after predecessors merged and final revalidation passes |
 | `merged` | Merge verified. | Eligible; scientific successor needs its own assignment | Completed |
-| `blocked` | Waiting for decision, predecessor, CI, conflict, or external state. | No | No |
+| `blocked` | Waiting for a decision, conflict, or external state. Pending CI/review alone is ordinary finalization. | Provisionally if the blocker leaves the recorded descendant contract usable | No |
 
 On `review-scope-reset`, do not request another AI review or start actual descendants of the affected node; independent nodes continue. Record the explicit hard policy or material-failure rationale, lifetime counts, thread dispositions, owner, and required decision. Exit after the artifact is accepted, narrowed, split, deferred, rejected, or explicitly authorized to resume. `review_churn_warning` is telemetry and does not change node state.
 
@@ -130,7 +135,7 @@ CI/review and thread resolution; merge authority remains explicit. While
 delegation is useful, the coordinator checks no more often than every 15 minutes
 unless completion, a blocker or an ownership transfer occurs.
 
-When no useful authorized work-ahead remains, apply SKILL.md's **Critical-Path
+When no useful parallel work remains, apply SKILL.md's **Critical-Path
 Finalization and Monitoring**: obtain a compact checkpoint, stop/release the delegated
 owner, establish any in-flight command outcome, then reclaim local finalization
 without repeating completed reviews/tests. Never keep two active readiness or
@@ -156,10 +161,10 @@ run proportional local checks, and push one coherent repair head. A serial
 comment-by-comment push-and-wait loop is justified only when an earlier finding
 changes the contract or makes the remaining fixes unknowable.
 
-When the user explicitly authorizes work-ahead and repository/dependency policy
-permits provisional work, predecessor finalization is a pipeline handoff, not
-an idle barrier. Start the successor against the exact recorded predecessor
-snapshot while the finalizer owns CI/review. Label it
+Predecessor finalization starts provisional successor work by default. Start
+the successor against the exact recorded predecessor snapshot while the
+finalizer owns CI/review; no user opt-in or predecessor merge is needed.
+Observe ownership, concurrency, and repository restrictions. Label it
 provisional, do not claim mergeability, and inventory which outputs are:
 
 - reusable after a tree/contract-equivalent merge;

@@ -32,6 +32,10 @@ Task:
 
 ## Ready-Issue Worker
 
+Use for nodes whose predecessors have merged or that have no predecessors.
+Use **Provisional Descendant Worker** for unmerged dependencies; do not wait
+for predecessor CI/review/merge or request work-ahead opt-in.
+
 ```text
 You are a Codex worker for issue #<ISSUE> in <OWNER>/<REPO>.
 
@@ -125,15 +129,18 @@ Rules:
   snapshots, and required follow-up checks.
 ```
 
-## Speculative Descendant Worker (Explicit User Opt-In Only)
+## Provisional Descendant Worker
+
+Use by default as soon as predecessor contracts are `dependency-ready`, within
+the execution budget and repository restrictions. No separate user opt-in is
+needed. Scientific authority and final merge gates still apply.
 
 ```text
 You are a Codex worker for downstream issue #<ISSUE> in <OWNER>/<REPO>.
 
 Requested routing: gpt-6.1-sol / <medium for routine work; high for complex work>.
 
-Use only where repository policy permits speculation; scientific dependency
-gates still apply. This is speculative downstream work. Predecessors are not all merged:
+This is provisional downstream work. Predecessors are not all merged:
 <PREDECESSORS>.
 
 You may implement against this contract snapshot:
@@ -149,8 +156,9 @@ Rules:
 - Do not request AI reviews or merge.
 - Do not spawn subagents.
 - Report any predecessor contract mismatch immediately.
-- After predecessors merge, rebase/update to final base, rerun required checks,
-  update the PR body, then ask the coordinator for final review.
+- After predecessors merge, update to the final base, reassess evidence and run
+  affected or policy-required checks under SKILL.md's evidence discretion,
+  update the PR body, then hand back to the coordinator for final review.
 ```
 
 ## PR Finalization Owner

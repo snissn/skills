@@ -1,6 +1,6 @@
 ---
 name: codex-issue-graph-executor
-description: "Execute and merge dependency graphs of GitHub issues and PRs with GPT-6.1 Sol-only Codex delegation by default, conservative concurrency, mature-PR review, and current-head CI and performance gates. Use for graph execution, not requests to review or edit this skill."
+description: "Execute and merge dependency graphs of GitHub issues and PRs with GPT-6.1 Sol-only Codex delegation by default, provisional dependent work, conservative concurrency, mature-PR review, and current-head CI and performance gates. Use for graph execution, not requests to review or edit this skill."
 ---
 
 # Codex Issue Graph Executor
@@ -44,6 +44,11 @@ and [Codex subagent guidance](https://learn.chatgpt.com/docs/agent-configuration
 ## Default Authorization
 
 - Merge authorization is granted by default for PRs in the selected graph.
+- Always start dependent nodes provisionally as soon as their predecessors have
+  usable recorded contract snapshots. Do not wait for predecessor CI, review,
+  or merge, and do not ask the user to opt into work-ahead. Respect the execution
+  budget and actual repository restrictions; record concrete blockers rather
+  than asking the user to choose this default again.
 - Authorization is scoped to the target repo, parent tracker, child issues, and
   PRs created or explicitly adopted during this execution.
 - The coordinator may merge after all gates pass; workers may not merge unless
@@ -111,12 +116,10 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
   finalization is active ownership, not an agent assigned only to wait for CI;
   a merge may be the final action of an explicitly authorized end-to-end
   finalization assignment.
-- Disable speculative descendant implementation by default. Start a node only
-  after its direct predecessors merge unless the user explicitly opts into
-  work-ahead/speculation. Once that opt-in exists, repository/dependency policy
-  permits provisional work, and a predecessor finalizer owns the stable PR, do
-  not idle on its CI/review loop: start the highest-priority
-  successor against the recorded exact snapshot. Mark the lane provisional,
+- Start the highest-priority dependent node provisionally against recorded
+  exact predecessor snapshots once their contracts are `dependency-ready`.
+  Pending predecessor CI/review or an unmerged PR is not a start blocker.
+  Mark the lane provisional,
   keep it unmergeable, and separate reusable construction/implementation from
   merge-identity-bound evidence. Resync and revalidate after the predecessor
   merges; discard or rerun candidate-bound outputs that cannot survive the new
@@ -140,8 +143,8 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
 
 Keep finalization in the main thread when it is the only critical-path work.
 Delegate a finalizer only when concrete useful authorized work can run alongside
-it, not merely because a PR is mature. When work-ahead is authorized and a
-mature PR has a stable exact head, delegate its complete readiness loop and
+it, not merely because a PR is mature. When a mature PR has a stable exact head
+and a successor can start provisionally, delegate its complete readiness loop and
 explicitly decide whether that assignment includes merge authority; then begin
 the highest-priority safe successor immediately in an isolated worktree. Do not
 duplicate the finalizer's polling or gate work in the coordinator. If that
@@ -293,10 +296,9 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
   coordinator
   must not poll or message it more often than once every 15 minutes unless it
   reports completion or a blocker, and should advance a safe node meanwhile.
-  With explicit work-ahead authorization and policy permission, that node may
-  be the provisional successor. When a stable predecessor finalizer has
-  explicit merge authority, advancing that successor is the default rather than
-  duplicating final-gate work in the coordinator.
+  Start the highest-priority safe successor provisionally from recorded
+  predecessor snapshots. Starting it does not require separate user opt-in
+  or delegated merge authority for the predecessor finalizer.
 - Workers are direct children by default and may not delegate recursively.
 - Normal subagent concurrency is at most one, may rise to two under the conservative
   budget, and may not exceed two without explicit user opt-in.
@@ -304,12 +306,9 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
   resolves cross-node decisions before parallel workers continue.
 - Do not declare a dependent PR mergeable or merge it until all predecessors are merged and
   the dependent branch has been updated/revalidated on the final base.
-- Downstream speculative work is disabled unless the user explicitly opts in;
-  `dependency-ready` alone does not authorize a speculative worker. When the
-  user has opted in and repository/dependency policy permits provisional work,
-  delegated predecessor finalization is the normal pipeline boundary: begin
-  the successor optimistically rather than waiting for merge, while preserving
-  its final-base and mergeability gates.
+- `dependency-ready` unblocks provisional descendants by default. Start them
+  while predecessors finalize, within ownership and concurrency limits;
+  preserve final-base, mergeability, and scientific authority gates.
 - Audit policy for every node from that PR's actual worktree or head commit, not only from the coordinator checkout. Enumerate all root/nested `AGENTS.md` files at that head and map every changed path to its applicable policy chain, including policy files added by the PR. Record local review-round caps and scientific acceptance/stop rules in graph state before review.
 - Avoid review-credit churn: do not request Codex, Copilot, CodeRabbit, or other AI reviews until the PR is mature. Mature means coherent code pushed, focused tests and required benchmarks run or explicitly justified, PR body/status is current, no known local blockers remain, and latest-head CI is running or green.
 - Before every `@codex review`, run the `github-pr-mergeable` Codex gate classifier. An exact-head no-findings issue comment is a completed clean result even without a formal review object. Stop requesting immediately when clean; any later unresolved Codex finding supersedes it. Keep the three-request exact-head anti-spam cap. PR-lifetime counts are advisory by default: six requests or three finding-bearing heads emit `review_churn_warning`, but a resolved, mature new head may continue.
@@ -356,7 +355,8 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
    otherwise use a local manifest and report the fallback.
 6. Present a concise graph snapshot and proceed immediately. Do not wait for
    plan approval because this skill defaults to execute-and-merge.
-7. Delegate one ready issue when useful local work can proceed alongside it;
+7. Start ready nodes, including provisional descendants of `dependency-ready`
+   predecessors. Delegate one when useful local work can proceed alongside it;
    otherwise implement locally. Add a second worker only when the conservative
    budget permits it. Keep inventory, graph state, integration, and merge
    authority allocation with the coordinator. Use a bounded GPT-6.1 Sol adviser
@@ -376,15 +376,12 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
     concrete useful parallel work exists. The active readiness owner
     inventories all current CI/review findings, repairs them in coherent
     batches, and owns the PR until `mergeable-candidate` or a named blocker.
-    Do not poll a delegated owner more often than once per 15 minutes. When
-    work-ahead is authorized, a stable predecessor handoff starts the highest-priority
-    safe successor immediately; when useful parallel work is exhausted, reclaim sole
+    Do not poll a delegated owner more often than once per 15 minutes. A stable
+    predecessor handoff starts the highest-priority safe successor provisionally
+    without an opt-in prompt; when useful parallel work is exhausted, reclaim sole
     local ownership via **Critical-Path Finalization and Monitoring**, then
     continuously monitor the outstanding gates locally.
-    With explicit work-ahead authorization and policy
-    permission, begin the next successor optimistically from the recorded
-    predecessor snapshot. It must
-    stop before a third repair head for the same
+    The finalizer must stop before a third repair head for the same
     material failure category and return one named question for bounded GPT-6.1 Sol
     advice. The finalizer inventories all current review notes before editing,
     repairs compatible findings in one coherent batch, runs the proportional
