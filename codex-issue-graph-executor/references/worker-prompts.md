@@ -194,9 +194,14 @@ server-generated merge candidate when available.
 Use `github-pr-mergeable/scripts/codex_review_gate.py --check` for Codex state. Do not inspect only formal reviews, and do not request another review when an exact-head clean issue comment already exists. Report advisory lifetime churn without changing node state. Recommend `review-scope-reset` only for an exhausted explicit hard cap or a coordinator-supplied recurring material contract/architecture failure.
 
 Run only checks required by the issue or changed batch; do not repeat a broad
-suite that already has valid exact-head evidence. If the same material blocker
-category survives two repair heads, stop before creating a third and return one
-named root-cause or architecture question with both attempts and raw evidence.
+suite whose evidence still applies. Apply the graph skill's post-push evidence
+discretion when composing `github-pr-mergeable`: assess the actual diff and repo
+policy, reuse applicable evidence with its original SHA and rationale, and
+refresh only affected or required gates. A new SHA alone does not require
+another review or full suite. Required current-head CI and exact-head review
+rules still apply. If the same material blocker category survives two repair
+heads, stop before creating a third and return one named root-cause or
+architecture question with both attempts and raw evidence.
 
 Send completion or an actionable blocker immediately. Monitor outstanding gates
 continuously while assigned; ordinary pending CI/review is not a handoff boundary.

@@ -181,12 +181,17 @@ Classify proven unrelated CI flakes separately and rerun only affected gates whi
 
 ## Merge Gate
 
+Apply SKILL.md's post-push evidence discretion: assess the actual change and
+reuse applicable evidence with its original SHA and rationale when policy
+permits. A new SHA alone does not mandate another review or full validation run.
+
 A node can be declared mergeable only when:
 
 - no unaccepted material performance regression remains;
 - all predecessors are merged;
 - the branch is updated onto the intended final base;
-- required tests/benchmarks were rerun after that update;
+- required test/benchmark evidence covers the final candidate, with justified
+  reuse or affected/policy-required reruns;
 - PR body and comments no longer rely on speculative predecessor facts;
 - latest-head CI and review state are acceptable;
 - when Codex is required and no policy-permitted replacement applies, the shared `github-pr-mergeable/scripts/codex_review_gate.py --check` classifier reports clean for the exact head; a clean Codex issue comment is sufficient, while any later unresolved Codex thread blocks;

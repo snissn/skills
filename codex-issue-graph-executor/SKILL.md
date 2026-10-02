@@ -74,6 +74,10 @@ and [Codex subagent guidance](https://learn.chatgpt.com/docs/agent-configuration
 - `gh-issue-planner` when a graph needs a durable parent tracker or issue body
   updates before implementation.
 
+When composing helper skills, apply this skill's post-push evidence discretion
+instead of a blanket fresh-evidence reset. Required repository and branch
+protection gates still apply.
+
 At startup, verify which helper skills/tools are available and record any
 fallback in the graph state. Missing helper skills do not stop execution unless
 their absence makes a required gate impossible to verify.
@@ -148,7 +152,7 @@ coordinator is only waiting on the delegated reviewer/finalizer, reclaim ownersh
   in-flight commands and merge authority), then stop/release the worker before
   taking over writes or merge execution. If a command was in flight, establish
   its outcome first. There must be exactly one active readiness/writer owner.
-- Reuse exact-head completed reviews and tests; refresh outstanding facts once.
+- Reuse completed reviews and tests that still apply; refresh outstanding facts once.
   Continue the same PR locally without another review, push, implementer or
   approval request unless changed code, a real finding or policy requires it.
 
@@ -161,20 +165,26 @@ The delegated-owner polling cadence does not prohibit monitoring external CI
 after reclaiming ownership. Keep individual blocking waits within harness limits.
 
 Persist the owner, exact head, outstanding gate and next action. On completion,
-refresh the exact-head readiness gates and merge/proceed immediately when
+recheck live readiness status and merge/proceed immediately when
 authorized. On failure, diagnose and repair or retry only the affected gate
 within existing policy; waiting is not permission for unbounded retry churn.
-After every push, reset one immutable gate tuple containing the exact head,
-base, required-check set, review-thread state, and required review artifact so
-evidence from an older head cannot satisfy the gate. Before retrying CI, inspect
+After a push, update the recorded head/base and let the active readiness owner
+decide whether fresh test, benchmark, or review evidence is needed from the
+actual diff, affected contracts, base/environment changes, failures, and repo
+policy. A push or new SHA alone does not require another review or full suite.
+Reuse evidence that still covers the candidate when policy permits, preserving
+its original SHA and a concise applicability rationale. Refresh only affected,
+missing, or explicitly required gates; never relabel old evidence as a new-head
+CI run or review. Before merge, recheck the live head/base, required checks,
+approvals, and review threads. Before retrying CI, inspect
 the exact failure logs, classify whether the failure intersects changed paths or
 contracts, run the smallest useful reproduction when feasible, and retry only
 failed jobs once; diagnose any repeat instead of cycling reruns.
 End the turn for completion, an explicit pause, a genuine blocker requiring new
 authority/input, or a harness limit—not merely an unchanged pending status.
 Do not invent automatic wake or create a goal just to wait. Continuous monitoring
-does not waive predecessor merges, exact-head reviews, current-head CI or
-landed-source evidence requirements, or grant new merge authority.
+does not waive predecessor merges, required exact-head reviews, required
+current-head CI or landed-source evidence requirements, or grant new merge authority.
 
 ## Agent and Model Routing
 
@@ -386,7 +396,8 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
     record `review_churn_warning` as telemetry, and merge only when latest-head
     CI/reviews and required evidence are current and all predecessors are merged.
 11. Merge in topological order. After each merge, update descendants to the
-    final base and rerun their required checks before declaring them mergeable.
+    final base, reassess evidence, and run affected or policy-required checks
+    before declaring them mergeable.
 12. When a merged node is resolved and no descendant or provenance obligation
     still needs its branch/worktree, apply `github-pr-mergeable` post-merge
     cleanup immediately rather than accumulating completed local streams.
