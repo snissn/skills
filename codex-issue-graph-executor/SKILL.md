@@ -1,6 +1,6 @@
 ---
 name: codex-issue-graph-executor
-description: "Execute and merge dependency graphs of GitHub issues and PRs with Astra-aware Codex delegation, conservative concurrency, mature-PR review, and current-head CI and performance gates. Use for graph execution, not requests to review or edit this skill."
+description: "Execute and merge dependency graphs of GitHub issues and PRs with GPT-6.1 Sol-only Codex delegation by default, conservative concurrency, mature-PR review, and current-head CI and performance gates. Use for graph execution, not requests to review or edit this skill."
 ---
 
 # Codex Issue Graph Executor
@@ -19,11 +19,11 @@ and Monitoring** below; keep monitoring until the gate resolves.
 Do not ask for separate merge approval unless the user
 explicitly narrowed the request to planning or no-merge execution.
 
-## Astra Execution Guidance
+## GPT-6.1 Sol Execution Guidance
 
-Apply the [official Astra skills and prompting guidance](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)
-and [latest model guidance](https://developers.openai.com/api/docs/guides/latest-model)
-(checked 2026-09-15) to this workflow:
+Use the [official GPT-6.1 Sol guidance](https://developers.openai.com/api/docs/models/gpt-6.1-sol)
+and [Codex subagent guidance](https://learn.chatgpt.com/docs/agent-configuration/subagents)
+(checked 2026-10-01), with the runtime-specific routing below:
 
 - Resolve routine choices and finish authorized work. Clarify only consequential
   unknowns; keep independent work moving. Preserve prior authorization.
@@ -123,9 +123,9 @@ Optimize for completed graph nodes per usage window, not maximum parallelism.
   or unnecessary work through the available lifecycle tools. Close/release agents
   when supported; interruption alone does not prove a runtime slot was freed.
 - Do not keep an agent pending for model capacity. After one capacity error or
-  two minutes without starting useful work, stop its work and either fall back once
-  to an available lower-cost route or perform the task locally. Never cycle
-  through several frontier models for the same assignment.
+  two minutes without starting useful work, stop its work and perform the task
+  locally when possible. Do not automatically substitute another model; record
+  unavailable independent review as an outstanding gate, not self-review.
 - Time-box delegated read/review work to about 10 minutes. Treat about 25
   minutes without visible implementation progress as a checkpoint, not a
   push, review, or handoff boundary. Request a concise status once; stop only
@@ -180,30 +180,61 @@ landed-source evidence requirements, or grant new merge authority.
 
 Inspect the runtime's exposed model catalog, spawn schema, and concurrency
 limit once. Record unavailable facts as unknown; do not change global config.
-Keep the current coordinator and its effective effort. For an Astra session,
-inherit `gpt-6-astra` unless a bounded role below warrants an explicit override.
-These routes are workflow choices, not guaranteed cost or quality rankings.
+The preferred execution mode is **GPT-6.1 Sol only**: use the exact model ID
+`gpt-6.1-sol` for every delegated worker, finalizer, adviser, support agent, and
+independent reviewer. Adjust effort for the task instead of switching models.
+Do not automatically route to Astra, Terra, Luna, or an older Sol model.
+Explicit user model/effort choices and required repository reviewer identities
+override this preference; record any deviation rather than silently relabeling it.
+
+Prefer `gpt-6.1-sol` for the coordinator when the session model can be selected.
+Keep the current coordinator and its effective supported effort; never spawn a
+replacement coordinator or edit global config to enforce the preference. If it
+uses another model, record that retained-session exception while keeping new
+delegation on `gpt-6.1-sol`.
 
 | Role | Preferred route when available | Use for |
 | --- | --- | --- |
-| Coordinator and final gate | current model/effort | Graph, integration, blockers, and merge-authority decisions. Never spawn a replacement coordinator. |
-| Complex implementation or specialist | `gpt-6-astra`, inherited effort | Ambiguous multi-file work, architecture, persistence/concurrency, security, or disputed evidence. Use `medium` for a fresh unconfigured worker; `high` for demonstrated complexity. |
-| Routine implementation | `gpt-5.6-terra`, `medium` | A bounded issue with a clear contract, focused tests, and its fix loop. |
-| PR finalization owner | `gpt-5.6-terra`, `medium` | One mature PR's mutable review/CI repair loop. Use Astra only when the PR itself requires the high-risk route. |
-| Fast support | `gpt-5.6-luna`, `low` | A substantial independent inventory or triage task that saves elapsed time. |
-| Independent review | `gpt-6-astra`, `high` | A mature high-risk candidate or disputed finding, read-only in fresh context. Required reviewer identity is governed by repo policy. |
+| Coordinator and final gate | `gpt-6.1-sol`, current supported effort | Graph, integration, blockers, and merge-authority decisions; retain an existing session as described above. |
+| Complex implementation or specialist | `gpt-6.1-sol`, `high` | Ambiguous multi-file work, architecture, persistence/concurrency, security, or disputed evidence. |
+| Routine implementation | `gpt-6.1-sol`, `medium` | A bounded issue with a clear contract, focused tests, and its fix loop. |
+| PR finalization owner | `gpt-6.1-sol`, `medium` | One mature PR's mutable review/CI repair loop; use `high` for a demonstrated correctness, concurrency, or security risk. |
+| Fast support | `gpt-6.1-sol`, `low` | A substantial independent inventory or triage task that saves elapsed time. |
+| Independent review or adviser | `gpt-6.1-sol`, `high` | A mature high-risk candidate or disputed finding, read-only in fresh context. Required reviewer identity is governed by repo policy. |
 
-Preserve explicitly selected models/efforts. Do not escalate to `max` or `ultra`
-as a default; use higher effort only for a named unresolved difficulty. Keep
-agent depth at one. If Astra is unavailable, use an immediately available
-`gpt-5.6-sol` for complex work or execute locally; never relabel the fallback.
+If `gpt-6.1-sol` is unavailable or cannot be selected, execute locally and record
+the actual route. Do not silently spawn a different model. A mandatory independent
+review still needs an available, policy-compliant independent reviewer.
+
+### GPT-6.1 Sol Compatibility
+
+- Supported API efforts are `low`, `medium`, `high`, `xhigh`, and `max`;
+  `none` and `minimal` are unsupported. Use `low` for a fresh task that needs
+  minimum reasoning. Preserve explicit supported effort choices; record any
+  required adjustment from an unsupported effort.
+- Set worker effort explicitly using the role table. The API defaults to
+  `medium`, while the checked Codex catalog defaults to `low`; inspect the
+  actual client rather than assuming its default matches the API.
+- Use `xhigh` or `max` only for a named unresolved difficulty. `ultra` is a
+  Codex runtime option only when exposed, not a documented API effort; use it
+  only when explicitly requested, without waiving the concurrency/depth budget.
+- Use the runtime's actual context and compaction limits, which may be smaller
+  than the model's advertised API context. Keep assignment context bounded and
+  recover durable graph state after compaction.
+- API-backed tooling requires Responses for tool calling; Chat Completions
+  does not support tools for this model. This skill uses exposed Codex
+  collaboration tools; API multi-agent support does not grant recursive
+  delegation, extra slots, or unsupported spawn flags.
 
 Use actual tool fields: this collaboration runtime exposes `model` and
 `reasoning_effort`; custom-agent config may use `model_reasoning_effort`.
-Full-history forks inherit model/effort and cannot take overrides here. For an
-explicit override use `fork_turns="none"` or a supported bounded history and
-supply the task context. An independent reviewer gets fresh context, the exact
-candidate, requirements, and raw evidence, without the implementer's conclusions.
+Here, request `model="gpt-6.1-sol"`, the role's `reasoning_effort`, and
+`fork_turns="none"` or supported bounded history, supplying the task context.
+Full-history forks inherit model/effort and cannot take overrides here; use
+them only when the parent already has the intended model and effort.
+A model name in the prompt alone does not select it. An independent reviewer
+gets fresh context, the exact candidate, requirements, and raw evidence,
+without the implementer's conclusions.
 Record requested versus actual routing only when observable. Never invent model
 selection, async flags, lifecycle tools, or capacity that the harness lacks.
 
@@ -216,19 +247,19 @@ specific independent assignment justifies it.
 If subagent tools are unavailable or no task has a safe delegation boundary,
 execute locally and record why. Do not pretend work was delegated.
 
-### Bounded Astra Advisers
+### Bounded GPT-6.1 Sol Advisers
 
-Use Astra as a read-only adviser, not a shadow implementer:
+Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
 
 - At ticket start, use at most one roughly ten-minute consultation only when
   architecture, persistence, concurrency, security, benchmark semantics, or a
   consequential unknown could change the design. Ask one concrete question.
 - If the same material blocker category survives two coherent repair batches
-  or repair heads, stop before a third micro-fix loop and ask Astra one concrete
-  root-cause or architecture question. Include both failed approaches and raw
-  evidence.
+  or repair heads, stop before a third micro-fix loop and ask the adviser one
+  concrete root-cause or architecture question. Include both failed approaches
+  and raw evidence.
 - After the first coherent performance candidate fails a hard gate, consult
-  Astra once when the measured result contradicts the proposed mechanism,
+  the adviser once when the measured result contradicts the proposed mechanism,
   suggests work happened at the wrong stack boundary, or leaves the next
   causal experiment unclear. Provide the workload entrypoint, active counters,
   logical-versus-physical operation counts, and retained artifacts. This is a
@@ -275,11 +306,17 @@ Use Astra as a read-only adviser, not a shadow implementer:
 - A new repair SHA does not erase review history, but advisory history does not change node state. Enter `review-scope-reset` only for an exhausted explicit repository/user hard cap or a coordinator-confirmed recurring material contract/architecture failure. Provider exhaustion is reviewer unavailability. Continue independent nodes; only the affected node and actual descendants wait when its required review is unavailable.
 - Record hosted Codex quota, usage-limit, rate-limit, capacity, or service
   unavailability as `CODEX_REVIEW_UNAVAILABLE_QUOTA`: the review did not run.
-  When repo policy permits, use an independent read-only GPT-5.6 Pro reviewer or
-  documented clean-room `LOCAL_GPT56_REVIEW` bound to the exact candidate. Record
+  Prefer an independent read-only `gpt-6.1-sol` review only when repo policy
+  permits that reviewer identity, bound to the exact candidate. Record
   paths/claims, checks, findings, `ACCEPT` or `REJECT`, and no candidate edits.
-  Later scientific edits invalidate it. An Astra review is not that named
-  fallback unless policy explicitly permits it; self-review is not independent.
+  Later scientific edits invalidate it. A named GPT-5.6 Pro or
+  `LOCAL_GPT56_REVIEW` policy fallback remains that specific identity: a Sol
+  review does not satisfy it unless policy explicitly permits substitution.
+  Use a different model only for an explicit user model exception or a
+  repository-required reviewer identity, recording the reason. Otherwise keep
+  the gate outstanding until a compliant independent review is available.
+  Self-review is not independent; hosted review model selection is external
+  and must not be reported as a pinned `gpt-6.1-sol` subagent.
 - Treat material performance regressions as blockers unless the user or
   coordinator explicitly accepts them with evidence.
 - A failed implementation candidate retires that mechanism, not automatically
@@ -312,8 +349,8 @@ Use Astra as a read-only adviser, not a shadow implementer:
 7. Delegate one ready issue when useful local work can proceed alongside it;
    otherwise implement locally. Add a second worker only when the conservative
    budget permits it. Keep inventory, graph state, integration, and merge
-   authority allocation with the coordinator. Use a bounded Astra adviser only under the
-   triggers above.
+   authority allocation with the coordinator. Use a bounded GPT-6.1 Sol adviser
+   only under the triggers above.
 8. Track node state transitions in durable graph state and any local manifest: `pending`, `running`, `dependency-ready`, `fix-needed`, `review-scope-reset`, `mergeable-candidate`, `merged`, or `blocked`. Track requested and actual agent routing separately.
    A performance no-go normally leaves the node `fix-needed` while the
    failed-candidate intervention in `references/dependency-execution.md` runs;
@@ -338,7 +375,7 @@ Use Astra as a read-only adviser, not a shadow implementer:
     permission, begin the next successor optimistically from the recorded
     predecessor snapshot. It must
     stop before a third repair head for the same
-    material failure category and return one named question for bounded Astra
+    material failure category and return one named question for bounded GPT-6.1 Sol
     advice. The finalizer inventories all current review notes before editing,
     repairs compatible findings in one coherent batch, runs the proportional
     local checks, and then pushes once. Do not pay a CI cycle per comment unless

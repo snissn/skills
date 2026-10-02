@@ -5,9 +5,11 @@ Use these templates when dispatching Codex subagents from
 expand them. Supply the worktree, exact head/base, authorization, ownership,
 non-goals, acceptance checks, and stop conditions in every assignment. Do not
 make a worker rediscover coordinator context. Keep handoffs concise and readable.
-For model overrides, follow the runtime's fork restrictions in `SKILL.md`.
+Select `gpt-6.1-sol` through the spawn/config fields, not the prompt alone.
+Use explicit role effort and follow the runtime's fork restrictions in `SKILL.md`;
+do not inherit a different parent model or automatically substitute another model.
 
-## Optional Luna Inventory Agent
+## Optional GPT-6.1 Sol Inventory Agent
 
 Do not use this template by default. The coordinator performs inventory
 locally. Use it only when a large live-state pass can run beside an existing
@@ -16,7 +18,7 @@ implementation worker without raising concurrency above two.
 ```text
 You are the read-only inventory worker for a Codex issue graph.
 
-Preferred routing when selectable: gpt-5.6-luna / low.
+Requested routing: gpt-6.1-sol / low.
 
 Task:
 - Read the live GitHub state for these nodes: <ISSUES_OR_PRS>.
@@ -33,7 +35,7 @@ Task:
 ```text
 You are a Codex worker for issue #<ISSUE> in <OWNER>/<REPO>.
 
-Requested routing: <MODEL, Astra for complex work; Terra for routine work> / <EFFORT>.
+Requested routing: gpt-6.1-sol / <medium for routine work; high for complex work>.
 The coordinator records whether this route was actually pinned.
 Progress checkpoint: <TIME_BOX, normally 25 minutes without visible progress>.
 
@@ -93,12 +95,12 @@ Every handoff must include:
 - current node state recommendation.
 ```
 
-## Astra High-Risk Specialist
+## GPT-6.1 Sol High-Risk Specialist
 
 ```text
 You are the high-risk specialist for <DECISION_OR_SCOPE> in <OWNER>/<REPO>.
 
-Preferred routing when selectable: gpt-6-astra / <inherited effort or high>.
+Requested routing: gpt-6.1-sol / high.
 
 Context:
 - Trigger: <TICKET_START_RISK_OR_STUCK_AFTER_TWO_REPAIR_HEADS>
@@ -128,7 +130,7 @@ Rules:
 ```text
 You are a Codex worker for downstream issue #<ISSUE> in <OWNER>/<REPO>.
 
-Requested routing: <MODEL> / <EFFORT>.
+Requested routing: gpt-6.1-sol / <medium for routine work; high for complex work>.
 
 Use only where repository policy permits speculation; scientific dependency
 gates still apply. This is speculative downstream work. Predecessors are not all merged:
@@ -163,9 +165,9 @@ the coordinator reuses completed evidence instead of restarting review.
 ```text
 You are the active finalization owner for PR <PR_URL>.
 
-Preferred routing: gpt-5.6-terra / medium, or the high-risk route already
-assigned to this PR. Apply repo-required reviewer identity and quota fallback
-rules from SKILL.md; your work cannot replace a required independent review.
+Requested routing: gpt-6.1-sol / medium; high for a demonstrated correctness,
+concurrency, or security risk. Apply repo-required reviewer identity and quota
+fallback rules from SKILL.md; your work cannot replace a required independent review.
 Candidate worktree/head SHA and base: <WORKTREE> / <HEAD_SHA> / <BASE_SHA>.
 Acceptance requirements and raw evidence: <REQUIREMENTS_AND_ARTIFACTS>.
 

@@ -1,4 +1,4 @@
 interface:
   display_name: "Codex Issue Graph Executor"
-  short_description: "Execute issue graphs with Astra-aware delegation"
-  default_prompt: "Use $codex-issue-graph-executor to execute and merge this issue graph with Astra-aware routing, at most one useful subagent by default, and no speculative fan-out."
+  short_description: "Execute issue graphs with GPT-6.1 Sol agents"
+  default_prompt: "Use $codex-issue-graph-executor to execute and merge this issue graph using only gpt-6.1-sol subagents by default, at most one useful subagent, and no speculative fan-out."
