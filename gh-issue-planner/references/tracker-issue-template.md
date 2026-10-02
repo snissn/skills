@@ -31,7 +31,7 @@ Before using the body structure:
 1. Confirm the request passed the skill's Issue Shape Preflight. A standalone issue must not use this template.
 2. Confirm whether the request is inspect/review, structure sketch, local draft, or GitHub apply.
 3. For umbrella or migration work, complete the preflight in [issue-graph-planning.md](issue-graph-planning.md).
-4. Do not write to GitHub unless apply mode was explicitly requested.
+4. Do not write to GitHub unless authorized directly or as necessary maintenance within an explicitly authorized execution scope.
 
 ## Body Structure
 
@@ -64,6 +64,21 @@ symbols, reusable optimized primitives, and any unresolved doc/code discrepancy.
 ## Desired State
 
 Describe the target architecture or workflow.
+
+## Assumptions And Reassessment
+
+Keep this section for abstract outcomes or material uncertainty; omit it for
+direct work with an established cause and solution.
+
+- Name provisional assumptions and evidence that would invalidate them.
+- Require coordinator reassessment of the architecture and remaining graph at
+  named implementation/evidence boundaries where the next work could change,
+  even if child tickets pass. Do not require a review after every push or child.
+- Within authorized execution, let the coordinator revise or replace the
+  remaining graph, creating/adopting necessary nodes and preserving the goal,
+  acceptance criteria, guardrails, ownership, useful work, and history.
+- Record consequential revisions and map remaining obligations to live owners.
+  Keep strategic checks here; add child-specific checks only where useful.
 
 ## Feature Path, Allocation, And Documentation Contract
 

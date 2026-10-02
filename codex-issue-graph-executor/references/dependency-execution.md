@@ -87,6 +87,44 @@ experiment and stop conditions, and which independent node proceeds meanwhile.
 Keep independent graph work moving while this diagnosis or a mature PR
 finalizer runs.
 
+## Graph Reassessment
+
+Reassess when evidence undermines the plan, not only when a candidate fails:
+
+- Local improvements do not advance the representative parent outcome.
+- Setup, publication, durability, or cleanup costs defeat the intended mechanism.
+- A bottleneck, prerequisite, path-selection, or correctness assumption is false.
+- A new safety finding changes the necessary work or ordering.
+
+For abstract or materially uncertain work, also honor the tracker's named
+reassessment boundaries even when tests and child exit gates pass. Keep direct,
+well-understood work event-driven. The coordinator owns strategic reassessment;
+workers surface consequential evidence without running a separate graph review
+for every child.
+
+Reuse available code, profiles, counters, tests, and review evidence. Investigate
+only a bounded question that could change the next decision. Reassessment does
+not itself require a new benchmark, reviewer, push, or wholesale replacement.
+Keep a sound plan; revise only the affected remainder when it is inadequate.
+Prioritize required structural/integration work over further local polishing.
+
+Use `gh-issue-planner` to reorder, narrow, supersede, create/adopt necessary nodes,
+or replace the remaining graph within existing authorization. Record the finding
+and evidence, why the old plan is inadequate, changed nodes/edges, and preserved
+gates in the parent. Preserve useful work and provenance; map remaining
+obligations to live owners before retiring nodes. A linked follow-up cannot stand
+in for an unmet parent acceptance gate.
+
+Steer or stop affected provisional descendants when their assumed contracts
+change; independent lanes continue. Preserve one writer per surface and the
+default provisional start once a revised contract is usable. New/replacement
+nodes retain the same ownership, review, final-base, CI, and evidence gates.
+Replanning cannot reset an exhausted explicit hard review cap or bypass
+`review-scope-reset` owner disposition. New goals/repos, weaker acceptance,
+accepted-gap changes outside their triggers, and scientific authority still need
+the applicable user/owner decision; scientific successors require their own
+assignment and merged predecessor authority.
+
 ## Sync Windows
 
 Do not continuously rebase downstream branches. Sync at:
@@ -151,8 +189,9 @@ turn. All predecessor and evidence gates still apply.
 If the same material blocker category survives two repair heads, stop before a
 third and route one named question through the bounded GPT-6.1 Sol adviser.
 Keep the same PR across base advancement; sync once pre-finalization or on a real
-conflict/predecessor trigger, and replace it only when genuinely irreparable
-under repository policy.
+conflict/predecessor trigger. Replace it only when repo policy permits and either
+its branch is genuinely irreparable or a recorded coordinator **Graph Reassessment**
+supersedes its obsolete completion packet.
 
 
 At each repair head, inventory every current review thread and failed gate

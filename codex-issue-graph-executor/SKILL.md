@@ -51,6 +51,10 @@ and [Codex subagent guidance](https://learn.chatgpt.com/docs/agent-configuration
   than asking the user to choose this default again.
 - Authorization is scoped to the target repo, parent tracker, child issues, and
   PRs created or explicitly adopted during this execution.
+- The coordinator may revise the remaining graph and create or explicitly
+  adopt necessary nodes within that scope as evidence changes. Map them to the
+  agreed parent outcome and preserve acceptance criteria, guardrails, ownership,
+  and history; necessary issue maintenance needs no repeated permission.
 - The coordinator may merge after all gates pass; workers may not merge unless
   the coordinator explicitly delegates that action for a specific PR.
 - Do not merge PRs outside the selected graph, even if they are nearby.
@@ -76,8 +80,9 @@ and [Codex subagent guidance](https://learn.chatgpt.com/docs/agent-configuration
   authority. One scientific decision per PR; unrelated main changes do not
   invalidate a lane. Scientific successors need merged predecessor authority
   and their own owner direction or assignment; merging does not activate them.
-- `gh-issue-planner` when a graph needs a durable parent tracker or issue body
-  updates before implementation.
+- `gh-issue-planner` when a graph needs a durable parent tracker, issue body
+  updates, or revision during execution. Carry existing execution authorization
+  into its apply mode; preserve narrower user restrictions.
 
 When composing helper skills, apply this skill's post-push evidence discretion
 instead of a blanket fresh-evidence reset. Required repository and branch
@@ -96,7 +101,7 @@ their absence makes a required gate impossible to verify.
 
 ## Conservative Execution Budget
 
-Optimize for completed graph nodes per usage window, not maximum parallelism.
+Optimize for verified progress toward the agreed parent outcome per usage window.
 
 - Default to **one active subagent when useful work can run in parallel**,
   otherwise zero. The coordinator handles live inventory, DAG/state updates,
@@ -283,6 +288,12 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
 ## Hard Invariants
 
 - The coordinator owns the dependency graph and allocation of final merge authority.
+- Honor task-specific reassessment instructions before committing to the next
+  affected work. Increase reassessment when discoveries expose uncertainty;
+  concrete tickets need it only on contradictory evidence. Use **Graph
+  Reassessment** in `references/dependency-execution.md` to revise the approach
+  while preserving the outcome and gates. Prefer necessary architecture or
+  integration work over low-value micro-optimization.
 - Workers may open or update PRs, but they must not merge unless explicitly
   delegated by the coordinator.
 - An issue worker owns the total issue completion packet through a stable
@@ -346,7 +357,9 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
    state, branch, base, current head SHA, CI status, linked issues, and existing
    review status.
 3. Build a DAG. Use explicit dependencies first, then issue wording, PR stack
-   notes, tracker order, and conflict/contract risk.
+   notes, tracker order, and conflict/contract risk. Read the planner's
+   reassessment instructions and identify consequential assumptions and decision
+   boundaries where present.
 4. Record a conflict/contract and routing table for every node:
    `contract_surface`, `conflict_surface`, `execution_mode`, `contract_owner`,
    `agent_role`, `requested_model`, `requested_effort`, and routing rationale.
@@ -364,11 +377,15 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
 8. Track node state transitions in durable graph state and any local manifest: `pending`, `running`, `dependency-ready`, `fix-needed`, `review-scope-reset`, `mergeable-candidate`, `merged`, or `blocked`. Track requested and actual agent routing separately.
    A performance no-go normally leaves the node `fix-needed` while the
    failed-candidate intervention in `references/dependency-execution.md` runs;
-   it is not a terminal state by itself.
+   it is not a terminal state by itself. Apply that reference's **Graph
+   Reassessment** at required boundaries or when findings undermine the plan;
+   update affected issue scopes/edges before committing to further work.
 9. Use sync windows instead of constant rebasing or polling: initial snapshot,
    predecessor contract change, predecessor merge, one pre-final-review sync,
-   and conflict/test trigger. Advance the existing PR; replace it only when its
-   branch is genuinely irreparable under repo policy. Prefer a merge queue or
+   and conflict/test trigger. Advance the existing PR through ordinary repairs
+   and base changes. Replace it only when repo policy permits and either its
+   branch is genuinely irreparable or a recorded coordinator **Graph Reassessment**
+   supersedes its obsolete completion packet. Prefer a merge queue or
    server-generated merge candidate when available instead of repeatedly
    chasing the default branch.
 10. When an issue worker produces a mature, issue-complete PR, use

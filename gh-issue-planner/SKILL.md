@@ -14,7 +14,11 @@ Match the user's requested mode and do not advance beyond it automatically:
 - **Inspect/review:** read live issue state, classify the issue shape, and report findings; do not draft or write.
 - **Structure sketch:** propose a standalone scope or tracker graph; do not write to GitHub.
 - **Local draft:** prepare issue bodies or graph artifacts for review; do not write to GitHub.
-- **Apply:** create or edit GitHub issues only when the user explicitly requests those writes.
+- **Apply:** create or edit GitHub issues when directly authorized by the user or
+  necessary to maintain a graph within an explicitly authorized execution scope.
+  Reuse that authorization when an executor calls this skill; do not request
+  permission for each issue edit. A read-only or planning-only request still
+  prohibits GitHub writes.
 
 These modes govern issue work. A request to revise this skill authorizes local
 skill edits, not GitHub issue mutations or execution of a graph.
@@ -86,6 +90,32 @@ For both standalone issues and graphs:
   approved changes into the graph and downstream issues within the requested
   mode; documentation edits do not themselves authorize a scientific decision.
 
+Set execution instructions using [Proportional Reassessment](#proportional-reassessment).
+
+## Proportional Reassessment
+
+Match reassessment to uncertainty and the consequences of a wrong premise,
+not ticket size or detail:
+
+- For a concrete requirement with a known cause and solution, implement and
+  validate directly; revisit the approach only when evidence contradicts it.
+  Omit reassessment boilerplate.
+- For an uncertain mechanism, name the consequential assumption, evidence that
+  would invalidate it, and a bounded decision point before dependent work relies
+  on it. This can fit in a standalone issue without creating a graph.
+- For an abstract outcome or unresolved architecture, require the coordinator
+  to reassess the architecture and remaining plan at meaningful implementation
+  or evidence boundaries, even when individual tickets pass. Name task-specific
+  boundaries where findings could change the next work; do not impose a fixed
+  cadence, extra reviewer, or benchmark campaign.
+
+Keep strategic reassessment in the parent; add child-specific instructions only
+where they change execution. Detailed children inherit relevant parent
+uncertainty. Prioritize production integration and structural changes needed for
+the agreed outcome before residual micro-optimization; local wins alone do not
+validate the plan. Keep the goal, acceptance criteria, and safety/performance
+guardrails intact when revising the approach.
+
 ## High-Capability Planning Advisory Pass
 
 When the user explicitly requests Astra or another high-capability planning
@@ -138,7 +168,7 @@ Do not load the tracker template or design a dependency graph.
    non-goals, total completion packet, and related-issue or ordering
    constraints. Do not overstate what the code or linked evidence proves.
 3. Reuse or update an existing issue when it already owns the outcome; otherwise recommend or draft one new issue.
-4. Add relevant validation, performance, documentation, branch, PR, review, and CI requirements. Performance-sensitive standalone features must include the shared feature contract. Do not add tracker milestones or process boilerplate.
+4. Add relevant validation, performance, documentation, branch, PR, review, and CI requirements, plus reassessment instructions only where preflight identified material uncertainty. Performance-sensitive standalone features must include the shared feature contract. Do not add tracker milestones or process boilerplate.
 5. In apply mode, create or update the issue with `gh issue create` or `gh issue edit` after checking available labels.
 6. Verify any write, then return the issue URL, disposition, scope boundaries, and coordination constraints.
 
@@ -156,7 +186,7 @@ Do not load the tracker template or design a dependency graph.
    assign every completion gate exactly one authoritative owner.
 6. Identify the exact workstream, current evidence, non-goals, milestone order, owner boundaries, expected proof, and adjacent in-flight work that must not be disturbed.
 7. Read [references/tracker-issue-template.md](references/tracker-issue-template.md) for the reusable issue structure.
-8. Draft with concrete, current facts. Do not overstate what the code proves or convert every reported metric into an optimization target.
+8. Draft with concrete, current facts and the proportionate reassessment instructions from preflight. Do not overstate what the code proves or convert every reported metric into an optimization target.
 9. For every PR-bearing milestone, define the behavior or invariant that drives its test-first loop. Require a failing test before implementation, or an explicit exception with the alternative correctness evidence.
 10. Classify each PR or milestone as **not performance-relevant**, **possibly performance-relevant**, **performance-sensitive**, or **performance-objective**. State the evidence required for that class and the metrics that match the affected path. Include the shared feature contract for performance-sensitive/objective nodes, with allocation and documentation exit gates in each owning child.
 11. Include checkbox milestones that can serve as a work log. Keep test-first

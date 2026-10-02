@@ -11,6 +11,7 @@ Use this reference for umbrella trackers, dependency graphs, tracker migrations,
 - [Gate classification](#gate-classification)
 - [Dependencies and conditional branches](#dependencies-and-conditional-branches)
 - [Existing-issue dispositions](#existing-issue-dispositions)
+- [Revising during execution](#revising-during-execution)
 - [Apply sequence](#apply-sequence)
 - [Maintenance](#maintenance)
 
@@ -23,9 +24,11 @@ Stay within the user's requested mode:
 | Inspect/review | live-state findings and recommendations | none |
 | Graph sketch | proposed hierarchy, edges, roles, gates, and dispositions | none |
 | Local draft | reviewable parent and child bodies or body files | none |
-| Apply | created or edited issues plus verified links | explicitly authorized writes only |
+| Apply | created or edited issues plus verified links | directly authorized writes or necessary maintenance within authorized execution |
 
 Do not infer apply authorization from a request to plan, synthesize, model, sketch, or review.
+An executor may carry existing execution authorization into this skill for
+necessary graph maintenance; preserve any narrower user restrictions.
 
 ## Graph Preflight
 
@@ -61,6 +64,10 @@ Each executable node should also own one total completion packet: production
 callers/fallback, implementation, tests, documentation, required performance
 evidence, and acceptance. Treat start, implementation, and close as phases of
 that packet, not separate PRs or review cycles.
+
+Apply SKILL.md's proportional reassessment guidance. For uncertain work, identify
+the assumptions and meaningful decision boundaries; keep strategic review with
+the parent rather than adding a ceremony to every child.
 
 ## Reuse Versus Net-New
 
@@ -146,9 +153,33 @@ Use one explicit disposition per existing issue:
 
 Do not erase experiment history merely to make a body look clean. Prefer an authoritative current-state block or concise disposition comment. Do not close an issue as superseded until its remaining obligations are mapped to a live owner or explicitly accepted as no longer required.
 
+## Revising During Execution
+
+Within authorized execution, the coordinator may reorder, narrow, supersede,
+create or explicitly adopt necessary nodes, and change their edges. Replace the
+remaining graph when its structure misleads execution; reuse the dispositions
+and reuse-versus-net-new rules above. Map new/adopted nodes to the parent outcome
+before assigning work. Apply the same completion, ownership, and evidence rules
+to replacements.
+
+Preserve the agreed goal, acceptance criteria, guardrails, merged work, useful
+in-flight work, experiment history, and unrelated owners' scope. Map each
+remaining obligation to a live owner before retiring a node. Linking a follow-up
+does not satisfy an unmet parent goal. Record a concise revision in the parent:
+finding and evidence, affected nodes/edges, the revised plan, and preserved gates.
+
+Replanning does not authorize a new goal/repository, weaker thresholds,
+reopening accepted gaps without their revisit trigger or new direction, or
+evading an explicit hard review cap through replacement issues/PRs. Scientific
+successors still require their own owner direction/assignment and merged
+predecessor authority; issue edits cannot generate scientific/governance authority.
+Ask only for decisions outside existing authorization; continue independent
+authorized work meanwhile. In read-only/planning modes, propose these revisions
+without applying them.
+
 ## Apply Sequence
 
-When GitHub writes are explicitly authorized:
+When GitHub writes are authorized directly or through execution scope:
 
 1. Prepare and review parent and child bodies locally.
 2. Create or update the parent with a temporary graph ledger if child URLs do not exist yet.

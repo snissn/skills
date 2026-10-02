@@ -9,6 +9,15 @@ Select `gpt-6.1-sol` through the spawn/config fields, not the prompt alone.
 Use explicit role effort and follow the runtime's fork restrictions in `SKILL.md`;
 do not inherit a different parent model or automatically substitute another model.
 
+Include this rule in every ready-issue or provisional-descendant assignment:
+challenge the proposed approach when evidence undermines a consequential
+assumption or shows local wins do not advance the parent outcome. Report the
+evidence, affected scope/contracts, and smallest useful plan revision promptly
+to the coordinator. Continue valid work within your ownership boundary; do not
+silently broaden scope, edit the graph, or abandon the completion packet. The
+coordinator owns adoption and issue changes; hand off only at the existing
+dependency-ready, real-blocker, or stop boundary.
+
 ## Optional GPT-6.1 Sol Inventory Agent
 
 Do not use this template by default. The coordinator performs inventory
@@ -195,8 +204,9 @@ cycle. Multiple local commits are fine; do not push one finding at a time.
 
 Keep the same PR while advancing its base. Sync once before final review and on
 an actual conflict or predecessor-contract trigger; do not continually chase
-the default branch. Replace the PR only if the branch is genuinely irreparable
-under repo policy and the coordinator approves. Prefer a merge queue or
+the default branch. Replace the PR only when repo policy permits, the coordinator
+approves, and either the branch is genuinely irreparable or a recorded coordinator
+Graph Reassessment supersedes its obsolete completion packet. Prefer a merge queue or
 server-generated merge candidate when available.
 
 Use `github-pr-mergeable/scripts/codex_review_gate.py --check` for Codex state. Do not inspect only formal reviews, and do not request another review when an exact-head clean issue comment already exists. Report advisory lifetime churn without changing node state. Recommend `review-scope-reset` only for an exhausted explicit hard cap or a coordinator-supplied recurring material contract/architecture failure.
