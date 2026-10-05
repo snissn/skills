@@ -60,6 +60,9 @@ Use the metrics that fit the workstream. Examples: wall time, per-unit latency, 
 Describe how the code works today. Separate implementation facts from assumptions.
 Name canonical docs/sections read at the base SHA, relevant caller/dispatch/hot-path
 symbols, reusable optimized primitives, and any unresolved doc/code discrepancy.
+Include consequential findings from the planner's bounded existing-code
+simplification audit and the reuse/consolidation/removal decision, or briefly
+state that no useful simplification was found. Keep this in the owning packet.
 
 ## Desired State
 

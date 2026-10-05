@@ -11,6 +11,11 @@ do not inherit a different parent model or automatically substitute another mode
 Include large generated paths and their retention/disposal status in every
 implementation or finalization handoff.
 
+Carry consequential planner simplification findings into implementation
+assignments. Ready-issue, provisional-descendant, and finalization workers apply
+[Simplification Within The Completion Packet](../SKILL.md#simplification-within-the-completion-packet)
+within their ownership boundary; use the normal PR evidence/handoff for findings.
+
 Include this rule in every ready-issue or provisional-descendant assignment:
 challenge the proposed approach when evidence undermines a consequential
 assumption or shows local wins do not advance the parent outcome. Report the
@@ -76,6 +81,8 @@ Rules:
 - You are not alone in the codebase. Do not revert changes made by others.
 - Enumerate every root/nested `AGENTS.md` applicable to your owned paths at the assigned head and report its review cap/stop rules.
 - Deliver only this issue's scope; resolve routine choices without approval.
+- Apply SKILL.md's simplification policy to existing code and the candidate diff;
+  deliver the full outcome and preserve required behavior/evidence.
 - Own the assigned deliverable packet under SKILL.md. For implementation, include
   production callers/fallback, code, risk tests, docs, and performance evidence.
   For an inquiry, return the hypothesis, discriminating evidence, conclusion,
@@ -171,6 +178,7 @@ You may implement against this contract snapshot:
 
 Rules:
 - Keep PR draft/WIP or clearly blocked.
+- Apply SKILL.md's simplification policy within the assigned snapshot and ownership.
 - Do not claim final mergeability.
 - Begin useful implementation or validation immediately; do not wait on the
   predecessor finalizer merely because the lane is provisional.
@@ -203,6 +211,8 @@ Candidate worktree/head SHA and base: <WORKTREE> / <HEAD_SHA> / <BASE_SHA>.
 Acceptance requirements and raw evidence: <REQUIREMENTS_AND_ARTIFACTS>.
 
 Use <CODEX_HOME>/skills/github-pr-mergeable/SKILL.md.
+Also apply `codex-issue-graph-executor/SKILL.md`'s **Simplification Within The
+Completion Packet** to repairs; send wider scope/contract changes to the coordinator.
 
 Own only this PR until it is a mergeable candidate or has a named blocker. This
 is active repair ownership, not a CI-waiting assignment. You may edit, test,

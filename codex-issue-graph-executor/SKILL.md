@@ -98,6 +98,39 @@ secondary objectives distinct from guardrails; a measurement budget or resource 
 is not proof of optimization. Parent completion requires its agreed outcome gates,
 not merely accepted child outputs or linked follow-ups.
 
+## Simplification Within The Completion Packet
+
+At implementation start, inspect the affected existing code and verify any planner
+simplification findings against the assigned source snapshot. Look for reuse,
+duplicate logic, redundant layers, obsolete branches/options, and avoidable custom
+machinery. If planning omitted this audit, do it locally within the node's scope;
+do not wait for a separate planning pass or ponytail invocation.
+
+Choose the simplest maintainable implementation that meets the full completion
+packet. Consolidate shared logic and remove verified unnecessary code in the same
+PR when it directly helps the change and fits the ownership boundary. Judge the
+resulting code's responsibilities and maintenance burden, not just added lines or
+diff size. A necessary abstraction or larger coherent refactor can be the simpler
+solution. Do not replace the agreed outcome with a reduced feature or stop at a
+partial fix in the name of minimalism.
+
+Before calling the candidate mature, inspect the diff together with its affected
+callers for duplication or layers the change adds or leaves unnecessary. Preserve
+applicable behavior, validation, error handling, ownership/lifetime, concurrency,
+durability, and performance gates. Use existing characterization evidence when it
+adequately protects a refactor; add or run checks for actual changed risks under
+the node's test policy. Simplification does not impose a one-test ceiling or a
+new review/benchmark cycle when existing evidence still applies.
+
+Record consequential simplifications or reasons to retain complexity briefly in
+the normal PR evidence/handoff. Finding no useful simplification is acceptable;
+do not invent cleanup to satisfy this pass. Route discoveries that materially
+change scope, contracts, or ownership through Graph Reassessment; keep unrelated cleanup off
+the critical path. Carry this policy into implementation and finalization prompts;
+it needs no separate audit node, agent, report, or ponytail dependency.
+When composing simplification helpers such as ponytail, the full completion
+packet governs scope, validation, and reporting.
+
 ## Compose With
 
 - `github-pr-mergeable` for PR readiness, review, latest-head CI, and merge execution. Use its bundled `scripts/codex_review_gate.py` for Codex state; never infer Codex completion from formal reviews alone. Repository-local proportionality and review-stop rules override that skill's default Codex cadence.

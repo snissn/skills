@@ -81,6 +81,8 @@ For both standalone issues and graphs:
 - Trace the affected production entry point, dispatch/eligibility checks, shared
   implementation, and fallback callers. Identify the existing optimized path
   and reusable helpers before proposing a new abstraction or implementation.
+  Apply [Simplification During Planning](#simplification-during-planning) to
+  the existing code before selecting implementation slices.
 - Record source paths/sections and base SHA with the constraints they impose.
   Cross-check docs against code, tests, and benchmark setup. Distinguish current
   behavior, accepted design, historical evidence, and proposals; flag conflicts
@@ -100,6 +102,36 @@ For both standalone issues and graphs:
   mode; documentation edits do not themselves authorize a scientific decision.
 
 Set execution instructions using [Proportional Reassessment](#proportional-reassessment).
+
+## Simplification During Planning
+
+Audit the affected existing implementation at the intended base, including when
+planning a new feature. Look for duplicate logic, redundant wrappers/layers,
+obsolete branches/options, and custom code that existing primitives, the standard
+library, or native facilities can replace. Trace callers and relevant contracts
+before proposing removal; a single implementation or few callers alone does not
+prove an abstraction unnecessary. Bound the audit to the outcome and nearby code
+that could materially simplify its implementation.
+
+Compare extending the current path with consolidating or removing unnecessary
+structure. Choose the simplest maintainable design that delivers the full outcome
+and preserves applicable correctness, durability, concurrency, security, and
+performance requirements. A larger coherent refactor can be simpler than another
+small patch; line count and diff size are supporting observations, not acceptance
+gates. New structure is justified when it serves a concrete requirement.
+
+Record a compact, source-linked finding in the preflight or owning issue: what
+was inspected, what to reuse/consolidate/remove, why, and the behavior/evidence to
+preserve. If no useful simplification exists, say so briefly and proceed. Put
+relevant safe simplifications in the implementation's completion packet. Separate
+a wider refactor only when it has an independently necessary outcome or ownership
+boundary; unrelated cleanup stays outside the critical path. Keep the requested
+operating mode: this audit does not authorize code or GitHub writes.
+
+This guidance is built into the planner; no separate ponytail invocation, audit
+agent, report, or deletion quota is required. Simplification does not reduce the
+requested outcome, required evidence, or repository policy. Apply any additional
+simplification helper's suggestions within these boundaries.
 
 ## Proportional Reassessment
 

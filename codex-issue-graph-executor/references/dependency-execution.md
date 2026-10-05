@@ -109,6 +109,8 @@ Reassess when evidence undermines the plan, not only when a candidate fails:
 - Setup, publication, durability, or cleanup costs defeat the intended mechanism.
 - A bottleneck, prerequisite, path-selection, or correctness assumption is false.
 - A new safety finding changes the necessary work or ordering.
+- An audit reveals that consolidating or removing existing structure materially
+  simplifies the remaining implementation, changing planned scope or ownership.
 
 For abstract or materially uncertain work, also honor the tracker's named
 reassessment boundaries even when tests and child exit gates pass. Keep direct,
