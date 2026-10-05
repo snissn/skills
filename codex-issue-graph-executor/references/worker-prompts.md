@@ -17,8 +17,9 @@ assumption or shows local wins do not advance the parent outcome. Report the
 evidence, affected scope/contracts, and smallest useful plan revision promptly
 to the coordinator. Continue valid work within your ownership boundary; do not
 silently broaden scope, edit the graph, or abandon the completion packet. The
-coordinator owns adoption and issue changes; hand off only at the existing
-dependency-ready, real-blocker, or stop boundary.
+coordinator owns adoption and issue changes; hand off only with a complete
+non-PR output awaiting acceptance, at dependency-ready, or at a real-blocker or
+stop boundary.
 
 ## Optional GPT-6.1 Sol Inventory Agent
 
@@ -43,9 +44,10 @@ Task:
 
 ## Ready-Issue Worker
 
-Use for nodes whose predecessors have merged or that have no predecessors.
-Use **Provisional Descendant Worker** for unmerged dependencies; do not wait
-for predecessor CI/review/merge or request work-ahead opt-in.
+Use when all recorded predecessor gates pass, including accepted non-PR outputs,
+or when there are no predecessors. Use **Provisional Descendant Worker** for
+dependency-ready PR predecessors awaiting merge once decision and eligibility
+gates pass; do not wait for their CI/review/merge or request work-ahead opt-in.
 
 ```text
 You are a Codex worker for issue #<ISSUE> in <OWNER>/<REPO>.
@@ -58,12 +60,14 @@ Load and follow:
 - <CODEX_HOME>/skills/codex-issue-graph-executor/SKILL.md
 
 Graph state:
-- This issue has no unmerged predecessors.
+- This issue's recorded predecessor gates are satisfied: <MERGED_PRS_AND_ACCEPTED_OUTPUTS_OR_NONE>.
 - Worktree and candidate SHA: <WORKTREE> / <HEAD_SHA>
 - Base ref/SHA: <BASE_REF> / <BASE_SHA>
 - Parent tracker/invariants: <SUMMARY>
 - Non-goals: <NON_GOALS>
 - Required tests/benchmarks/evidence: <REQUIREMENTS>
+- Intended deliverable / target / acceptance owner: <PR_OR_ISSUE_UPDATE_OR_DECISION_OR_ARTIFACT>
+- Decision gates and conditional eligibility: <ACCEPTED_OUTPUTS_OR_NONE>
 - Your ownership boundary: <FILES_OR_MODULES>
 - Parallel siblings and boundaries: <SIBLINGS>
 - Stop and hand back when: <STOP_CONDITIONS>
@@ -71,12 +75,16 @@ Graph state:
 Rules:
 - You are not alone in the codebase. Do not revert changes made by others.
 - Enumerate every root/nested `AGENTS.md` applicable to your owned paths at the assigned head and report its review cap/stop rules.
-- Implement only this issue's scope; resolve routine choices without approval.
-- Own the total issue packet: affected production callers and fallback,
-  implementation, risk-relevant tests, documentation, required benchmark or
-  evidence, and acceptance criteria. Carry it through focused validation to a
-  stable dependency-ready candidate or a real blocker. A plan, opened PR, first
-  test, or partial code change is not completion.
+- Deliver only this issue's scope; resolve routine choices without approval.
+- Own the assigned deliverable packet under SKILL.md. For implementation, include
+  production callers/fallback, code, risk tests, docs, and performance evidence.
+  For an inquiry, return the hypothesis, discriminating evidence, conclusion,
+  next decision, and necessary ticket revisions. For an issue update, verify its
+  actual revision and preserved gates; apply GitHub changes only when that write
+  authority was assigned, otherwise return the proposed patch for the coordinator.
+  Do not invent a PR for an accepted non-code output or claim the parent goal met.
+  Carry the packet to coordinator acceptance, a stable dependency-ready PR, or a
+  real blocker. An opened PR, first test, or partial code change is not completion.
 - Run required checks once; repeat or broaden only for changes, failures, or
   unresolved risks. Preserve commands, results, and the SHA they tested.
 - Treat material performance regressions as blockers.
@@ -89,8 +97,9 @@ Rules:
   authority.
 - Do not spawn subagents.
 
-Return a handoff only for a dependency-ready candidate, a real blocker, or a
-coordinator stop request. Use `review-scope-reset` only for an exhausted
+Return a handoff for a complete non-PR output awaiting coordinator acceptance,
+a dependency-ready PR candidate, a real blocker, or a coordinator stop request.
+Use `review-scope-reset` only for an exhausted
 explicit hard cap or coordinator-confirmed recurring material
 contract/architecture failure; advisory review history does not change node
 state.
@@ -100,7 +109,9 @@ return the current HEAD, dirty files, commands/results, and exact next action,
 then continue unless blocked or stopped. Do not wait on model capacity.
 
 Every handoff must include:
-- branch name and current HEAD SHA;
+- intended deliverable, target, evidence/acceptance, and next decision;
+- non-PR output link/version or proposed ticket revision when applicable;
+- branch name and current HEAD SHA for code/evidence bound to a source tree;
 - PR URL, when opened;
 - changed files;
 - tests run;
@@ -142,17 +153,18 @@ Rules:
 
 ## Provisional Descendant Worker
 
-Use by default as soon as predecessor contracts are `dependency-ready`, within
-the execution budget and repository restrictions. No separate user opt-in is
-needed. Scientific authority and final merge gates still apply.
+Use by default as soon as PR predecessor contracts are `dependency-ready` and
+non-PR decision/output and eligibility gates pass, within the execution budget
+and repository restrictions. No separate user opt-in is needed. Scientific
+authority and final merge gates still apply.
 
 ```text
 You are a Codex worker for downstream issue #<ISSUE> in <OWNER>/<REPO>.
 
 Requested routing: gpt-6.1-sol / <medium for routine work; high for complex work>.
 
-This is provisional downstream work. Predecessors are not all merged:
-<PREDECESSORS>.
+This is provisional downstream work. These PR predecessors await merge:
+<PR_PREDECESSORS>. Accepted non-PR outputs and eligibility: <ACCEPTED_GATES>.
 
 You may implement against this contract snapshot:
 <SNAPSHOT>.
@@ -167,7 +179,7 @@ Rules:
 - Do not request AI reviews or merge.
 - Do not spawn subagents.
 - Report any predecessor contract mismatch immediately.
-- After predecessors merge, update to the final base, reassess evidence and run
+- After PR predecessors merge, update to the final base, reassess evidence and run
   affected or policy-required checks under SKILL.md's evidence discretion,
   update the PR body, then hand back to the coordinator for final review.
 ```

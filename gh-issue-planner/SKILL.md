@@ -43,14 +43,23 @@ Do not create an umbrella, dependency graph, milestone ledger, or tracker-form i
 
 ## Total Completion Packet
 
-Every executable issue owns one coherent completion packet: affected production
-entry points/callers and fallback behavior, implementation, risk-relevant
-tests, required documentation, performance evidence when relevant, and explicit
-acceptance. Keep that packet in the same issue and normally the same PR unless a
-separately owned dependency or evidence gate is genuinely required.
+Every executable issue names its intended deliverable, target location, acceptance
+evidence, and authoritative acceptance owner. A deliverable may be a PR, an issue
+revision, an evidence-backed decision, or a report/artifact. Do not manufacture a
+PR for work whose accepted output belongs in a ticket or decision record.
 
-Test-first start, implementation, and close are logical phases inside this
-packet. They are not instructions to create separate PRs, push every small
+Implementation packets own affected production callers/fallback, code, risk-relevant
+tests, docs, performance evidence, and acceptance, normally in one PR. Investigation
+packets own the question, consequential hypothesis, smallest discriminating inquiry,
+evidence, conclusion (including rejected or inconclusive hypotheses), and resulting
+plan/issue changes. An issue-revision packet names the issues/fields to change and
+requires verification of their live contents, ownership, edges, and preserved gates.
+Repository policy still determines whether code, harness, or documentation changes
+require a PR. Completing an investigation or issue revision does not satisfy an
+unmet product goal.
+
+Test-first start, implementation, and close are logical phases inside an
+implementation packet. They are not instructions to create separate PRs, push every small
 change, or wait for CI/review after each phase.
 
 ## Shared Workflow
@@ -115,6 +124,14 @@ uncertainty. Prioritize production integration and structural changes needed for
 the agreed outcome before residual micro-optimization; local wins alone do not
 validate the plan. Keep the goal, acceptance criteria, and safety/performance
 guardrails intact when revising the approach.
+
+For exploratory work, detail the next consequential inquiry and already justified
+implementation, leaving other mechanisms conditional until evidence selects them.
+At each named decision boundary, record the finding and revise the unexecuted graph;
+each snapshot stays acyclic. State primary objectives, secondary objectives, and
+guardrails explicitly. A time box bounds an experiment, not the product outcome;
+exhausting it leaves unmet goals open with the next decision. Do not invent numeric
+targets or resource caps where evidence-based scaling/lifetime criteria suffice.
 
 ## High-Capability Planning Advisory Pass
 
@@ -220,6 +237,10 @@ Repo extensions preserve project-specific conventions without hardcoding them in
   decision gate, or final evidence. Before execution, narrow or supersede
   overlapping issues; do not let parallel issues own the same scope or
   completion gate.
+- Record each node's deliverable contract and whether its blocking edges require
+  an accepted decision/output or a merged PR. A negative experiment can complete
+  its inquiry and retire a mechanism; it cannot pass an implementation's performance
+  gate. Conditional implementations activate only after their eligibility decision.
 - Distinguish the execution graph from evidence/history issues. Preserve useful history with cross-links and concise disposition comments instead of rewriting mature issue narratives into unrelated architecture.
 - Make dependencies directional and explicit. Conditional children name eligibility evidence and remain non-blocking until it exists. For scientific lanes, use `scientific-portfolio-governance`: owner direction or a clear issue assignment, one writer per issue branch, overlap checks, and merged predecessor authority. No automatic successor activation, scheduler, slot pool, activation PR, or workflow-authored authority; unrelated mainline changes do not invalidate a lane.
 - Classify measured metrics as north-star gates, milestone exit gates, guardrails, observational metrics, or explicitly accepted gaps. An accepted gap must record its evidence basis and revisit trigger and must not remain an accidental completion blocker.

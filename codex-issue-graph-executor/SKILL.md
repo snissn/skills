@@ -1,6 +1,6 @@
 ---
 name: codex-issue-graph-executor
-description: "Execute and merge dependency graphs of GitHub issues and PRs with GPT-6.1 Sol-only Codex delegation by default, provisional dependent work, conservative concurrency, mature-PR review, and current-head CI and performance gates. Use for graph execution, not requests to review or edit this skill."
+description: "Execute GitHub issue graphs toward agreed outcomes with accepted decisions, ticket revisions, artifacts, and merged PRs. Use GPT-6.1 Sol-only delegation by default, provisional dependent work, conservative concurrency, and current-head PR gates. Use for graph execution, not requests to review or edit this skill."
 ---
 
 # Codex Issue Graph Executor
@@ -12,9 +12,11 @@ subagent tools for bounded work that benefits from delegation, with this rollout
 remaining the graph coordinator and owner of merge-authority allocation.
 
 For a graph execution request, invocation means `execute-and-merge`: inspect live state,
-delegate safe independent work, open/update PRs, drive each PR through readiness
-gates, and merge in topological order after gates pass. Do not stop at a plan,
-opened PR, or ordinary pending CI/review. Follow **Critical-Path Finalization
+delegate safe independent work, deliver and verify each node's intended output,
+drive PRs through readiness gates, and merge in topological order after gates pass.
+A plan, report, or ticket revision completes a node only when it is that node's
+accepted deliverable; it does not complete an unmet parent product outcome. Do not
+stop at an opened PR or ordinary pending CI/review. Follow **Critical-Path Finalization
 and Monitoring** below; keep monitoring until the gate resolves.
 Do not ask for separate merge approval unless the user
 explicitly narrowed the request to planning or no-merge execution.
@@ -45,7 +47,8 @@ and [Codex subagent guidance](https://learn.chatgpt.com/docs/agent-configuration
 
 - Merge authorization is granted by default for PRs in the selected graph.
 - Always start dependent nodes provisionally as soon as their predecessors have
-  usable recorded contract snapshots. Do not wait for predecessor CI, review,
+  usable recorded contract snapshots and decision dependencies/conditional
+  eligibility are satisfied. Do not wait for predecessor PR CI, review,
   or merge, and do not ask the user to opt into work-ahead. Respect the execution
   budget and actual repository restrictions; record concrete blockers rather
   than asking the user to choose this default again.
@@ -70,6 +73,30 @@ and [Codex subagent guidance](https://learn.chatgpt.com/docs/agent-configuration
   regressions.
 - If a hard blocker prevents completion, update durable graph state with the
   blocker, owner, and next action before reporting.
+
+## Node Deliverable Contract
+
+Use the planner's completion-packet rules. Record each node's primary deliverable
+(`pr`, `issue-update`, `decision`, or `artifact`), target location, acceptance
+criteria/evidence, and acceptance owner. Supporting outputs belong in the same
+packet; a report stored through a PR still follows that PR's gates. Do not create
+a PR solely to represent completion of an accepted non-code output.
+
+For an inquiry, preserve the question/hypothesis, discriminating evidence, conclusion
+(including negative or inconclusive findings), and resulting plan changes. For an
+issue update, verify the actual live revision, ownership/edges, preserved acceptance,
+and remaining obligations. The coordinator accepts the output and records its link,
+version/source binding, evidence, and next action before setting `completed`.
+Negative findings can complete an inquiry but cannot pass a product improvement gate.
+Code, harness, and documentation changes still follow applicable repository PR policy;
+non-PR completion never substitutes for required review, CI, or scientific authority.
+
+Build out the next consequential inquiry and justified implementation, then revise
+the unexecuted graph at the planner's decision boundaries. Retain useful findings,
+retire disproven mechanisms, and select successors from evidence. Keep primary and
+secondary objectives distinct from guardrails; a measurement budget or resource cap
+is not proof of optimization. Parent completion requires its agreed outcome gates,
+not merely accepted child outputs or linked follow-ups.
 
 ## Compose With
 
@@ -319,8 +346,10 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
 - Workers may open or update PRs, but they must not merge unless explicitly
   delegated by the coordinator.
 - An issue worker owns the total issue completion packet through a stable
-  `dependency-ready` candidate or a real blocker. A plan, opened PR, first test,
-  or isolated code change is not a handoff boundary.
+  `dependency-ready` PR candidate, accepted non-PR output, or real blocker. A plan
+  is a handoff boundary only when the assigned packet is an evidence-backed
+  plan/issue revision; an opened PR, first test, or isolated code change is not
+  implementation completion.
 - Finalize a mature issue-complete PR locally unless delegation enables concrete
   useful parallel work. A delegated direct-child finalizer may edit, test,
   commit, push, update the PR and resolve threads; merge needs explicit delegated
@@ -337,7 +366,8 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
   budget, and may not exceed two without explicit user opt-in.
 - Keep one writer per contract/conflict surface. A named `contract_owner`
   resolves cross-node decisions before parallel workers continue.
-- Do not declare a dependent PR mergeable or merge it until all predecessors are merged and
+- Do not declare a dependent PR mergeable or merge it until predecessor PRs are merged,
+  required non-PR outputs are accepted, conditional eligibility is satisfied, and
   the dependent branch has been updated/revalidated on the final base.
 - `dependency-ready` unblocks provisional descendants by default. Start them
   while predecessors finalize, within ownership and concurrency limits;
@@ -370,7 +400,12 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
   with `gh-issue-planner` rather than forcing another implementation.
 - Keep user changes safe. Do not revert unrelated local changes. Do not use
   destructive git commands unless explicitly requested.
-- Continue until every node is merged, intentionally deferred to a linked follow-up, or blocked by external state with an exact next action. Pause at `review-scope-reset` only under an explicit hard review policy or coordinator-confirmed recurring material scope failure, never from advisory counts alone.
+- Continue until active node deliverables and the parent outcome are accepted, or
+  an explicit pause, genuine blocker, harness limit, or user-accepted narrower
+  endpoint stops execution. Deferral, retired hypotheses, and linked follow-ups
+  leave unmet parent goals open with an owner/next action. Pause at
+  `review-scope-reset` only under an explicit hard review policy or
+  coordinator-confirmed recurring material scope failure, never advisory counts.
 
 ## Workflow
 
@@ -398,7 +433,7 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
    budget permits it. Keep inventory, graph state, integration, and merge
    authority allocation with the coordinator. Use a bounded GPT-6.1 Sol adviser
    only under the triggers above.
-8. Track node state transitions in durable graph state and any local manifest: `pending`, `running`, `dependency-ready`, `fix-needed`, `review-scope-reset`, `mergeable-candidate`, `merged`, or `blocked`. Track requested and actual agent routing separately.
+8. Track node state transitions in durable graph state and any local manifest: `pending`, `running`, `dependency-ready`, `fix-needed`, `review-scope-reset`, `mergeable-candidate`, `merged`, `completed` (accepted non-PR output), or `blocked`. Record deliverable contracts and accepted output links/versions. Track requested and actual agent routing separately.
    A performance no-go normally leaves the node `fix-needed` while the
    failed-candidate intervention in `references/dependency-execution.md` runs;
    it is not a terminal state by itself. Apply that reference's **Graph
@@ -432,7 +467,8 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
     coordinator is the normal merge owner unless it explicitly delegated merge
     authority for that PR as part of the complete finalization assignment. Apply the node's effective repository policy,
     record `review_churn_warning` as telemetry, and merge only when latest-head
-    CI/reviews and required evidence are current and all predecessors are merged.
+    CI/reviews and required evidence are current, predecessor PRs are merged,
+    required non-PR outputs are accepted, and conditional eligibility holds.
 11. Merge in topological order. After each merge, update descendants to the
     final base, reassess evidence, and run affected or policy-required checks
     before declaring them mergeable.
@@ -445,6 +481,14 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
 ## Dependency Ready
 
 A node may be marked `dependency-ready` when:
+
+For non-PR nodes, the required output must already be accepted and source/version
+bound, with a stable downstream decision/contract and eligible successors recorded.
+Such nodes finish as `completed`; never label them `merged`. An unresolved inquiry
+does not select a conditional implementation. Reusable preparation can continue
+without committing to its unknown decision.
+
+For PR nodes:
 
 - A PR exists with branch and latest head SHA.
 - Implementation scope is substantially complete.
@@ -467,6 +511,9 @@ by descendants.
 Lead with the outcome; summarize evidence and link detailed state. Report:
 
 - Graph nodes and final state.
+- Intended deliverables and accepted non-PR outputs, including verified ticket
+  revisions and consequential plan changes. Separately state whether the parent
+  goal was achieved, investigation completed, or optimization obligations remain.
 - PRs merged, merge commits if available, and any issues closed/updated.
 - Tests, benchmarks, CI, and review evidence used for each merge.
 - Confirmation that AI reviews were requested only after mature PR heads, or not

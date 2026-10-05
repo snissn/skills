@@ -4,13 +4,19 @@ Represent issues and PRs as a DAG:
 
 ```text
 node = GitHub issue, ticket, or PR
-edge A -> B = A must be merged before B can be mergeable/merged
+edge A -> B = B requires A's accepted output or merged PR, as recorded
 ```
 
-Edges gate final mergeability, not provisional construction. Always start B
-provisionally from A's recorded `dependency-ready` snapshot within the execution
-budget; do not wait for A's CI/review/merge or ask for work-ahead opt-in.
-Actual repository restrictions and scientific authority gates still apply.
+Record `accepted-output` for a decision, verified issue revision, or artifact;
+record `merge` for a PR dependency. Acceptance of a report does not waive a required
+product/harness merge. Decision gates select eligible branches before their actual
+implementation starts; unresolved decisions allow only reusable preparation.
+
+PR edges gate final mergeability, not provisional construction. Once decision gates
+and eligibility are satisfied, start B provisionally from A's recorded
+`dependency-ready` snapshot within the budget; do not wait for A's PR CI/review/merge
+or ask for work-ahead opt-in. Repository restrictions and scientific authority still
+apply, including scientific predecessor merges and separate owner assignment.
 
 ## Edge Sources
 
@@ -34,12 +40,13 @@ parallel managers inventing incompatible contracts.
 | State | Meaning | May Unblock Descendants | May Merge |
 | --- | --- | --- | --- |
 | `pending` | Not started. | No | No |
-| `running` | Worker or coordinator is implementing or actively finalizing. | Provisionally once a recorded contract is `dependency-ready` | No |
+| `running` | Worker or coordinator is producing or finalizing the assigned deliverable. | Provisionally once a recorded contract is `dependency-ready` and decision gates/eligibility pass | No |
 | `dependency-ready` | Contract stable; provisional descendants start by default. | Yes, provisionally within the execution budget and repository restrictions | No |
 | `fix-needed` | Review, CI, tests, or performance evidence found blockers. | Provisionally if the recorded descendant contract remains usable | No |
 | `review-scope-reset` | An explicit hard review cap or coordinator-confirmed recurring material contract/architecture failure requires owner scope disposition. Advisory counts and provider exhaustion do not enter this state. | No | No |
-| `mergeable-candidate` | Worker believes PR is ready, graph gates still apply. | Yes, provisionally by default | Only after predecessors merged and final revalidation passes |
+| `mergeable-candidate` | Worker believes PR is ready, graph gates still apply. | Yes, provisionally after decision gates/eligibility pass | Only after predecessor PRs merge, non-PR outputs are accepted, and final revalidation passes |
 | `merged` | Merge verified. | Eligible; scientific successor needs its own assignment | Completed |
+| `completed` | Non-PR deliverable verified and accepted by its owner; link/version/evidence recorded. | Only selected eligible successors; does not satisfy a merge edge | Not applicable |
 | `blocked` | Waiting for a decision, conflict, or external state. Pending CI/review alone is ordinary finalization. | Provisionally if the blocker leaves the recorded descendant contract usable | No |
 
 On `review-scope-reset`, do not request another AI review or start actual descendants of the affected node; independent nodes continue. Record the explicit hard policy or material-failure rationale, lifetime counts, thread dispositions, owner, and required decision. Exit after the artifact is accepted, narrowed, split, deferred, rejected, or explicitly authorized to resume. `review_churn_warning` is telemetry and does not change node state.
@@ -50,6 +57,13 @@ deferred. Those terminal dispositions require evidence that the issue premise
 is false, the accepted objective is infeasible within its contract, a linked
 successor owns the remaining work, or an external dependency prevents the next
 causal test.
+
+A rejected hypothesis can complete an investigation whose accepted packet owns
+that inquiry and next decision; the unsuccessful implementation remains unaccepted.
+Do not set `completed` merely because a ticket was edited: verify its intended
+revision, evidence, remaining owners, and parent gates. Record conditional branches
+not selected by the accepted finding as inactive, without inventing a merge or
+passing their implementation gate.
 
 ## Failed Candidate Intervention
 
@@ -108,6 +122,13 @@ not itself require a new benchmark, reviewer, push, or wholesale replacement.
 Keep a sound plan; revise only the affected remainder when it is inadequate.
 Prioritize required structural/integration work over further local polishing.
 
+For exploratory outcomes, reassessment selects the next inquiry or implementation
+from evidence, including successful child results. Capture the decision and necessary
+issue revisions as legitimate outputs under SKILL.md's deliverable contract. Only
+detail the next useful frontier; preserve the parent outcome and leave speculative
+mechanisms conditional. Experiment completion or a time-box limit cannot close an
+unmet optimization goal.
+
 Use `gh-issue-planner` to reorder, narrow, supersede, create/adopt necessary nodes,
 or replace the remaining graph within existing authorization. Record the finding
 and evidence, why the old plan is inadequate, changed nodes/edges, and preserved
@@ -165,8 +186,9 @@ Predecessor #A changed since snapshot:
 
 ## Finalization Ownership
 
-An issue worker owns its total completion packet until a mature
-`dependency-ready` PR or a real blocker. Finalize locally unless a delegated
+An issue worker owns its deliverable packet until an accepted non-PR output, a mature
+`dependency-ready` PR, or a real blocker. The PR readiness loop below applies to
+PR-bearing packets. Finalize locally unless a delegated
 direct-child finalizer enables concrete useful parallel work. The active owner
 handles complete finding inventory, coherent repair batches, latest-head
 CI/review and thread resolution; merge authority remains explicit. While
@@ -232,7 +254,8 @@ permits. A new SHA alone does not mandate another review or full validation run.
 A node can be declared mergeable only when:
 
 - no unaccepted material performance regression remains;
-- all predecessors are merged;
+- predecessor PRs are merged, required non-PR outputs are accepted, and conditional
+  eligibility is satisfied;
 - the branch is updated onto the intended final base;
 - required test/benchmark evidence covers the final candidate, with justified
   reuse or affected/policy-required reruns;
@@ -276,9 +299,17 @@ durable_state:
 nodes:
   id:
     kind: issue|pr
+    deliverable:
+      kind: pr|issue-update|decision|artifact
+      target: ...
+      acceptance: ...
+      acceptance_owner: ...
+      accepted_output: ... # link/version/evidence once verified; omit until accepted
     title: ...
     url: ...
     predecessors: []
+    dependency_gates: {} # predecessor -> merge|accepted-output when ambiguous
+    eligible_when: ... # omit for unconditional nodes
     successors: []
     layer: 0
     state: pending

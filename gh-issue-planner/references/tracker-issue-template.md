@@ -106,6 +106,14 @@ For umbrella work, keep a compact authoritative ledger. Omit this section for a 
 
 State conditional edges and eligibility evidence; scientific successors also need their own owner direction/assignment and merged predecessor authority. Do not duplicate one completion gate across multiple issues.
 
+For each active node, name its primary deliverable (`pr`, `issue-update`, `decision`,
+or `artifact`), target location, acceptance evidence/owner, and whether dependencies
+require accepted outputs or merged PRs. Supporting outputs belong in that packet.
+Investigation nodes name the question/hypothesis, bounded inquiry, decision outcomes,
+and required ticket revisions. Verify issue updates live; a negative result may
+complete an inquiry while its parent product goal remains open. Detail speculative
+implementation only after the decision selects it.
+
 ## North-Star Gates
 
 For performance or scaling trackers, define the gates that must pass before the tracker can close. Do not rely on merged child PRs alone.
@@ -116,7 +124,10 @@ For performance or scaling trackers, define the gates that must pass before the 
 
 Rules:
 
-- A final gate may decide not to change a default, but it may not claim the tracker goal is complete unless the north-star gates pass or explicit replacement blockers are linked and accepted.
+- A final gate may decide not to change a default, but the tracker goal is
+  complete only when its north-star gates pass. Linked follow-ups preserve unmet
+  obligations; they do not satisfy them. An explicitly accepted narrower endpoint
+  must be reported separately from achieving the original goal.
 - Current-only measurements are not proof of improvement.
 - "No regression" is not enough for an optimization milestone unless that milestone is explicitly instrumentation-only or safety-only.
 
@@ -403,13 +414,13 @@ Group tests by behavior:
 
 State evidence required before closing the tracker:
 
-- [ ] All milestone checkboxes complete or intentionally moved to linked follow-ups.
-- [ ] Required tests pass.
+- [ ] All required milestone packets are accepted; linked follow-ups preserve any remaining obligations.
+- [ ] Required tests or non-PR acceptance checks pass.
 - [ ] Required benchmarks are recorded.
 - [ ] No unaccepted material performance regression remains.
 - [ ] Accepted gaps are recorded as non-blocking with evidence and revisit triggers; any guardrail breach is resolved or explicitly accepted.
 - [ ] Current evidence proves the goal, not just a subset.
-- [ ] North-star gates are satisfied, or any failed gates have explicit user/coordinator acceptance plus linked replacement blockers that prevent false completion.
+- [ ] North-star gates are satisfied; an explicitly accepted narrower endpoint is distinguished from achieving the original goal.
 - [ ] PRs are mergeable under the repo policy: latest-head CI green, required tests pass, benchmark evidence is posted when relevant, and AI/code-review findings are passing, resolved, or explicitly rejected with rationale.
 - [ ] Affected architecture/contracts, performance/usage guides, examples, and generated docs are current and validated; no required update is deferred to closeout.
 - [ ] Every performance-sensitive feature has optimized production-path proof and an allocation audit with avoidable overhead removed and residual costs inside the agreed budget or explicitly accepted.
@@ -434,7 +445,7 @@ Before creating or editing the issue, verify:
 - [ ] Every PR-bearing milestone names its test-first behavior/invariant or a valid explicit exception.
 - [ ] Every PR-bearing milestone classifies performance relevance and requests only context-appropriate evidence.
 - [ ] Each milestone has checkboxes.
-- [ ] Each milestone has tests.
+- [ ] Each milestone has acceptance checks; implementation packets have relevant tests.
 - [ ] Performance-sensitive milestones have benchmark requirements.
 - [ ] Non-goals are explicit.
 - [ ] The issue avoids fake completion paths.

@@ -42,7 +42,8 @@ edges. Then produce a compact graph preflight with:
 5. Gate classifications and ownership.
 6. Conditional branches and their activation evidence.
 7. Adjacent in-flight work and frozen boundaries.
-8. The test-first seam and performance-relevance class for every executable node.
+8. The acceptance evidence and performance-relevance class for every executable
+   node, including the test-first seam for implementation packets.
 9. Canonical docs read at the intended base, the optimized production path to
    reuse, and doc/code conflicts or evidence gaps that affect sequencing.
 10. Each performance-sensitive feature's allocation audit/budget and path proof,
@@ -58,12 +59,19 @@ Use a ledger like this:
 
 Keep the preflight approximate when the user requests a sketch. Do not fill it with issue-body boilerplate.
 
-Every executable node should name the first behavior or invariant its implementation PR must drive from red to green, or an explicit allowed exception. Also classify the node as not performance-relevant, possibly performance-relevant, performance-sensitive, or performance-objective so benchmark requirements are deliberate rather than copied uniformly across the graph.
+Every implementation packet should name the first behavior or invariant its PR
+must drive from red to green, or an explicit allowed exception. Non-PR packets
+name the evidence that accepts their assigned output. Classify each node as not
+performance-relevant, possibly performance-relevant, performance-sensitive, or
+performance-objective so benchmark requirements are deliberate rather than copied
+uniformly across the graph.
 
-Each executable node should also own one total completion packet: production
-callers/fallback, implementation, tests, documentation, required performance
-evidence, and acceptance. Treat start, implementation, and close as phases of
-that packet, not separate PRs or review cycles.
+Each executable node names its deliverable, target location, evidence, and acceptance
+owner under SKILL.md's completion-packet rules. Implementation packets own production
+callers/fallback, code, tests, docs, and performance evidence; an inquiry may instead
+deliver an accepted decision or verified ticket revision. Record what completes that
+packet without implying the parent outcome is achieved. Treat implementation phases
+as one packet, not separate PRs or review cycles.
 
 Apply SKILL.md's proportional reassessment guidance. For uncertain work, identify
 the assumptions and meaningful decision boundaries; keep strategic review with
@@ -105,6 +113,12 @@ Use only roles the work actually needs:
 - **Evidence/final gate:** reruns the agreed representative matrix and owns the final claim.
 - **Evidence/history anchor:** preserves prior experiments or benchmark attribution without blocking the new graph by default.
 
+Roles describe purpose; deliverables describe outputs. An experiment can deliver a
+report plus ticket revisions without a PR. Name one primary deliverable and include
+required supporting outputs in its acceptance; use separate nodes only for separately
+owned gates. A ticket revision must identify changed scope/edges, evidence, affected
+owners, and remaining obligations, then verify the live result.
+
 Assign every completion gate exactly one authoritative issue. Other issues may contribute evidence but must link to the owner rather than restating the same closure criterion.
 Before execution, narrow or supersede any overlapping executable issue whose
 scope or completion gate is already owned elsewhere.
@@ -134,12 +148,20 @@ Do not create an optimization child solely because a metric is measurable. Accep
 ## Dependencies And Conditional Branches
 
 - Draw only real blocking edges. A related issue is not automatically a dependency.
+- Label decision/output dependencies separately from merge dependencies. Accepted
+  non-PR outputs satisfy their own edges; product dependencies still require merged
+  predecessor PRs. Preserve repository/scientific authority rules.
 - Prefer an acyclic execution graph with one clearly identified final gate.
 - Put measurement or contract work before irreversible format or architecture choices when evidence can select the path.
 - A conditional child must state its eligibility evidence and failure action. Scientific successors also require owner direction/assignment and merged predecessor authority; evidence alone never activates them.
 - Keep inactive conditional children out of the critical path.
 - If evidence changes the graph, update the parent ledger and affected child bodies rather than continuing a stale plan.
 - Avoid ticket explosion. A child should own a coherent, independently reviewable slice, not every function or anticipated PR.
+
+For exploratory work, fully specify only the next useful inquiry and justified
+implementation. Keep other mechanisms as conditional hypotheses in the parent until
+selection requires a child. At meaningful evidence boundaries, revise the remaining
+graph rather than executing a speculative implementation simply because it was listed.
 
 ## Existing-Issue Dispositions
 
