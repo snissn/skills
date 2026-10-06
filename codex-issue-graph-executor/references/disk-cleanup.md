@@ -5,6 +5,25 @@ execution hosts. Skill-editing and read-only requests do not authorize deletion.
 Use existing graph notes and native filesystem/Git tools; no new scheduler or
 cleanup service is required.
 
+## Required Local Deletion
+
+After a merge or candidate retirement, remove eligible local worktrees and their
+disposable generated data promptly once consumers release them. Moving them to
+another directory, an external disk, Trash, a tarball, or a preservation copy is
+not cleanup. Do not retain complete worktrees, test DBs, generated corpora, or
+run-local caches just in case they might be useful again. Retain only required
+evidence or unique work, with its durable location and concrete reason recorded.
+Use pushed source refs plus input recipes, seeds, and hashes for reproducible
+data when those satisfy the evidence contract. Keep an exact fixture or binary
+only when the contract actually requires those bytes. Never delete protected or
+unreleased content to meet this requirement.
+
+Local worktree/output deletion proceeds independently of remote branch cleanup.
+A protected remote ref, squash merge, or retained source ref is not a reason to
+keep a clean released checkout. Verify required source commits are recoverable
+from pushed refs or another explicitly accepted durable source binding. Report
+local branch and remote-branch retention separately under the helper's policy.
+
 ## Scope And Release
 
 - Inventory recorded run roots and attributable graph outputs: completed issue,
@@ -20,8 +39,10 @@ cleanup service is required.
   At release, capture expected path/type and filesystem identity plus a
   contents/metadata inventory sufficient to detect replacement or additions;
   pass this snapshot with the allowlist. A pathname and size alone do not suffice.
-  Preserve accepted and failed-candidate raw results, provenance, repro inputs,
-  scientific artifacts, and anything required for review/recovery. A disposable
+  Preserve accepted and failed-candidate raw results, provenance, required
+  non-reproducible inputs, scientific artifacts, and anything required for
+  review/recovery. This does not require retaining the surrounding checkout,
+  generated corpus, working DB, or run-local cache. A disposable
   working DB can go when the retained evidence and reproducible fixture suffice.
   Verify any required durable copy and its location before removing the local one.
 - The coordinator gives one cleaner an exact allowlist and protected-path list.
@@ -53,7 +74,9 @@ cleanup service is required.
    untracked/ignored contents, and preservation of required commits on durable
    refs. Delete only separately allowlisted disposable generated contents, then
    use `git worktree remove <exact-path>` without force. If it refuses, retain and
-   report the reason. Remove unregistered scratch directories only after their
+   report the reason. Do not create a whole-worktree backup to bypass a refusal;
+   identify the specific dirty work, consumer, or evidence requirement. Remove
+   unregistered scratch directories only after their
    complete contents are attributable and disposable. Do not run blanket
    `git clean`, forced branch deletion, or global worktree pruning.
 4. Delete only exact released files/directories, with path-safe native commands;
@@ -78,5 +101,8 @@ the storage blocker and concrete broader-cleanup candidates.
 
 Collect the result before ending execution, or explicitly stop the worker and
 record remaining cleanup with its exact next action. Persist removed/retained
-paths and space observations in graph state. Cleanup does not require rerunning
+paths and space observations in graph state. A queued deletion or a relocated
+worktree is not a completed cleanup result. Retained paths need an explicit
+retention requirement or a concrete blocker, rather than a default archive.
+Cleanup does not require rerunning
 product tests/reviews or generating another push solely because files were removed.

@@ -270,6 +270,10 @@ Time box and stop conditions: <BOUNDS>.
 
 Recheck every target before deleting it. Reclaim only released, verified
 disposable outputs; skip changed, active, dirty, uncertain, or protected paths.
+Delete eligible local worktrees and disposable DBs/datasets; do not archive,
+move to Trash, relocate, or save complete copies. Required evidence is retained
+at the coordinator's verified durable location. Remote-branch retention does
+not block eligible local deletion. A queued or moved path is not removed.
 Keep scans/deletion outside conflicting benchmark measurement windows. Report
 new large candidates to the coordinator for release; do not expand your scope.
 Do not edit source, merge, commit, push, request reviews, or spawn subagents.

@@ -58,8 +58,10 @@ and [Codex subagent guidance](https://learn.chatgpt.com/docs/agent-configuration
   adopt necessary nodes within that scope as evidence changes. Map them to the
   agreed parent outcome and preserve acceptance criteria, guardrails, ownership,
   and history; necessary issue maintenance needs no repeated permission.
-- Execution includes removing verified disposable outputs owned by this graph
-  after their consumers release them, under **Asynchronous Disk Cleanup**.
+- Execution includes deleting released local worktrees and verified disposable
+  outputs owned by this graph after merge or retirement, under **Asynchronous
+  Disk Cleanup**. Local cleanup is required; archiving or moving a disposable
+  worktree does not satisfy it.
   Editing this skill does not itself authorize a disk cleanup run.
 - The coordinator may merge after all gates pass; workers may not merge unless
   the coordinator explicitly delegates that action for a specific PR.
@@ -209,6 +211,16 @@ Optimize for verified progress toward the agreed parent outcome per usage window
 
 ## Asynchronous Disk Cleanup
 
+After a PR merges, delete its local worktree and disposable test/benchmark DBs,
+datasets, binaries, and run-local caches as soon as their writers and consumers
+release them. Do not save, archive, move to Trash, or copy the complete worktree
+or disposable outputs for possible future use. Keep only explicitly required
+evidence and unique work, with a verified durable location and a retention reason;
+pushed source refs and reproducible input recipes normally suffice for recovery.
+Active descendants, dirty or unpushed work, primary checkouts, and required
+scientific/review evidence remain protected. A blocked remote-branch deletion
+does not block eligible local worktree or output deletion.
+
 Use one direct-child `gpt-6.1-sol` cleanup agent for sizeable released batches
 while useful graph work continues. Read
 [references/disk-cleanup.md](references/disk-cleanup.md) before assigning it and
@@ -221,7 +233,9 @@ Start after a resolved merge, retired candidate, or completed test/benchmark
 stage releases its worktree or generated outputs. The coordinator assigns exact
 paths and sole deletion ownership; keep active/provisional lanes and retained
 evidence protected. Hand helper-skill post-merge cleanup to that owner rather
-than running two cleaners. Async means an exposed subagent running alongside
+than running two cleaners. Releasing or queuing a path is not completed cleanup;
+verify actual deletion and removal of its worktree registration. Async means an
+exposed subagent running alongside
 execution, not a detached daemon or invented spawn flag. Collect its outcome
 before the final report; never claim cleanup will continue after the turn ends.
 
@@ -504,12 +518,15 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
     required non-PR outputs are accepted, and conditional eligibility holds.
 11. Merge in topological order. After each merge, update descendants to the
     final base, reassess evidence, and run affected or policy-required checks
-    before declaring them mergeable.
-12. Release eligible worktrees and generated outputs to **Asynchronous Disk
+    before declaring them mergeable. Release the merged node's local worktree
+    and disposable outputs immediately after their consumers finish.
+12. Delete eligible worktrees and generated outputs through **Asynchronous Disk
     Cleanup** as consumers finish; do not accumulate them until graph closeout.
     Preserve `github-pr-mergeable` branch-cleanup policy and one cleanup owner.
     Before reporting completion, collect cleanup results or finish locally;
-    record retained paths and blockers honestly.
+    verify removed paths are absent and worktrees unregistered. Record every
+    retained path's concrete blocker or explicit retention requirement; do not
+    replace deletion with a local archive.
 
 ## Dependency Ready
 
