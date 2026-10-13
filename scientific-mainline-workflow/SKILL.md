@@ -123,9 +123,10 @@ When this workflow is composed with `github-pr-mergeable`, an issue-graph execut
 - enumerate all root/nested `AGENTS.md` files at the scientific worktree or exact candidate head, map candidate paths to their applicable policy chain, and do not rely only on the coordinator checkout;
 - use PR tooling for final integration inventory, CI, and thread disposition, not to add an unbounded code-review loop after the scientific gate is satisfied;
 - an exact-head Codex clean artifact is required only when effective repository/workstream policy requires it;
+- when hosted review or delegation cannot run, an internal read-only subagent review or a separate same-agent mock subagent reviewer pass is an acceptable fallback under [the shared contract](../github-pr-mergeable/references/internal-review-fallback.md); record the actual mode/model and exact candidate, and follow explicit target-repository independent-review and scientific requirements;
 - a repair commit does not reset a repository-wide review-round cap.
 
-Absent a repository-specific cap, a non-execution analytic candidate gets one independent review and one batched repair by default. After two finding-bearing candidate heads, stop and reassess the claim, authority, or artifact split before any further review. Continue only for a concrete finding that changes the scientific claim or with explicit project-owner authorization.
+Absent a repository-specific cap, a non-execution analytic candidate gets one internal review and one batched repair by default. Prefer an independent read-only subagent; use the documented mock subagent fallback when delegation cannot run. After two finding-bearing candidate heads, stop and reassess the claim, authority, or artifact split before any further review. Continue only for a concrete finding that changes the scientific claim or with explicit project-owner authorization.
 
 See [the status taxonomy](references/execution-status-taxonomy.md) for the
 required execution/disposition separation.
@@ -226,8 +227,9 @@ Apply a proportional gate:
   scientific value or decision surface changed. Do not create a new scientific
   identity.
 - **Scientific analytic result:** require adversarial design review, local
-  substantive validation, and final independent acceptance bound to the exact
-  candidate before one coherent mainline freeze/result integration. Mutable
+  substantive validation, and final acceptance in the recorded review mode
+  bound to the exact candidate under target-repository requirements before one
+  coherent mainline freeze/result integration. Mutable
   feature-branch commits remain allowed and non-authoritative.
 - **Scientific execution:** review and commit the frozen definition first,
   qualify mutable execution software separately, execute the frozen decision
@@ -313,7 +315,7 @@ scientific predicates.
 
 ### 4. Review adversarially before freeze
 
-The independent reviewer must inspect the actual sources and formulas, not
+The reviewer in the recorded review mode must inspect the actual sources and formulas, not
 only the constructor's summary. Review at the theorem's natural level:
 
 - type and ontology consistency;
@@ -397,7 +399,7 @@ committed sources. A prose statement that checks were run is not equivalent to
 validation evidence.
 
 After substantive validation passes, generate the exact candidate manifest and
-obtain the independent reviewer's final `ACCEPT` on those bytes and that
+obtain the reviewer's final `ACCEPT`, in the recorded mode, on those bytes and that
 evidence. For a non-decisive analytic candidate, use a clean pushed candidate
 commit. For a decision-bearing candidate, use the uncommitted working-tree
 bytes; if review or validation causes a scientific edit, revise them without
@@ -425,7 +427,7 @@ Use direct-to-main only when it is authorized and:
 
 - local `main` is synchronized with the intended remote head;
 - the diff contains only the reviewed scientific artifact set;
-- independent review is accepted;
+- exact-candidate review is accepted in the recorded mode under target-repository requirements;
 - all required local validations pass;
 - no active frozen execution is invalidated;
 - no unrelated user changes are included.

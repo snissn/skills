@@ -12,11 +12,15 @@ science.
 For an internal scientific review gate that does not explicitly mandate the
 GitHub-hosted Codex service, use one of these exact-head substitutes:
 
-1. preferred: an independent, read-only GPT-5.6 Pro subagent with no constructor
-   role and no candidate write access;
-2. fallback: a local clean-room GPT-5.6 Pro review after candidate freeze, in a
-   separate adversarial phase or isolated worktree with candidate writes
-   disabled.
+1. preferred: an independent, read-only internal subagent with no constructor
+   role or candidate write access (`INTERNAL_SUBAGENT_REVIEW`);
+2. when a separate subagent cannot run: a same-agent mock subagent review
+   (`LOCAL_MOCK_SUBAGENT_REVIEW`) with candidate bytes held fixed, in a separate
+   adversarial phase or isolated worktree with candidate writes disabled.
+
+Both are acceptable for the default internal gate. Follow
+[the shared fallback contract](../github-pr-mergeable/references/internal-review-fallback.md)
+and explicit target-repository reviewer/model requirements.
 
 The reviewer must inspect the actual theorem, action, state space, source
 bindings, validators, controls, recovery maps, and claim boundaries at the exact
@@ -34,10 +38,11 @@ codex_unavailability_evidence:
   normalized_reason:
 ```
 
-A local same-agent fallback is labeled `LOCAL_GPT56_REVIEW` and is accepted only
-as an internal repository review. It is not independent human review, external
-peer review, or hosted Codex review. A constructor's narrative self-review does
-not satisfy the gate.
+A local same-agent fallback is labeled `LOCAL_MOCK_SUBAGENT_REVIEW` and is
+accepted as internal repository review after an actual adversarial reviewer
+pass. Record the actual model and preserve the distinction from independent
+review, external peer review, and hosted Codex review. A constructor's narrative
+summary does not satisfy the gate.
 
 Any scientific edit invalidates the review. The fallback does not waive freeze,
 current-main synchronization, CI, execution qualification, branch protection,

@@ -3,6 +3,13 @@
 Choose the assurance profile before adding validation infrastructure. Apply
 repository-local policy first when it is stricter or more specific.
 
+For internal review, prefer an independent read-only subagent. When hosted
+review or delegation cannot run, a separate same-agent mock subagent reviewer
+pass is an acceptable fallback under
+[the shared contract](../../github-pr-mergeable/references/internal-review-fallback.md).
+Record the actual mode/model and exact candidate, and follow explicit
+target-repository reviewer requirements.
+
 ## Diagnostic
 
 Use for exploration, proof search, first-cell calculations, or “no certificate
@@ -17,7 +24,7 @@ or activate a dependency.
 
 Use for a scoped theorem, obstruction, or positive construction that does not
 execute a scientific decision. Require a direct substantive check and one
-independent reviewer by default. Batch repairs. After two finding-bearing
+internal reviewer by default. Batch repairs. After two finding-bearing
 candidate heads without a claim-changing finding, stop and accept, downgrade,
 or obtain explicit project-owner authorization for more review.
 
@@ -29,7 +36,7 @@ do not renew review when that surface is mechanically unchanged.
 
 Use when an exact conclusion becomes scientific evidence, closes a target, or
 activates a successor. Bind exact sources and the scientific surface, obtain
-one independent scientific review, and test a small set of load-bearing
+one internal scientific review, and test a small set of load-bearing
 semantic changes. Prefer 1–15 targeted mutations; do not mutate every scalar or
 prose phrase.
 

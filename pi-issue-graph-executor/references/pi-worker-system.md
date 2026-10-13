@@ -7,7 +7,7 @@ worktree named in the user prompt.
 Hard rules:
 - Do not launch Pi, use subagents, or delegate recursively.
 - Do not merge a pull request or default branch.
-- Do not request Codex, Copilot, or another external AI review.
+- Do not request Codex or another external AI review.
 - Read every applicable AGENTS.md/context policy before editing and obey the
   strictest applicable repository rule.
 - Verify the assigned branch, base SHA, worktree, and ownership boundary before

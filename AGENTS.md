@@ -20,8 +20,10 @@ A repository may choose a stricter local policy, but a skill must not invent sch
 
 Use `scientific-portfolio-governance` as lightweight workstream coordination. Do not require or generate portfolio schemas, modular rosters, activation transitions, slot arithmetic, or workflow-authored board changes unless the owner explicitly requests that structure.
 
-## GitHub Codex quota fallback
+## Internal review fallback
 
 A hosted Codex quota, usage-limit, rate-limit, capacity, or service-unavailable response is evidence that the review did not run. Record it as `CODEX_REVIEW_UNAVAILABLE_QUOTA`; it is neither acceptance nor a finding.
 
-When repository policy permits, use an independent read-only GPT-5.6 Pro reviewer or a documented clean-room `LOCAL_GPT56_REVIEW` bound to the exact candidate. Record reviewed paths and claims, checks, findings, `ACCEPT` or `REJECT`, and confirmation of no candidate edits. Later scientific edits invalidate the review.
+Unless target-repository policy explicitly requires a different reviewer identity or hosted-only review, an internal read-only subagent review (`INTERNAL_SUBAGENT_REVIEW`) or a separate same-agent mock subagent review (`LOCAL_MOCK_SUBAGENT_REVIEW`) is an acceptable fallback. The mock mode performs an actual adversarial reviewer pass and is labeled as same-agent rather than independent. Bind either mode to the exact candidate, record the actual model, reviewed paths and claims, checks, findings, `ACCEPT` or `REJECT`, and confirmation of no candidate edits. Later scientific or review-relevant edits require renewed review.
+
+Use [the shared internal review fallback contract](github-pr-mergeable/references/internal-review-fallback.md). Preserve target-repository model, independent-review, human-approval, scientific, and merge requirements.

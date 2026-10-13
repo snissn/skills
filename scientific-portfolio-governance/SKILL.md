@@ -55,7 +55,7 @@ A handoff preserves the exact remote branch and head, WIP status, changed paths,
 
 ## Review and merge
 
-Keep scientific construction, qualification engineering, and parent synthesis separate when they are distinct decisions. Hosted Codex quota may use the repository-approved exact-candidate GPT-5.6 Pro fallback. Git mergeability alone is not scientific acceptance.
+Keep scientific construction, qualification engineering, and parent synthesis separate when they are distinct decisions. When hosted review or delegation cannot run, an internal read-only subagent review or a separate same-agent mock subagent reviewer pass is an acceptable fallback under [the shared contract](../github-pr-mergeable/references/internal-review-fallback.md). Record the actual mode/model, exact candidate, checks, findings, and disposition, while following explicit target-repository reviewer requirements. Git mergeability alone is not scientific acceptance.
 
 ## Retained evidence lanes
 

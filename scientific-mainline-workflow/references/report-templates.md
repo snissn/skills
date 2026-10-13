@@ -21,13 +21,17 @@ Artifacts:
 - `<path>` — <role>
 - `<path>` — <role>
 
-Independent review:
+Internal review:
+- review mode: <INTERNAL_SUBAGENT_REVIEW / LOCAL_MOCK_SUBAGENT_REVIEW / other required mode>
 - reviewer: <agent or human identity>
+- actual model: <model or unknown>
 - reviewed base: `<sha>`
 - candidate manifest: `<manifest sha256>`
 - reviewed artifact set: <paths and file hashes>
 - reviewed NEED set: <predicates>
 - disposition: <ACCEPT/BLOCK/FAIL and decisive reason>
+- candidate edits by reviewer: false
+- fallback reason/evidence: <when applicable>
 
 Validation:
 - NEED predicate: <predicate>
@@ -157,7 +161,7 @@ Closed by `<sha>` with:
 ### Evidence
 
 - <artifact and result>
-- <independent review>
+- <exact-candidate review, actual mode, and disposition>
 - <validation>
 
 ### Scientific inference

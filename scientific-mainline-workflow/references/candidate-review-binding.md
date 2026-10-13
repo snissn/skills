@@ -1,10 +1,16 @@
 # Candidate Review Binding
 
-Use this contract when an independent scientific review must authorize the
+Use this contract when an internal scientific review must authorize the
 freeze and mainline integration of a mutable-branch candidate. Non-decisive
 analytic candidates may be reviewed at an exact pushed commit. Decision-bearing
 candidates must be reviewed as exact uncommitted bytes before their first joint
 freeze commit.
+
+Prefer an independent read-only subagent. When hosted review or delegation
+cannot run, a separate same-agent mock subagent reviewer pass is an acceptable
+fallback under [the shared contract](../../github-pr-mergeable/references/internal-review-fallback.md).
+Record the actual mode/model and follow explicit target-repository reviewer
+requirements; the same exact-byte binding applies to either fallback mode.
 
 Read [the evidence scope ladder](evidence-scope-ladder.md) before defining the
 review burden. The reviewer must evaluate the checkpoint that was actually
@@ -127,7 +133,7 @@ The design review should first audit the proposed burden itself:
 - Does the stop rule prevent depth drift after the NEED gate is met?
 
 After dedicated and inherited validation passes, regenerate the manifest and
-ask an independent reviewer for the integration disposition on:
+ask the reviewer in the recorded mode for the integration disposition on:
 
 - the exact candidate bytes and base;
 - the frozen inputs and source bindings;
@@ -200,7 +206,7 @@ with current `main`.
 
 - If candidate paths, frozen inputs, theorem dependencies, or any NEED premise
   changed, rebase or transplant the draft, rerun validation, regenerate the
-  manifest, and obtain a renewed independent review.
+  manifest, and obtain a renewed exact-candidate review in the recorded mode.
 - If the movement is demonstrably unrelated, preserve the accepted candidate
   file bytes, document the base-drift audit, rerun affected inherited checks,
   and bind the integration evidence to both manifests.
@@ -235,6 +241,7 @@ level.
 ```text
 Review this scientific candidate for freeze and mainline integration.
 
+Review mode and actual model: <internal subagent / same-agent mock subagent / required mode>
 Base: <sha>
 Candidate branch and HEAD: <branch> <sha>
 Candidate state: <pushed non-decisive commit / uncommitted decision-bearing draft>

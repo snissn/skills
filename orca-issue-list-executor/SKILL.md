@@ -64,6 +64,12 @@ Default assumption: the user wants PRs merged after they pass all mergeable/fina
 - latest-head CI/reviews/evidence are current;
 - the PR branch is still the intended head.
 
+When hosted review or delegation cannot run, an internal read-only subagent
+review or a separate same-agent mock subagent reviewer pass is an acceptable
+fallback under [the shared contract](../github-pr-mergeable/references/internal-review-fallback.md).
+Record the actual mode/model, exact candidate, findings, and disposition;
+explicit target-repository reviewer requirements still govern.
+
 If the user explicitly opts out, report “mergeable, not merged by request.”
 
 ## Thinking-Level Policy
@@ -114,7 +120,7 @@ Give the manager:
 - required conformance/compatibility checks for generic substrate changes;
 - instruction to produce a subtask plan before broad implementation;
 - instruction to report PR URL, branch, latest head SHA, checks, AI review status, tests, benchmarks, and blockers.
-- instruction not to request Codex, Copilot, or other review-credit-consuming AI reviews until the PR has coherent code, focused tests, required benchmark evidence or an explicit not-applicable rationale, an accurate PR body/status comment, no known local blockers, and latest-head CI running or green.
+- instruction not to request Codex or other review-credit-consuming AI reviews until the PR has coherent code, focused tests, required benchmark evidence or an explicit not-applicable rationale, an accurate PR body/status comment, no known local blockers, and latest-head CI running or green.
 
 ### 2. Monitor manager progress
 
@@ -143,7 +149,7 @@ The manager handoff must include:
 - benchmark tables with required counters when relevant;
 - explicit gate status for optimization work: pass, fail/fix-needed, re-scoped instrumentation/safety-only, linked blocker, or explicit waiver;
 - latest-head CI status;
-- Codex/Copilot status or unavailable notes;
+- hosted Codex status and any internal review fallback disposition;
 - unresolved review threads, if any;
 - known risks/deferrals.
 

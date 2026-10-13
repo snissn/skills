@@ -85,6 +85,12 @@ benchmark never proves an improvement. Optimization nodes that miss their
 stated improvement gate stay incomplete even when CI is green. Do not merge
 unrelated nearby PRs.
 
+When hosted review or delegation cannot run, an internal read-only subagent
+review or a separate same-agent mock subagent reviewer pass is an acceptable
+fallback under [the shared contract](../github-pr-mergeable/references/internal-review-fallback.md).
+Record the actual mode/model, exact candidate, checks, findings, and `ACCEPT`
+or `REJECT`; follow explicit target-repository reviewer requirements.
+
 ## Workflow
 
 1. Load policy: repo `AGENTS.md`, `CONTRIBUTING.md`, PR templates, and any

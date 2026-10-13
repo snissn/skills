@@ -261,7 +261,7 @@ When the implementation is incomplete but useful, publish a draft PR with a cohe
 
 Use `github-pr-mergeable` semantics.
 
-Before requesting Codex, Copilot, or other review-credit-consuming reviewers:
+Before requesting Codex or other review-credit-consuming reviewers:
 
 - implementation is coherent;
 - focused and broader affected tests are green or an exact blocker is documented;
@@ -271,6 +271,12 @@ Before requesting Codex, Copilot, or other review-credit-consuming reviewers:
 - internal deep review has no known blocker.
 
 Use the adapter to inventory exact-head comments, formal reviews, and review threads when `gh` or the bundled classifier is unavailable. A clean Codex artifact must identify the current head, and unresolved Codex findings supersede older clean results.
+
+When hosted review or delegation cannot run, an internal read-only subagent
+review or a separate same-agent mock subagent reviewer pass is an acceptable
+fallback under [the shared contract](../github-pr-mergeable/references/internal-review-fallback.md).
+Record the actual mode/model, exact candidate, checks, findings, and `ACCEPT`
+or `REJECT`; follow explicit target-repository reviewer requirements.
 
 Do useful work in other lanes while CI or review is pending. Revisit at deliberate sync points rather than polling continuously.
 
@@ -292,7 +298,7 @@ A node may merge only when:
 - the PR diff matches the issue and does not absorb sibling scope;
 - latest-head CI is acceptable;
 - all material review findings and threads are resolved or explicitly rejected with rationale;
-- required exact-head Codex state is clean or a permitted bounded unavailability disposition exists;
+- required exact-head review is clean or a documented, policy-permitted internal subagent or mock subagent fallback has accepted the final candidate;
 - performance and persistence evidence is current;
 - repository policy permits the coordinator to merge.
 

@@ -70,7 +70,7 @@ Rules:
 - Treat material performance regressions and missed optimization gates as
   blockers; report evidence rather than normalizing them.
 - You may commit, push, and open/update this issue's PR when instructed.
-- Do not merge, request Codex/Copilot review, edit graph state
+- Do not merge, request hosted AI review, edit graph state
   outside your assignment, or spawn subagents/descendants.
 - If policy, base, contract, ownership, or scope is ambiguous, stop and hand
   back instead of inventing a decision.

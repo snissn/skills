@@ -11,7 +11,7 @@ This directory must stay small and coordination-focused.
 - Do not pause unrelated branches because `main` advanced.
 - Keep one bounded scientific decision per PR by default.
 - Preserve merged-predecessor gates declared by the scientific issue.
-- Preserve proportional exact-candidate review and the documented GPT-5.6 Pro quota fallback.
+- Preserve proportional exact-candidate review and the documented internal subagent or same-agent mock subagent fallback, under explicit target-repository reviewer requirements.
 - Never use a workflow to author or push scientific or governance authority.
 - Never activate a successor automatically.
 

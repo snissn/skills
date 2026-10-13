@@ -42,7 +42,7 @@ Rules:
   blockers; report evidence rather than normalizing them.
 - Keep large command output in files and return distilled evidence.
 - You may commit, push, and open/update this issue's PR when requested.
-- Do not merge, request Codex/Copilot review, modify the graph
+- Do not merge, request hosted AI review, modify the graph
   manifest except your assigned node, or launch Pi/subagents.
 - If policy, base, contract, ownership, or scope is ambiguous, stop and hand
   back instead of inventing a decision.

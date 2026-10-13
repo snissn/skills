@@ -12,11 +12,15 @@ When effective target-repository policy requires an internal exact-head review
 but does not explicitly require GitHub-hosted Codex itself, the GPT-5.6 Pro
 coordinator may satisfy the gate by:
 
-1. spawning an independent read-only GPT-5.6 Pro review subagent with no
+1. an internal read-only subagent review (`INTERNAL_SUBAGENT_REVIEW`) with no
    construction role; or
-2. if no separate subagent is available, running a local clean-room GPT-5.6 Pro
-   review after freezing the candidate, in a separate adversarial review phase
-   or isolated worktree with candidate writes disabled.
+2. when a separate subagent cannot run, a same-agent mock subagent review
+   (`LOCAL_MOCK_SUBAGENT_REVIEW`) after holding the candidate bytes fixed, in
+   a separate adversarial phase or isolated worktree with writes disabled.
+
+Both are acceptable internal fallbacks. Follow
+[the shared contract](../github-pr-mergeable/references/internal-review-fallback.md)
+and this harness's permitted model routing; record the actual reviewer model.
 
 The fallback record must include exact base/head or manifest, reviewer mode and
 model, reviewed paths and contract, tests and checks inspected, every finding
@@ -32,8 +36,8 @@ codex_unavailability_evidence:
   normalized_reason:
 ```
 
-Label a same-agent review `LOCAL_GPT56_REVIEW`; do not call it independent or
-hosted Codex review.
+Label a same-agent review `LOCAL_MOCK_SUBAGENT_REVIEW`; it performs actual
+source inspection and is not independent or hosted Codex review.
 
 The coordinator may merge after a qualifying fallback only when all other
 merge gates pass, including current base, latest-head CI or an explicitly

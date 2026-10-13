@@ -95,7 +95,7 @@ Rules:
 - Run required checks once; repeat or broaden only for changes, failures, or
   unresolved risks. Preserve commands, results, and the SHA they tested.
 - Treat material performance regressions as blockers.
-- Do not request Codex, Copilot, or other AI reviews until the PR is
+- Do not request Codex or other AI reviews until the PR is
   mature enough to avoid review-credit churn.
 - Keep the PR draft while the issue completion packet is incomplete. Do not
   push each small repair merely to obtain another CI or review cycle; finish and
@@ -206,7 +206,10 @@ You are the active finalization owner for PR <PR_URL>.
 
 Requested routing: gpt-6.1-sol / medium; high for a demonstrated correctness,
 concurrency, or security risk. Apply repo-required reviewer identity and quota
-fallback rules from SKILL.md; your work cannot replace a required independent review.
+fallback rules from SKILL.md. An internal subagent review or a separate same-agent
+mock subagent reviewer pass is acceptable under the shared fallback contract.
+Record the exact candidate, actual mode/model, checks, findings, and disposition;
+an explicit requirement for a separately independent reviewer still applies.
 Candidate worktree/head SHA and base: <WORKTREE> / <HEAD_SHA> / <BASE_SHA>.
 Acceptance requirements and raw evidence: <REQUIREMENTS_AND_ARTIFACTS>.
 

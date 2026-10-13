@@ -201,8 +201,10 @@ Optimize for verified progress toward the agreed parent outcome per usage window
   when supported; interruption alone does not prove a runtime slot was freed.
 - Do not keep an agent pending for model capacity. After one capacity error or
   two minutes without starting useful work, stop its work and perform the task
-  locally when possible. Do not automatically substitute another model; record
-  unavailable independent review as an outstanding gate, not self-review.
+  locally when possible. Do not automatically substitute another model. For
+  an internal review gate, use the documented mock subagent fallback below.
+  If target policy explicitly requires a separately independent reviewer,
+  keep that gate outstanding until such a reviewer is available.
 - Time-box delegated read/review work to about 10 minutes. Treat about 25
   minutes without visible implementation progress as a checkpoint, not a
   push, review, or handoff boundary. Request a concise status once; stop only
@@ -317,8 +319,9 @@ delegation on `gpt-6.1-sol`.
 | Independent review or adviser | `gpt-6.1-sol`, `high` | A mature high-risk candidate or disputed finding, read-only in fresh context. Required reviewer identity is governed by repo policy. |
 
 If `gpt-6.1-sol` is unavailable or cannot be selected, execute locally and record
-the actual route. Do not silently spawn a different model. A mandatory independent
-review still needs an available, policy-compliant independent reviewer.
+the actual route. Do not silently spawn a different model. The internal or mock
+subagent fallback below may satisfy the default internal review gate; an explicit
+requirement for a separately independent reviewer still needs that reviewer.
 
 ### GPT-6.1 Sol Compatibility
 
@@ -420,22 +423,22 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
   while predecessors finalize, within ownership and concurrency limits;
   preserve final-base, mergeability, and scientific authority gates.
 - Audit policy for every node from that PR's actual worktree or head commit, not only from the coordinator checkout. Enumerate all root/nested `AGENTS.md` files at that head and map every changed path to its applicable policy chain, including policy files added by the PR. Record local review-round caps and scientific acceptance/stop rules in graph state before review.
-- Avoid review-credit churn: do not request Codex, Copilot, or other AI reviews until the PR is mature. Mature means coherent code pushed, focused tests and required benchmarks run or explicitly justified, PR body/status is current, no known local blockers remain, and latest-head CI is running or green.
+- Avoid review-credit churn: do not request Codex or other AI reviews until the PR is mature. Mature means coherent code pushed, focused tests and required benchmarks run or explicitly justified, PR body/status is current, no known local blockers remain, and latest-head CI is running or green.
 - Before every `@codex review`, run the `github-pr-mergeable` Codex gate classifier. An exact-head no-findings issue comment is a completed clean result even without a formal review object. Stop requesting immediately when clean; any later unresolved Codex finding supersedes it. Keep the three-request exact-head anti-spam cap. PR-lifetime counts are advisory by default: six requests or three finding-bearing heads emit `review_churn_warning`, but a resolved, mature new head may continue.
 - A new repair SHA does not erase review history, but advisory history does not change node state. Enter `review-scope-reset` only for an exhausted explicit repository/user hard cap or a coordinator-confirmed recurring material contract/architecture failure. Provider exhaustion is reviewer unavailability. Continue independent nodes; only the affected node and actual descendants wait when its required review is unavailable.
 - Record hosted Codex quota, usage-limit, rate-limit, capacity, or service
   unavailability as `CODEX_REVIEW_UNAVAILABLE_QUOTA`: the review did not run.
-  Prefer an independent read-only `gpt-6.1-sol` review only when repo policy
-  permits that reviewer identity, bound to the exact candidate. Record
-  paths/claims, checks, findings, `ACCEPT` or `REJECT`, and no candidate edits.
-  Later scientific edits invalidate it. A named GPT-5.6 Pro or
-  `LOCAL_GPT56_REVIEW` policy fallback remains that specific identity: a Sol
-  review does not satisfy it unless policy explicitly permits substitution.
-  Use a different model only for an explicit user model exception or a
-  repository-required reviewer identity, recording the reason. Otherwise keep
-  the gate outstanding until a compliant independent review is available.
-  Self-review is not independent; hosted review model selection is external
-  and must not be reported as a pinned `gpt-6.1-sol` subagent.
+  An internal read-only subagent review (`INTERNAL_SUBAGENT_REVIEW`) or, when
+  delegation cannot run, a separate same-agent mock subagent review
+  (`LOCAL_MOCK_SUBAGENT_REVIEW`) is an acceptable internal fallback. Follow
+  [the shared contract](../github-pr-mergeable/references/internal-review-fallback.md).
+  Prefer `gpt-6.1-sol` for a real review subagent; record the actual retained
+  session model for a local mock review. Bind either mode to the exact candidate
+  and record paths/claims, checks, findings, `ACCEPT` or `REJECT`, and no edits.
+  Later scientific or review-relevant edits require renewed review. Explicit
+  target-repository model identities or separately independent/hosted-only
+  requirements still govern. Self-review is not independent; hosted review
+  model selection is external and must not be reported as a pinned subagent.
 - Treat material performance regressions as blockers unless the user or
   coordinator explicitly accepts them with evidence.
 - A failed implementation candidate retires that mechanism, not automatically

@@ -138,7 +138,7 @@ claim it was pinned.
 - Audit policy for every adopted node from that node's actual worktree or PR
   head. Enumerate root and nested `AGENTS.md`, including policy files added by
   the PR, and map changed paths to the applicable policy chain.
-- Do not request Codex, Copilot, or another review-credit-consuming
+- Do not request Codex or another review-credit-consuming
   reviewer until the PR is mature: coherent code pushed, tests/benchmarks run or
   justified, PR body current, no known local blocker, and exact-head CI running
   or green.
@@ -151,6 +151,11 @@ claim it was pinned.
   coordinator-confirmed recurring material contract/architecture failure.
   Provider exhaustion is reviewer unavailability. Continue independent nodes;
   only the affected node and actual descendants wait on its required review.
+- When hosted review or delegation cannot run, accept an internal read-only
+  subagent review or a separate same-agent mock subagent reviewer pass under
+  [the shared contract](../github-pr-mergeable/references/internal-review-fallback.md).
+  Record the exact candidate, actual mode/model, checks, findings, and `ACCEPT`
+  or `REJECT`; follow explicit target-repository reviewer requirements.
 - Material regressions in runtime, throughput, latency, allocations, memory,
   storage/rebuild/checkpoint/recovery cost, or relevant domain counters block
   mergeability until optimized away or explicitly accepted with evidence.

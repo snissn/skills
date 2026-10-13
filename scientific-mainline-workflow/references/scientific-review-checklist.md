@@ -1,6 +1,6 @@
 # Scientific Review Checklist
 
-Use this checklist for independent review of a mutable candidate. First select
+Use this checklist for adversarial internal review of a mutable candidate. First select
 its evidence, quantifier, and stability levels using
 [the evidence scope ladder](evidence-scope-ladder.md). Select only the sections
 relevant to the declared claim, and do not skip a relevant NEED burden because

@@ -24,46 +24,28 @@ exhausted because it is a hosted-artifact classifier. Supplement that output
 with the recorded quota evidence rather than repeatedly triggering `@codex
 review`.
 
-## GPT-5.6 Pro substitute review
+## Internal substitute review
 
 When effective repository policy requires an internal exact-head review but
 does not explicitly require the GitHub-hosted Codex service itself, the merge
 review gate may be satisfied by:
 
-1. an independent, read-only GPT-5.6 Pro subagent with no construction role; or
-2. when no separate subagent is available, one local clean-room GPT-5.6 Pro
-   review after the candidate is frozen, performed in a distinct adversarial
-   review phase or isolated worktree with candidate writes disabled.
+1. `INTERNAL_SUBAGENT_REVIEW`: an independent, read-only internal subagent
+   with no construction role; or
+2. `LOCAL_MOCK_SUBAGENT_REVIEW`: when no separate subagent can run, an actual
+   same-agent reviewer pass in a distinct adversarial phase or isolated
+   worktree, with candidate writes disabled.
 
-The review record must contain:
-
-```text
-review_mode: INDEPENDENT_GPT56_SUBAGENT | LOCAL_GPT56_REVIEW
-model: GPT-5.6 Pro
-base_sha:
-head_sha_or_manifest:
-reviewed_paths:
-load_bearing_contract:
-checks_performed:
-findings_and_dispositions:
-disposition: ACCEPT | REJECT
-candidate_edits_by_reviewer: false
-codex_unavailability_evidence:
-  response_url:
-  bot_login:
-  timestamp:
-  exact_candidate_head:
-  normalized_reason:
-```
-
-A same-agent local fallback must be labeled `LOCAL_GPT56_REVIEW`; it must not be
-presented as independent, human, or hosted Codex review. A constructor summary,
-ordinary self-review paragraph, test result, mutation count, or green CI run is
-not a substitute review.
+Both are acceptable fallbacks under the default internal review gate. Follow
+[the shared fallback contract](references/internal-review-fallback.md) for
+the exact candidate, actual model, inspected paths and claims, checks, findings,
+`ACCEPT` or `REJECT`, no candidate edits, and unavailability evidence. Use the
+permitted model route; GPT-5.6 Pro is not a universal fallback requirement.
+Label a mock review as same-agent, not independent, human, or hosted review.
 
 ## Merge gate
 
-A qualifying GPT-5.6 Pro fallback may replace only the unavailable hosted Codex
+A qualifying internal fallback may replace only the unavailable hosted Codex
 artifact. It does not waive:
 
 - latest-head CI or an explicit permitted CI-unavailability disposition;

@@ -157,7 +157,7 @@ external AI reviews.
 - Audit policy for every adopted node from that node's actual worktree or PR
   head. Enumerate root and nested `AGENTS.md`, including policy files added by
   the PR, and map changed paths to the applicable policy chain.
-- Request AI reviews (Codex, Copilot, ...) only on mature PRs:
+- Request Codex or other AI reviews only on mature PRs:
   coherent code pushed, tests/benchmarks run or justified, PR body current, no
   known local blocker, latest-head CI running or green. Before each review
   request, run the `github-pr-mergeable` classifier; stop on an exact-head
@@ -168,6 +168,11 @@ external AI reviews.
   `review_churn_blocked` and `review-scope-reset`. Provider exhaustion is
   reviewer unavailability, not a scope reset. Continue independent graph nodes;
   only the affected node and its actual descendants wait on a required review.
+- When hosted review or delegation cannot run, accept an internal read-only
+  subagent review or a separate same-agent mock subagent reviewer pass under
+  [the shared contract](../github-pr-mergeable/references/internal-review-fallback.md).
+  Record the exact candidate, actual mode/model, checks, findings, and `ACCEPT`
+  or `REJECT`; follow explicit target-repository reviewer requirements.
 - Material regressions in runtime, throughput, latency, allocations, memory,
   storage/recovery cost, or relevant domain counters block mergeability until
   optimized away or explicitly accepted with evidence.

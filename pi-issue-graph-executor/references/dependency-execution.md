@@ -119,8 +119,10 @@ A node can be declared mergeable only when:
   rejected with rationale, and threads are resolved;
 - required Codex state is clean according to
   `github-pr-mergeable/scripts/codex_review_gate.py`, or the effective local
-  policy records its permitted bounded alternative;
-- the coordinator's independent final review passes;
+  policy records its permitted bounded alternative, including an exact-candidate
+  internal subagent or mock subagent fallback `ACCEPT` under the shared contract;
+- the coordinator's final review passes in the recorded mode under explicit
+  target-repository reviewer requirements;
 - repository policy and user authorization permit merge.
 
 Independent nodes may merge in any order after their own gates pass. Dependent

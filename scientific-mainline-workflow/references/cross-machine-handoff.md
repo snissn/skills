@@ -6,7 +6,12 @@ caches.
 ## Roles
 
 - The constructor owns scientific revisions on one issue-scoped branch.
-- The independent reviewer reads exact candidate bytes and does not edit them.
+- The reviewer in the recorded mode reads exact candidate bytes and does not
+  edit them. Prefer an independent subagent; when hosted review or delegation
+  cannot run, accept the documented internal subagent or separate same-agent
+  mock subagent fallback under
+  [the shared contract](../../github-pr-mergeable/references/internal-review-fallback.md)
+  and explicit target-repository reviewer requirements.
 - The integrator owns current-main comparison, final gate classification,
   merge method, merge, and parent acceptance.
 
@@ -70,6 +75,7 @@ source_bindings: exact repository path and Git blob pairs, or []
 validation: exact commands and outcomes bound to head
 ci: status and head, or not-run
 review: status and reviewed digest/head, or not-requested
+review_mode_and_model: actual review mode and model, or not-requested
 status: constructing | review-ready | repairing | integration-ready | merged | blocked
 blocker: concrete blocker or null
 next_action: one bounded action

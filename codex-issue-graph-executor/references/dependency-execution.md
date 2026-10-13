@@ -265,7 +265,8 @@ A node can be declared mergeable only when:
 - latest-head CI and review state are acceptable;
 - when Codex is required and no policy-permitted replacement applies, the shared `github-pr-mergeable/scripts/codex_review_gate.py --check` classifier reports clean for the exact head; a clean Codex issue comment is sufficient, while any later unresolved Codex thread blocks;
 - for hosted quota/service unavailability, apply SKILL.md's
-  `CODEX_REVIEW_UNAVAILABLE_QUOTA` and policy-permitted independent fallback;
+  `CODEX_REVIEW_UNAVAILABLE_QUOTA` and the documented internal subagent or
+  mock subagent fallback bound to the exact candidate with `ACCEPT`;
   never count an unavailable review as clean;
 - when repository-local proportional scientific policy replaces Codex, the bounded review disposition and exact acceptance evidence required by that policy are recorded, and all existing threads are fixed or explicitly rejected;
 - AI reviews, if used, were requested only after the PR was mature;

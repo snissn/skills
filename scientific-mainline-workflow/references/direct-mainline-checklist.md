@@ -69,9 +69,13 @@ does not silently promote SHOULD or COULD work into a broader theorem.
   stronger theorem.
 - A deterministic candidate manifest records the reviewed base, exact path set,
   file SHA-256 values, and manifest hash.
-- Independent review says `ACCEPT` for the exact base, changed-path set,
+- Review in the recorded mode says `ACCEPT` for the exact base, changed-path set,
   candidate manifest, selected evidence, quantifier, and stability levels, NEED
   set, and validation evidence being integrated.
+- When hosted review or delegation cannot run, a documented internal subagent
+  or separate same-agent mock subagent review is acceptable under
+  [the shared contract](../../github-pr-mergeable/references/internal-review-fallback.md)
+  and explicit target-repository reviewer requirements.
 - The current candidate bytes still match the accepted manifest; any scientific
   change received renewed review.
 - Every contradiction, circularity, vacuity, protected-boundary violation, and

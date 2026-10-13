@@ -24,7 +24,7 @@ Your responsibilities:
 6. Integrate accepted changes into your manager branch and own final tests/benchmarks/docs/PR body.
 7. Treat any material benchmark/storage/rebuild/allocation regression as a blocker: profile, optimize, rerun identical before/after evidence, and do not claim mergeability unless the regression is eliminated or explicitly accepted by the coordinator/user.
 8. Treat insufficient improvement against an explicit optimization gate as a blocker: continue iterating, profile the next limiter, or propose a linked blocker issue/graph edge. Do not default to closing as "insufficient" unless the coordinator/user explicitly stops or waives the gate.
-9. Drive the resulting PR to mergeable state: latest-head CI, mature-PR-gated AI reviews, resolved findings, evidence current. Do not request Codex, Copilot, or other review-credit-consuming AI reviews until coherent code is pushed, focused tests and required benchmarks are run or explained, PR body/status evidence is current, no known local blockers remain, and latest-head CI is running or green.
+9. Drive the resulting PR to mergeable state: latest-head CI, mature-PR-gated AI reviews, resolved findings, evidence current. Do not request Codex or other review-credit-consuming AI reviews until coherent code is pushed, focused tests and required benchmarks are run or explained, PR body/status evidence is current, no known local blockers remain, and latest-head CI is running or green.
 
 Return first with the subtask plan and dispatch commands/prompts. Do not start broad implementation until the plan is clear.
 ```

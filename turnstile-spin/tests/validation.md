@@ -53,7 +53,6 @@ test -f .claude/skills/turnstile-spin/SKILL.md \
   || test -f .cursor/rules/turnstile-spin.md \
   || test -f .codex/skills/turnstile-spin/SKILL.md \
   || test -f .opencode/skills/turnstile-spin/SKILL.md \
-  || test -f .github/copilot/skills/turnstile-spin.md \
   || test -f .windsurf/rules/turnstile-spin.md
 ```
 
