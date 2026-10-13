@@ -49,11 +49,15 @@ revision, an evidence-backed decision, or a report/artifact. Do not manufacture 
 PR for work whose accepted output belongs in a ticket or decision record.
 
 Implementation packets own affected production callers/fallback, code, risk-relevant
-tests, docs, performance evidence, and acceptance, normally in one PR. Investigation
-packets own the question, consequential hypothesis, smallest discriminating inquiry,
-evidence, conclusion (including rejected or inconclusive hypotheses), and resulting
-plan/issue changes. An issue-revision packet names the issues/fields to change and
-requires verification of their live contents, ownership, edges, and preserved gates.
+tests, docs, performance evidence, and acceptance, normally in one PR. Necessary
+shared-seam redesign or consolidation belongs in that packet, including migration
+of affected existing consumers and proof that the feature uses the shared path.
+
+Investigation packets own the question, consequential hypothesis, smallest
+discriminating inquiry, evidence, conclusion (including rejected or inconclusive
+hypotheses), and resulting plan/issue changes. An issue-revision packet names the
+issues/fields to change and requires verification of their live contents, ownership,
+edges, and preserved gates.
 Repository policy still determines whether code, harness, or documentation changes
 require a PR. Completing an investigation or issue revision does not satisfy an
 unmet product goal.
@@ -78,9 +82,16 @@ For both standalone issues and graphs:
   performance guides, benchmark instructions, and accepted design decisions.
   Use language/library primary documentation when repo guidance leaves a material
   implementation choice unresolved; avoid collecting unrelated documentation.
+- Complete [Existing Design And Integration Review](references/existing-design-integration.md)
+  before choosing implementation slices, integration seams, or graph edges.
+  Review the relevant architecture and live related work deeply enough to compare
+  existing seams, identify their owners and consumers, and justify using the
+  strongest suitable implementation. Carry the selection, code reuse, coordination,
+  and necessary seam redesign into the owning issues.
 - Trace the affected production entry point, dispatch/eligibility checks, shared
-  implementation, and fallback callers. Identify the existing optimized path
-  and reusable helpers before proposing a new abstraction or implementation.
+  implementation, fallback callers, and state/resource lifecycle. Identify the
+  existing optimized path and reusable helpers before proposing a new abstraction
+  or implementation; verify robustness and performance for the intended workload.
   Apply [Simplification During Planning](#simplification-during-planning) to
   the existing code before selecting implementation slices.
 - Record source paths/sections and base SHA with the constraints they impose.
@@ -97,9 +108,10 @@ For both standalone issues and graphs:
   If separately owned, add an explicit dependency and completion gate; never
   defer contract or fast-path guidance needed by descendants to final closeout.
   Record a brief no-doc-change rationale when none apply.
-- Recheck affected docs and path assumptions after predecessor changes. Carry
-  approved changes into the graph and downstream issues within the requested
-  mode; documentation edits do not themselves authorize a scientific decision.
+- Recheck affected docs, selected seams, ownership, and path assumptions after
+  relevant predecessor or adjacent work changes. Carry approved changes into the
+  graph and downstream issues within the requested mode; documentation edits do
+  not themselves authorize a scientific decision.
 
 Set execution instructions using [Proportional Reassessment](#proportional-reassessment).
 
@@ -119,6 +131,15 @@ and preserves applicable correctness, durability, concurrency, security, and
 performance requirements. A larger coherent refactor can be simpler than another
 small patch; line count and diff size are supporting observations, not acceptance
 gates. New structure is justified when it serves a concrete requirement.
+
+For a new feature, explicitly consider redesigning the existing seam so both
+current consumers and the feature fit one coherent contract. Examine API shape,
+data representation, ownership/lifetime, dispatch, and failure handling when they
+would force duplicated logic, conversions, or special cases. Prefer a justified
+shared-seam redesign over accumulating those costs. State what existing callers
+move, which paths retire, and how behavior and performance are protected. A brief
+evidence-based rationale is enough when the current seam already fits; a feature
+request does not require a broad rewrite.
 
 Record a compact, source-linked finding in the preflight or owning issue: what
 was inspected, what to reuse/consolidate/remove, why, and the behavior/evidence to
@@ -214,7 +235,8 @@ Do not load the tracker template or design a dependency graph.
 
 1. Use the shared documentation/code preflight and matching repo extension. Apply repo-local requirements and user direction before skill defaults.
 2. From concrete current evidence, define a concise title, problem, goal, scope,
-   non-goals, total completion packet, and related-issue or ordering
+   non-goals, total completion packet, selected integration seam and reusable
+   code, necessary seam cleanup/redesign, and related-work coordination or ordering
    constraints. Do not overstate what the code or linked evidence proves.
 3. Reuse or update an existing issue when it already owns the outcome; otherwise recommend or draft one new issue.
 4. Add relevant validation, performance, documentation, branch, PR, review, and CI requirements, plus reassessment instructions only where preflight identified material uncertainty. Performance-sensitive standalone features must include the shared feature contract. Do not add tracker milestones or process boilerplate.
@@ -223,7 +245,7 @@ Do not load the tracker template or design a dependency graph.
 
 ## Tracker Workflow
 
-1. Use the shared documentation/code preflight, including policy, relevant contracts, optimized paths, and evidence gaps. User direction overrides skill defaults; preserve applicable repo requirements.
+1. Use the shared documentation/code and existing-design preflight, including relevant contracts, seam comparison, code reuse, live-work coordination, necessary redesign, and evidence gaps. User direction overrides skill defaults; preserve applicable repo requirements.
 2. Apply the matching repo extension already loaded during preflight; otherwise use the generic workflow.
 3. For umbrella, dependency-graph, reorganization, or supersession work, read [references/issue-graph-planning.md](references/issue-graph-planning.md) and produce the graph preflight before drafting issue bodies.
 4. When the high-capability advisory mode applies, give the advisor the bounded

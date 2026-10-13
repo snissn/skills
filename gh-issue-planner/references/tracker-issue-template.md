@@ -63,10 +63,31 @@ symbols, reusable optimized primitives, and any unresolved doc/code discrepancy.
 Include consequential findings from the planner's bounded existing-code
 simplification audit and the reuse/consolidation/removal decision, or briefly
 state that no useful simplification was found. Keep this in the owning packet.
+Include related landed and ongoing designs, their owners/current heads, and the
+constraints or reusable work they contribute.
 
 ## Desired State
 
 Describe the target architecture or workflow.
+
+## Integration Seam, Reuse, And Redesign
+
+Record the existing-design integration review before selecting graph slices.
+Name the selected seam and source identity; justify contract fit, maturity,
+robustness, and performance for the intended workload against credible alternatives.
+Link the relevant sources/tests/measurements and label evidence gaps explicitly.
+
+| Candidate/source | Contract and consumers | Robustness/performance evidence or gap | Reuse or redesign required | Decision |
+| --- | --- | --- | --- | --- |
+| Existing seam at base SHA | Actual callers and requirements | Verified evidence or bounded uncertainty | Functions/types/representations to reuse or change | Selection and reason |
+
+Use a brief rationale instead of a table when the choice is straightforward.
+Name reused code and the resulting public call path, including selection/fallback.
+Compare direct extension with seam redesign/consolidation. Record required shared
+contract changes, existing consumers to migrate, paths/options to retire, and
+compatibility requirements, or why the current seam already fits. Put these changes
+and their regression/integration/performance evidence in the owning feature packet;
+carry node-specific details into each child.
 
 ## Assumptions And Reassessment
 
@@ -173,7 +194,11 @@ Describe the intended order and what blocks later milestones. Identify condition
 
 ## Coordination
 
-Identify adjacent PRs, issues, agents, branches, or modules and which files/areas each lane owns. Record in-flight work or correctness boundaries the tracker must not disturb.
+Identify relevant landed and in-flight PRs, issues, branches, owners, and modules.
+Record current state/head, overlapping paths, accepted/frozen boundaries, contracts
+to consume, and whether to reuse, extend, depend, sequence, or keep lanes disjoint.
+For a dependency, name the readiness gate and the action if the contract changes.
+Preserve existing writers and map any superseded obligations to a live owner.
 
 ## Test-First And Performance Classification
 
@@ -220,6 +245,7 @@ State the repo-specific policy discovered from `AGENTS.md`, `CONTRIBUTING.md`, P
 - [ ] Start-phase failing-test evidence, including the expected failure reason, or an explicit test-first exception and alternative correctness evidence.
 - [ ] Performance classification and metric rationale.
 - [ ] Start-phase performance plan when the class requires one.
+- [ ] Selected integration seam, reused code, and shared-seam redesign/consumer migration performed or a concise no-redesign rationale.
 - [ ] Optimized production-path proof, allocation audit and minimized residual costs for performance-sensitive features.
 - [ ] Affected documentation updates/validation or no-change rationale.
 - [ ] Close-phase test evidence.
@@ -234,6 +260,7 @@ State the repo-specific policy discovered from `AGENTS.md`, `CONTRIBUTING.md`, P
 Start phase:
 
 - [ ] Recheck relevant canonical docs and trace the production path and fallback callers at the assigned base.
+- [ ] Recheck the chosen seam, reuse/redesign plan, and related-work ownership/contracts against the assigned base and live state.
 - [ ] Name the externally meaningful behavior, invariant, or regression being changed.
 - [ ] Add or update the smallest appropriate test and run it before implementation to capture a failure for the intended reason.
 - [ ] If a meaningful red test is impractical, document the allowed exception and the characterization, contract, review, or other evidence that bounds behavior.
@@ -243,7 +270,7 @@ Start phase:
 
 Implementation phase:
 
-- [ ] Implement the smallest coherent change through the applicable existing optimized path.
+- [ ] Implement through the strongest suitable existing seam and reusable primitives, including the planned shared-seam redesign, cleanup, and existing caller migration.
 - [ ] Audit and remove avoidable hot-path allocations/copies; preserve ownership and bounded retention.
 - [ ] Update affected contracts, usage/performance guides, examples, and generated-doc sources with the change.
 - [ ] Refactor while the focused and affected suites remain green.
@@ -258,6 +285,7 @@ Close phase:
 - [ ] For performance-sensitive or performance-objective work, apply the feature-contract comparison (identical before/after commands for equivalent behavior) and report the relevant throughput or latency, `B/op`, `allocs/op`, peak/live memory, and domain counters; mark irrelevant axes `N/A` with rationale.
 - [ ] Treat material regressions as blocking: profile, optimize, rerun, and do not merge unless eliminated or explicitly accepted as minimized/correctness-required.
 - [ ] Verify public-path selection, allocation minimization, and affected docs before feature completion.
+- [ ] Verify existing consumers and the feature use the intended shared implementation, required migrations/retirements are complete, and related ownership/contracts remain respected.
 - [ ] Follow repo-required review identities and the shared skill's maturity, stop, and quota-fallback rules; repeat only when changed evidence requires review.
 
 ## CI Backlog Directive
@@ -272,7 +300,7 @@ Close phase:
 
 Purpose: establish facts before implementation.
 
-- [ ] Record docs/code preflight evidence and optimized-path reuse decisions.
+- [ ] Record docs/code and existing-design preflight evidence, seam comparison, code reuse, and necessary redesign decisions.
 - [ ] Inventory current code paths.
 - [ ] Record baseline tests.
 - [ ] Record baseline benchmarks when required by the milestone performance class.
@@ -288,9 +316,11 @@ Required benchmarks:
 
 ### M1. First Implementation Seam
 
-Purpose: create the smallest correct seam future PRs can build on.
+Purpose: extend or redesign the strongest suitable existing seam for the feature
+and future PRs.
 
 - [ ] Add explicit option/status/contract.
+- [ ] Reuse maintained primitives and migrate affected existing consumers to the shared contract; retire obsolete paths only after caller audit.
 - [ ] Fail closed on unsupported/mismatched state.
 - [ ] Preserve existing behavior outside the selected path.
 
@@ -427,6 +457,7 @@ State evidence required before closing the tracker:
 - [ ] PRs are mergeable under the repo policy: latest-head CI green, required tests pass, benchmark evidence is posted when relevant, and AI/code-review findings are passing, resolved, or explicitly rejected with rationale.
 - [ ] Affected architecture/contracts, performance/usage guides, examples, and generated docs are current and validated; no required update is deferred to closeout.
 - [ ] Every performance-sensitive feature has optimized production-path proof and an allocation audit with avoidable overhead removed and residual costs inside the agreed budget or explicitly accepted.
+- [ ] The selected seam and reused code are justified; required redesign, cleanup, and existing consumer migration are complete with shared-path integration and regression evidence.
 
 ## Deferred Follow-Ups
 
@@ -440,6 +471,9 @@ Before creating or editing the issue, verify:
 - [ ] The requested operating mode is explicit and no GitHub write exceeds it.
 - [ ] Umbrella or migration work has a reviewed graph preflight.
 - [ ] Canonical docs were studied before graph design and checked against production code.
+- [ ] Existing design was reviewed deeply enough to justify the strongest suitable seam using contract, maturity, robustness, and performance evidence.
+- [ ] Related landed/in-flight work, owners, overlapping paths, consumed contracts, and readiness gates are reflected in the design.
+- [ ] Code reuse and seam redesign/cleanup were explicitly considered; necessary changes and existing consumer migration belong to the owning feature packet.
 - [ ] The issue distinguishes current state from desired state.
 - [ ] The issue distinguishes implementation work from evidence work.
 - [ ] Existing issues have explicit retain, narrow, supersede, close, or defer dispositions.

@@ -13,7 +13,10 @@ The coordinator first supplies:
 - repository, intended base SHA, applicable `AGENTS.md` and contribution rules;
 - canonical contract/guide sections and the observed production entry points;
 - relevant current source, tests, benchmarks, and known optimized primitives;
-- live candidate/overlapping issues with provisional dispositions; and
+- the existing-design review, credible seam alternatives and their evidence,
+  reusable code, and potential shared-seam redesign/consumer migration;
+- related landed work and live candidate/overlapping issues/PRs, owners/current
+  heads, consumed contracts, readiness gates, and provisional dispositions; and
 - the advisor's read-only boundary and one-synthesis-turn budget.
 
 The advisor may inspect narrowly adjacent source or live issue state needed to
@@ -42,6 +45,9 @@ Return one integrated proposal, not a stream of incremental observations:
      schema fields, and validation rules—not a speculative full patch;
    - existing helpers and formats to reuse, plus duplicate paths or client-side
      workarounds that must not be introduced;
+   - the selected seam and why its contract, maturity, robustness, and performance
+     fit better than credible alternatives; compare direct extension with local
+     redesign/consolidation and name required existing consumer migrations;
    - named test files/cases, fixtures, assertions, and the expected initial
      failure; include mutation, fallback, reopen, race, or path-selection proof
      only where the risk requires it;
@@ -63,6 +69,9 @@ Before returning, attack the draft for:
 - ticket explosion or nodes that do not own an independently useful outcome;
 - a new sidecar, representation, route, harness, or client-side fusion when an
   existing production seam should be extended;
+- a seam selected without comparing relevant mature implementations, duplicated
+  ongoing work, conflicting ownership, or required shared-seam redesign deferred
+  to optional cleanup;
 - missing public callers, fallback/error behavior, ownership/lifetime rules, or
   documentation and generated artifacts;
 - tests that prove helpers but not public path selection or fail-closed behavior;

@@ -32,8 +32,9 @@ necessary graph maintenance; preserve any narrower user restrictions.
 
 ## Graph Preflight
 
-Complete SKILL.md's documentation/code preflight before selecting nodes or
-edges. Then produce a compact graph preflight with:
+Complete SKILL.md's documentation/code preflight and
+[existing-design integration review](existing-design-integration.md) before
+selecting nodes or edges. Then produce a compact graph preflight with:
 
 1. The product outcome and final evidence owner.
 2. A small hierarchy or dependency diagram.
@@ -41,13 +42,19 @@ edges. Then produce a compact graph preflight with:
 4. Existing-issue dispositions.
 5. Gate classifications and ownership.
 6. Conditional branches and their activation evidence.
-7. Adjacent in-flight work and frozen boundaries.
+7. Related landed and in-flight work, owners/current heads, overlapping paths,
+   consumed contracts, readiness gates, and preserved frozen boundaries.
 8. The acceptance evidence and performance-relevance class for every executable
    node, including the test-first seam for implementation packets.
 9. Canonical docs read at the intended base, the optimized production path to
    reuse, and doc/code conflicts or evidence gaps that affect sequencing.
 10. Each performance-sensitive feature's allocation audit/budget and path proof,
     plus the owning node for affected documentation updates.
+11. The selected integration seam and source-linked comparison with credible
+    alternatives, including contract fit, maturity, robustness, and representative
+    performance evidence or explicit gaps.
+12. Reusable code/representations and necessary seam redesign, consolidation,
+    caller migration, or path retirement, with an owning completion packet.
 
 Use a ledger like this:
 
@@ -68,7 +75,8 @@ uniformly across the graph.
 
 Each executable node names its deliverable, target location, evidence, and acceptance
 owner under SKILL.md's completion-packet rules. Implementation packets own production
-callers/fallback, code, tests, docs, and performance evidence; an inquiry may instead
+callers/fallback, shared-seam changes and existing consumer migration, reused code,
+tests, docs, and performance evidence; an inquiry may instead
 deliver an accepted decision or verified ticket revision. Record what completes that
 packet without implying the parent outcome is achieved. Treat implementation phases
 as one packet, not separate PRs or review cycles.
@@ -78,6 +86,10 @@ the assumptions and meaningful decision boundaries; keep strategic review with
 the parent rather than adding a ceremony to every child.
 
 ## Reuse Versus Net-New
+
+Choose issue structure independently of code reuse. A fresh execution graph must
+still integrate through the strongest suitable existing seam and consume relevant
+landed or ongoing work under its declared readiness gates.
 
 Reuse an existing tracker when:
 
@@ -153,6 +165,12 @@ Do not create an optimization child solely because a metric is measurable. Accep
   predecessor PRs. Preserve repository/scientific authority rules.
 - Prefer an acyclic execution graph with one clearly identified final gate.
 - Put measurement or contract work before irreversible format or architecture choices when evidence can select the path.
+- Reuse related landed work and respect ongoing seam ownership. Model a dependency
+  on the specific accepted output or merged contract being consumed; record
+  overlapping-path sequencing without turning merely adjacent work into blockers.
+- Put seam redesign needed for clean feature integration in the owning packet.
+  A separately owned prerequisite names its contract and readiness gate; required
+  redesign cannot be deferred to optional cleanup after the feature is complete.
 - A conditional child must state its eligibility evidence and failure action. Scientific successors also require owner direction/assignment and merged predecessor authority; evidence alone never activates them.
 - Keep inactive conditional children out of the critical path.
 - If evidence changes the graph, update the parent ledger and affected child bodies rather than continuing a stale plan.
@@ -223,6 +241,9 @@ Use quoted body files or safely replaced placeholders. Never rely on shell inter
 - When implementation changes a contract, optimized route, or usage recommendation,
   update its owning docs and affected child assumptions. Contract docs needed by
   descendants must land with their predecessor or as an explicit prerequisite.
+- When related work changes the selected seam or its ownership, revisit the
+  source-linked selection, reuse/migration plan, and affected edges. Preserve
+  independent work; unrelated merges do not require redesigning the graph.
 - Do not let closed, stale, or merely related issues remain implicit blockers.
 
 Before handoff, verify that the graph has one final evidence owner, every blocking edge is explicit, each existing issue has a disposition, accepted gaps are non-blocking, and no GitHub write exceeded the requested mode.
