@@ -234,7 +234,7 @@ State the repo-specific policy discovered from `AGENTS.md`, `CONTRIBUTING.md`, P
 - [ ] Work must happen on a topic branch unless repo policy says otherwise.
 - [ ] Direct pushes to protected/default branches are prohibited unless explicitly authorized by repo policy and the user.
 - [ ] PRs must be mergeable before merge: latest-head CI, focused tests, benchmark evidence when relevant, and AI/code-review findings resolved or explicitly rejected with rationale.
-- [ ] Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviews are requested only after the PR is mature enough to avoid review-credit churn: coherent code, focused tests, required benchmark evidence or rationale, current PR body/status evidence, no known local blockers, and latest-head CI running or green.
+- [ ] Codex, Copilot, or other review-credit-consuming AI reviews are requested only after the PR is mature enough to avoid review-credit churn: coherent code, focused tests, required benchmark evidence or rationale, current PR body/status evidence, no known local blockers, and latest-head CI running or green.
 - [ ] Human approval or maintainer approval requirement is stated when required by repo policy.
 - [ ] Self-merge policy is stated when relevant.
 

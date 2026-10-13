@@ -37,7 +37,7 @@ Your tasks:
 4. Implement only this issue's scope.
 5. Drive review/fix loops and PR readiness using github-pr-mergeable.
 6. Treat material performance regressions as blockers: profile, optimize, rerun identical before/after evidence, and do not claim mergeability unless eliminated or explicitly accepted by the coordinator/user.
-7. Do not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviews until the PR is mature: coherent code pushed, focused tests and required benchmarks run or explained, PR body/status evidence current, no known local blockers, and latest-head CI running or green.
+7. Do not request Codex, Copilot, or other review-credit-consuming AI reviews until the PR is mature: coherent code pushed, focused tests and required benchmarks run or explained, PR body/status evidence current, no known local blockers, and latest-head CI running or green.
 8. Treat insufficient improvement as a blocker for optimization issues. If your evidence is neutral or below the tracker threshold, do not claim completion; profile, fix, or propose a measured blocker issue/graph edge for coordinator approval.
 9. Do not merge directly unless the coordinator explicitly delegates merge authority.
 10. Return handoffs at these milestones:

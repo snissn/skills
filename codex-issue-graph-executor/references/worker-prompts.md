@@ -95,7 +95,7 @@ Rules:
 - Run required checks once; repeat or broaden only for changes, failures, or
   unresolved risks. Preserve commands, results, and the SHA they tested.
 - Treat material performance regressions as blockers.
-- Do not request Codex, Copilot, CodeRabbit, or other AI reviews until the PR is
+- Do not request Codex, Copilot, or other AI reviews until the PR is
   mature enough to avoid review-credit churn.
 - Keep the PR draft while the issue completion packet is incomplete. Do not
   push each small repair merely to obtain another CI or review cycle; finish and

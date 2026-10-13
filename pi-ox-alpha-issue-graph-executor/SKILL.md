@@ -158,7 +158,7 @@ routing fallback.
 - Audit policy for every adopted node from that node's actual worktree or PR
   head. Enumerate root and nested `AGENTS.md`, including policy files added by
   the PR, and map changed paths to the applicable policy chain.
-- Do not request Codex, Copilot, CodeRabbit, or another review-credit-consuming
+- Do not request Codex, Copilot, or another review-credit-consuming
   reviewer until the PR is mature: coherent code pushed, tests/benchmarks run or
   justified, PR body current, no known local blocker, and exact-head CI running
   or green.

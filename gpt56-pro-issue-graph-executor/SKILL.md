@@ -261,7 +261,7 @@ When the implementation is incomplete but useful, publish a draft PR with a cohe
 
 Use `github-pr-mergeable` semantics.
 
-Before requesting Codex, Copilot, CodeRabbit, or other review-credit-consuming reviewers:
+Before requesting Codex, Copilot, or other review-credit-consuming reviewers:
 
 - implementation is coherent;
 - focused and broader affected tests are green or an exact blocker is documented;

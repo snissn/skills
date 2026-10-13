@@ -43,7 +43,7 @@ A PR is mergeable only when current evidence proves:
 - Codex review, when required by the effective repository/workstream policy, has been requested only after the PR is mature enough to avoid review-credit churn, and after meaningful pushes where available;
 - when Codex remains required, the latest-head review has completed cleanly as either an explicit no-findings issue comment or an approved/clean review tied to the exact head SHA, with no unresolved Codex threads, or Codex is explicitly unavailable after a documented bounded retry window and the user/repo policy permits proceeding without it;
 - when repository-local proportionality or scientific stop rules replace the default Codex gate, the PR records that policy, the bounded review disposition, and the acceptance evidence required by that policy; every existing thread is still fixed or explicitly rejected with rationale;
-- optional reviewers such as CodeRabbit and Copilot have either produced no usable response, are rate-limited/unavailable, or had every actual finding/check/thread resolved; optional acknowledgement reactions alone do not block mergeability;
+- optional reviewers such as Copilot have either produced no usable response, are rate-limited/unavailable, or had every actual finding/check/thread resolved; optional acknowledgement reactions alone do not block mergeability;
 - AI review findings are fixed or explicitly rejected with rationale;
 - review threads are commented on and marked resolved where the platform supports resolution;
 - PR description accurately states scope, tests, benchmarks, risks, and remaining caveats.
@@ -246,7 +246,7 @@ terminal even when advisory or explicit historical thresholds were exceeded.
 
 ## Mature PR Before AI Review
 
-Do not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviewers merely because a PR exists. Codex is the required final AI reviewer by default only when repository/workstream policy does not define a different proportional review or scientific acceptance gate; CodeRabbit and Copilot are optional unless repo policy makes their checks required. First make the PR mature enough that the requested review is likely to inspect the intended final shape:
+Do not request Codex, Copilot, or other review-credit-consuming AI reviewers merely because a PR exists. Codex is the required final AI reviewer by default only when repository/workstream policy does not define a different proportional review or scientific acceptance gate; Copilot is optional unless repo policy makes its checks required. First make the PR mature enough that the requested review is likely to inspect the intended final shape:
 
 - the issue-wide implementation packet is complete and coherent: production
   path/fallback, tests, required docs, and performance evidence;
@@ -261,14 +261,13 @@ If a later meaningful push changes code, benchmarks, or review-relevant behavior
 
 After meaningful pushes, after the maturity gate above is satisfied, and before final mergeable claim, request reviews from configured AI reviewers.
 
-Default assumption for ordinary code PRs without a contrary local rule: Codex should be requested and must complete on the latest head unless explicitly unavailable. For scientific/analytic work, apply repository proportionality and review-stop rules before this default. CodeRabbit and Copilot may be requested when useful, but they are opportunistic reviewers: rate limits, non-response, or acknowledgement-only reactions are documented and do not block mergeability unless repo policy or branch protection makes their check required.
+Default assumption for ordinary code PRs without a contrary local rule: Codex should be requested and must complete on the latest head unless explicitly unavailable. For scientific/analytic work, apply repository proportionality and review-stop rules before this default. Copilot may be requested when useful, but it is an opportunistic reviewer: rate limits, non-response, or acknowledgement-only reactions are documented and do not block mergeability unless repo policy or branch protection makes its check required.
 
 Use the repo’s established commands when known. Common pattern:
 
 ```sh
 gh pr comment <PR> --repo <OWNER>/<REPO> --body "@codex review"
 gh pr comment <PR> --repo <OWNER>/<REPO> --body "@copilot review"
-gh pr comment <PR> --repo <OWNER>/<REPO> --body "@coderabbitai review"
 ```
 
 Before every Codex trigger, run `scripts/codex_review_gate.py`. Do not trigger
@@ -307,7 +306,7 @@ Before posting final mergeability evidence or merging, re-inventory each request
   no exact-head artifact, treat it as **pending** until the bounded retry policy
   completes.
 - Do not merge while a policy-required Codex latest-head review is pending, even if `mergeable=MERGEABLE`, `mergeStateStatus=CLEAN`, local validation passes, or earlier review threads have been resolved. Do not manufacture a Codex requirement when repository-local policy explicitly uses a bounded scientific acceptance path.
-- CodeRabbit and Copilot are optional/conditional by default. If either returns a completed review, check, inline comment, or review thread, fix real findings or explicitly reject them with rationale and resolve threads. If either is rate-limited, unavailable, acknowledgement-only, or silent after a documented retry/window, record that disposition and proceed when the required gates are clean.
+- Copilot is optional/conditional by default. If it returns a completed review, check, inline comment, or review thread, fix real findings or explicitly reject them with rationale and resolve threads. If it is rate-limited, unavailable, acknowledgement-only, or silent after a documented retry/window, record that disposition and proceed when the required gates are clean.
 - If an optional reviewer has an active required status check under branch protection, treat that check as CI and wait for it or document why it is non-blocking. Do not treat a plain acknowledgement reaction from an optional reviewer as a pending merge blocker.
 - A reaction alone is not a clean artifact. Require an explicit exact-head
   clean comment/review plus zero unresolved Codex threads.
@@ -362,7 +361,7 @@ Ensure the PR body or a final status comment includes:
 - benchmark table if relevant;
 - explicit improvement/saturation gate status for optimization PRs: pass, fail/fix-needed, re-scoped instrumentation/safety-only, linked blocker, or explicit waiver;
 - CI status for latest head;
-- AI review status for required Codex and optional CodeRabbit/Copilot dispositions;
+- AI review status for required Codex and optional Copilot dispositions;
 - known caveats or intentionally deferred work;
 - merge intent/status: mergeable handoff, pending human approval, merged by authorized coordinator, or intentionally not merged with reason.
 

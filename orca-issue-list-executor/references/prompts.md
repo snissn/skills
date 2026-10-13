@@ -26,7 +26,7 @@ Your requirements:
 5. Open or update a PR for this issue only.
 6. Drive the PR to mergeable state under /skill:github-pr-mergeable. Do not merge directly unless the coordinator explicitly delegates merge authority.
 7. Treat material performance regressions as blocking: profile, optimize, rerun identical before/after evidence, and do not claim mergeability unless the regression is eliminated or explicitly accepted by the coordinator/user.
-8. Do not request Codex, Copilot, CodeRabbit, or other review-credit-consuming AI reviews until the PR is mature: coherent code pushed, focused tests and required benchmarks run or explained, PR body/status evidence current, no known local blockers, and latest-head CI running or green.
+8. Do not request Codex, Copilot, or other review-credit-consuming AI reviews until the PR is mature: coherent code pushed, focused tests and required benchmarks run or explained, PR body/status evidence current, no known local blockers, and latest-head CI running or green.
 9. Return a final handoff with PR URL/number, branch, latest head SHA, exact tests/benchmarks, performance regression status, CI status, AI review status, unresolved threads, risks, and deferrals.
 
 Do not absorb work from later dependency issues unless the coordinator explicitly approves.

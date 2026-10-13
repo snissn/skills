@@ -157,7 +157,7 @@ external AI reviews.
 - Audit policy for every adopted node from that node's actual worktree or PR
   head. Enumerate root and nested `AGENTS.md`, including policy files added by
   the PR, and map changed paths to the applicable policy chain.
-- Request AI reviews (Codex, Copilot, CodeRabbit, ...) only on mature PRs:
+- Request AI reviews (Codex, Copilot, ...) only on mature PRs:
   coherent code pushed, tests/benchmarks run or justified, PR body current, no
   known local blocker, latest-head CI running or green. Before each review
   request, run the `github-pr-mergeable` classifier; stop on an exact-head
