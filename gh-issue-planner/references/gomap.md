@@ -125,9 +125,11 @@ TreeDB implementation PRs use test-first development by default. Select the red 
 - architecture seams start with contract, selection, fallback, and generation/schema invalidation tests before substrate implementation.
 
 For profile-dependent optimizations, apply SKILL.md's public-entry regression and
-eligibility proof using the actual profile's batch/commit path. Trace visibility
-flush separately from durable sync at those callers; an internal mode name alone
-does not establish either semantic or the public path's eligibility.
+activation/eligibility proof through the nearest actual public entry with the
+target profile/configuration. For write or durability profile optimizations,
+trace the actual batch/commit callers and distinguish visibility flush from
+durable sync; an internal mode name alone does not establish either semantic or
+the public path's eligibility.
 
 Documentation-only, pure benchmark/instrumentation, exploratory, adequately characterized mechanical-refactor work, or optimizations meeting SKILL.md's red-test exception may use an explicit exception. Record why a meaningful red test is unavailable and what alternative correctness evidence applies. TreeDB's pre-alpha format policy permits intentional compatibility breaks, but it does not waive tests for the new format's reopen, durability, recovery, or GC invariants.
 
