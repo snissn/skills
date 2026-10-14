@@ -279,11 +279,16 @@ Implementation phase:
 
 Close phase:
 
+When performance is primary, apply [the shared sequencing](../SKILL.md#performance-sensitive-feature-contract):
+focused changed-seam checks and bounded public-path comparisons/profiles establish
+a stable, viable candidate before exhaustive qualification, unless changed risk or
+repo policy requires earlier coverage. Required per-PR and final gates remain.
+
 - [ ] Re-run focused tests.
-- [ ] Re-run broader affected, race, recovery, reopen, or integration tests as the risk requires.
 - [ ] Re-run the evidence required by the performance classification.
 - [ ] For performance-sensitive or performance-objective work, apply the feature-contract comparison (identical before/after commands for equivalent behavior) and report the relevant throughput or latency, `B/op`, `allocs/op`, peak/live memory, and domain counters; mark irrelevant axes `N/A` with rationale.
 - [ ] Treat material regressions as blocking: profile, optimize, rerun, and do not merge unless eliminated or explicitly accepted as minimized/correctness-required.
+- [ ] Complete broader affected, race, recovery, reopen, or integration tests as the risk requires before merge.
 - [ ] Verify public-path selection, allocation minimization, and affected docs before feature completion.
 - [ ] Verify existing consumers and the feature use the intended shared implementation, required migrations/retirements are complete, and related ownership/contracts remain respected.
 - [ ] Follow repo-required review identities and the shared skill's maturity, stop, and quota-fallback rules; repeat only when changed evidence requires review.
