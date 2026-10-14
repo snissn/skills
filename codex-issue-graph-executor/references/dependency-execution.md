@@ -87,9 +87,12 @@ When a coherent performance candidate fails a hard gate:
    stop conditions before running it. Do not tune one yield, delay, or threshold
    per CI cycle.
 6. If that probe identifies a viable mechanism, produce one completion packet:
-   deterministic mechanism test, implementation, correctness/recovery tests,
-   benchmark provenance, and the full performance matrix. Open a PR only after
-   the local hard gates pass unless repository policy requires an earlier draft.
+   public-entry regression or justified exception, implementation, focused changed-seam checks,
+   and a bounded public-path comparison with benchmark provenance. Apply SKILL.md's
+   performance-first sequencing: establish a stable, viable candidate before
+   exhaustive qualification, then complete the required correctness/recovery
+   coverage and full performance matrix. Open a PR only after the local hard gates
+   pass unless repository policy requires an earlier draft.
 7. If the probe helps but the simplest mechanism violates another gate, try at
    most one evidence-motivated follow-on mechanism by default. If both fail,
    stop micro-tuning and make an explicit architecture, scope, or measured-no-go

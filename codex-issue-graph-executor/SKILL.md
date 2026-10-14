@@ -100,6 +100,16 @@ secondary objectives distinct from guardrails; a measurement budget or resource 
 is not proof of optimization. Parent completion requires its agreed outcome gates,
 not merely accepted child outputs or linked follow-ups.
 
+When performance is the primary outcome, apply the sequencing in the planner's
+[performance-sensitive feature contract](../gh-issue-planner/SKILL.md#performance-sensitive-feature-contract).
+For optimizations, carry its public-entry red/green regression or justified exception,
+activation proof, and relevant eligibility cases into the assigned completion packet.
+Carry that order into implementation and finalization assignments: focused changed-seam
+checks before bounded public-path comparisons and short profiles, then exhaustive
+qualification after a stable, viable performance candidate exists. Preserve required
+per-PR merge gates and final graph qualification; diagnostic runs are not retained
+qualification evidence.
+
 ## Simplification Within The Completion Packet
 
 At implementation start, inspect the affected existing code and verify any planner

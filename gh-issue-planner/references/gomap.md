@@ -56,9 +56,10 @@ The issue must require:
   justification and bounded retention, lifetime, invalidation, and race proof.
 - Require `B/op` and `allocs/op` (or total bytes/objects normalized to the actual
   operation for phase harnesses), and path/fallback/materialization counters.
-  Start with a focused `GOWORK=off go test <package> -run '^$' -bench '<benchmark>'
-  -benchmem` command derived from the current harness. Collect allocation
-  profiles or targeted escape diagnostics when attribution remains unclear.
+  Use a focused `GOWORK=off go test <package> -run '^$' -bench '<benchmark>'
+  -benchmem` command derived from the current harness alongside the bounded public-path
+  comparison; apply SKILL.md's sequencing when performance is primary. Collect
+  allocation profiles or targeted escape diagnostics when attribution remains unclear.
   Use the repo's existing allocation-budget tests where stable; do not invent
   a zero-allocation budget for API-owned output or a toolchain-sensitive path.
 - Pair microbenchmarks with bounded representative public-path measurements,
@@ -123,7 +124,12 @@ TreeDB implementation PRs use test-first development by default. Select the red 
 - concurrency changes start with deterministic coordination/invariant tests plus race coverage where useful;
 - architecture seams start with contract, selection, fallback, and generation/schema invalidation tests before substrate implementation.
 
-Documentation-only, pure benchmark/instrumentation, exploratory, or adequately characterized mechanical-refactor work may use an explicit exception. Record why a meaningful red test is unavailable and what alternative correctness evidence applies. TreeDB's pre-alpha format policy permits intentional compatibility breaks, but it does not waive tests for the new format's reopen, durability, recovery, or GC invariants.
+For profile-dependent optimizations, apply SKILL.md's public-entry regression and
+eligibility proof using the actual profile's batch/commit path. Trace visibility
+flush separately from durable sync at those callers; an internal mode name alone
+does not establish either semantic or the public path's eligibility.
+
+Documentation-only, pure benchmark/instrumentation, exploratory, adequately characterized mechanical-refactor work, or optimizations meeting SKILL.md's red-test exception may use an explicit exception. Record why a meaningful red test is unavailable and what alternative correctness evidence applies. TreeDB's pre-alpha format policy permits intentional compatibility breaks, but it does not waive tests for the new format's reopen, durability, recovery, or GC invariants.
 
 ### Performance Relevance
 

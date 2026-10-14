@@ -204,9 +204,35 @@ Apply this to every performance-sensitive or performance-objective implementatio
 including new features and standalone tickets, not just optimization trackers. Embed it in the owning
 issue; a later performance-polish child is not a substitute.
 
+When performance is the primary outcome, put diagnosis and speedup checks on the
+graph's critical path. Establish a current public-path baseline and, where meaningful,
+an original/pre-project anchor. Compare coherent candidates with bounded runs on the
+same quiet host using equivalent semantics, commands, fixtures, and environment.
+Use short relevant profiles and path counters to select causal structural or
+integration fixes before residual micro-polish. Allocation reductions or helper-only
+wins cannot establish production performance viability.
+
+Run focused correctness and safety checks on every changed seam before diagnostic
+measurements, preserving the meaningful test-first check or allowed exception.
+Batch compatible causal fixes and reuse unchanged applicable evidence. Establish a
+stable, viable public-path candidate before exhaustive risk-relevant qualification,
+unless a changed risk or repository policy requires earlier coverage. Keep graph-wide
+qualification with the existing final evidence owner; required per-PR tests, review,
+CI, and branch-protection gates still pass before every merge. Never waive a known
+serious correctness or safety failure to pursue a speedup. This changes scheduling,
+not existing allocation, documentation, or final completion gates.
+
 - Name the production path to reuse or extend, eligibility/fallback conditions,
-  and proof that ordinary callers reach it. Define tests or counters for correct
-  results and path selection; a helper-only benchmark cannot prove integration.
+  and proof that ordinary callers reach it. For an optimization, drive a meaningful
+  regression from red to green through the nearest real production entry with the
+  target profile/configuration. If equivalent outputs can hide fallback, assert
+  activation through an existing selector, counter, or artifact observable; a direct
+  helper test or helper-only benchmark cannot prove integration. For profile-dependent
+  eligibility, cover the target and important excluded/fallback classes with a small
+  representative matrix, not the full option cross-product. Avoid tests that mirror
+  the predicate or production counters added solely for tests. If a meaningful red
+  test is impractical, record why and the alternative public-path correctness and
+  activation evidence under the test-first exception; do not fabricate a failure.
 - Require an allocation audit of each added or changed hot path: allocation/copy
   sites, frequency (per item, batch, request, or setup), ownership/lifetime, and
   required output storage versus avoidable temporary work. Implement through the
@@ -218,8 +244,11 @@ issue; a later performance-polish child is not a substitute.
   ownership, validation, concurrency, and durability; lower allocations alone do
   not justify unsafe reuse, unbounded retention, or worse algorithmic complexity.
 - Require comparable before/after evidence for existing paths and representative
-  public-path evidence for the feature. For genuinely new behavior, preserve the
-  old workload as a regression guardrail and measure feature-enabled incremental
+  public-path evidence for the feature. Before declaring viability, use bounded
+  measurements or profiles to sample lifecycle states that can change routing or
+  dominant costs for the changed risk, not an exhaustive state cross-product.
+  State-specific wins support only state-specific claims. For genuinely new behavior,
+  preserve the old workload as a regression guardrail and measure feature-enabled incremental
   cost plus scaling; compare equivalent semantics to a reference when available.
   Label missing comparators honestly. Feature-off timing is not proof that the
   new feature is optimized, and zero allocations is not a universal target.
@@ -300,7 +329,7 @@ Repo extensions preserve project-specific conventions without hardcoding them in
 - Classify measured metrics as north-star gates, milestone exit gates, guardrails, observational metrics, or explicitly accepted gaps. An accepted gap must record its evidence basis and revisit trigger and must not remain an accidental completion blocker.
 - Require test-first development for implementation PRs: name the behavior or invariant, add or update a test that fails for the intended reason, implement the smallest coherent change that makes it pass, and refactor while green. Do not treat post-hoc coverage as test-first evidence.
 - Test-first does not mean unit-test-only. Use contract, characterization, integration, reopen/recovery, fault-injection, race, or end-to-end tests when those best express the risk.
-- Allow explicit test-first exceptions for documentation-only work, pure instrumentation or benchmark changes, exploratory spikes, and mechanical refactors already bounded by adequate characterization tests. The tracker and PR must record why a meaningful red test is impractical and what alternative evidence protects behavior.
+- Allow explicit test-first exceptions for documentation-only work, pure instrumentation or benchmark changes, exploratory spikes, mechanical refactors already bounded by adequate characterization tests, and optimizations meeting the feature contract's red-test exception. The tracker and PR must record why a meaningful red test is impractical and what alternative evidence protects behavior.
 - Require every PR-bearing milestone to classify performance relevance. Changes touching hot paths, storage or wire layouts, encoding, concurrency, I/O, caching, query execution, ingestion, compaction, or bulk processing default to at least possibly performance-relevant unless the tracker records a concrete rationale otherwise.
 - For possibly performance-relevant work, require a focused benchmark, allocation check, profile, or equivalent guardrail on the affected path. For performance-sensitive and performance-objective work, require comparable before/after evidence on relevant axes; use the shared feature contract when no pre-change equivalent exists. A not-performance-relevant PR needs only a concise rationale, not ceremonial benchmarks.
 - Select metrics by risk. Throughput and latency measure execution behavior; `B/op` and `allocs/op` measure allocation efficiency; peak RSS, peak/live heap, or retained heap measure memory pressure. Do not substitute allocation metrics for footprint evidence when memory residency is the risk.
