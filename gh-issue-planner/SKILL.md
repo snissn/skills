@@ -206,8 +206,10 @@ issue; a later performance-polish child is not a substitute.
 
 When Go runtime performance is material, use
 [Go Performance Optimization](../go-performance-optimization/SKILL.md) to select
-public-path measurements, profiling, ownership checks, and evidence gates. Carry
-only the relevant requirements into the issue; planning alone does not require runs.
+public-path measurements, profiling, ownership checks, and evidence gates. For
+material allocation work, carry its existing-arena/pool/buffer inventory and
+reuse-or-justified-exception acceptance into the issue. Carry only relevant
+requirements; planning alone does not require runs.
 
 When performance is the primary outcome, put diagnosis and speedup checks on the
 graph's critical path. Establish a current public-path baseline and, where meaningful,

@@ -61,6 +61,32 @@ or present helper savings as public gains. For interacting changes, measure the
 combined candidate against the baseline. Measure an incremental counterfactual only
 when individual attribution matters, keeping mandatory fallback/copy work intact.
 
+## Reuse Existing Allocation Domains
+
+For material allocation optimization, inventory the affected repository's arenas,
+pools, batch buffers, caller-owned scratch, and direct-write APIs before choosing
+storage. Record the strongest maintained mechanism, eligible payloads, owner and
+last-consumer boundary, reset/release behavior, and retention limits. Reuse that
+mechanism by default when its lifetime and concurrency contract fit; do not add a
+replacement heap helper, pool, or arena around a cost already solved by that seam.
+A different choice needs a documented contract mismatch or measured public-path
+reason, with the applicable bytes, objects, latency, and retention tradeoffs.
+
+Carry this choice into the plan and acceptance evidence. Planning may name the
+bounded comparison still needed rather than invent results; implementation is not
+allocation-complete without the reuse decision, lifetime controls, and applicable
+public performance evidence. An arena-choice exception permits alternate storage;
+it does not waive the measurement and acceptance rules below. For `snissn/gomap`, apply the
+[existing-arena default](references/gomap.md) to eligible bulk/lifetime storage.
+
+Bulk allocation can reduce objects without reducing bytes. Account for unused
+capacity, peak/live backing storage, reset policy, and retained-memory bounds.
+Reset or return storage only after its final alias, snapshot, pending write, and
+asynchronous consumer release it. For shared/COW state, preserve explicit private
+preparation and mutation authority, immutable rollback aliases, and candidate/seal
+boundaries; arena residence alone does not grant exclusive ownership. Transient
+buffer reuse never changes persistent value-log reachability or durability rules.
+
 ## Implement With Ownership And Risk In View
 
 Use a meaningful public regression or activation check before implementation when
