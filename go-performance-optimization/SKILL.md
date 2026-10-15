@@ -14,6 +14,13 @@ performance method; it does not authorize unrelated changes or replace PR gates.
 - Name the primary outcome and guardrails: latency/throughput, bytes and objects
   allocated, retained/peak memory, contention, or relevant domain work. Distinguish
   agreed targets from observations; do not invent a universal zero-allocation goal.
+- Distinguish product requirements from chosen work-accounting limits. Record each
+  consequential counter's origin, unit, and charged phases; do not infer a latency
+  or useful-progress guarantee from the count alone. If fixed work defeats a
+  selected quota, reassess the model explicitly: bound variable and fixed work
+  separately when justified, report the full total, and preserve the original
+  product gate or record its authorized revision. Changing units or excluding
+  phases cannot silently pass the original gate.
 - Inspect existing design, live adjacent work, and maintained primitives before
   choosing a fix. Trace the real public entry through dispatch, eligibility,
   optimized implementation, fallback, publication, and cleanup. Identify affected
