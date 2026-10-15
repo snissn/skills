@@ -19,6 +19,8 @@ the harness; retain its exact bytes and both effective input sets. Never transpl
 candidate production code into the baseline by accident.
 
 ```sh
+# Run as a script; abort on any build, benchmark, or comparison failure.
+set -e
 # In each source checkout, with the selected toolchain/environment:
 go test -c -o /evidence/before.test ./path/to/package
 # Build the candidate analogously as /evidence/after.test.
@@ -35,6 +37,10 @@ cat /evidence/before-*.txt > /evidence/before.txt
 cat /evidence/after-*.txt > /evidence/after.txt
 benchstat /evidence/before.txt /evidence/after.txt
 ```
+
+Retain a failed invocation's logs and exit status for diagnosis, but do not treat
+its partial benchmark lines as accepted samples or silently replace it. Investigate
+the failure and record any revised collection plan before comparing valid runs.
 
 Use fixed iterations (for example `-test.benchtime=1000x`) when equal operation
 counts are needed to preserve a growing workload or match attribution. Time-based
@@ -60,6 +66,8 @@ timings with uninstrumented results or combine every expensive profiler at once.
 These examples use the already built candidate and the same public workload:
 
 ```sh
+# Run as a separate script; stop if capture or profile analysis fails.
+set -e
 /evidence/after.test -test.run='^$' -test.bench='^BenchmarkPublicOperation$' \
   -test.benchtime=1s -test.cpuprofile=/evidence/cpu.pprof
 /evidence/after.test -test.run='^$' -test.bench='^BenchmarkPublicOperation$' \
