@@ -145,6 +145,9 @@ packet governs scope, validation, and reporting.
 
 ## Compose With
 
+- [Go Performance Optimization](../go-performance-optimization/SKILL.md) when Go
+  runtime performance is material, for public-path activation, comparable measurements,
+  profiling diagnosis, ownership/lifetime checks, and scoped evidence reuse.
 - `github-pr-mergeable` for PR readiness, review, latest-head CI, and merge execution. Use its bundled `scripts/codex_review_gate.py` for Codex state; never infer Codex completion from formal reviews alone. Repository-local proportionality and review-stop rules override that skill's default Codex cadence.
 - `github:gh-fix-ci` when GitHub Actions failures need targeted diagnosis.
 - `github:gh-address-comments` when unresolved PR review threads must be

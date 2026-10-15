@@ -204,6 +204,11 @@ Apply this to every performance-sensitive or performance-objective implementatio
 including new features and standalone tickets, not just optimization trackers. Embed it in the owning
 issue; a later performance-polish child is not a substitute.
 
+When Go runtime performance is material, use
+[Go Performance Optimization](../go-performance-optimization/SKILL.md) to select
+public-path measurements, profiling, ownership checks, and evidence gates. Carry
+only the relevant requirements into the issue; planning alone does not require runs.
+
 When performance is the primary outcome, put diagnosis and speedup checks on the
 graph's critical path. Establish a current public-path baseline and, where meaningful,
 an original/pre-project anchor. Compare coherent candidates with bounded runs on the
