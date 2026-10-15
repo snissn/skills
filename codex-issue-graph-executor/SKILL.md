@@ -100,6 +100,16 @@ secondary objectives distinct from guardrails; a measurement budget or resource 
 is not proof of optimization. Parent completion requires its agreed outcome gates,
 not merely accepted child outputs or linked follow-ups.
 
+When performance is the primary outcome, apply the sequencing in the planner's
+[performance-sensitive feature contract](../gh-issue-planner/SKILL.md#performance-sensitive-feature-contract).
+For optimizations, carry its public-entry red/green regression or justified exception,
+activation proof, and relevant eligibility cases into the assigned completion packet.
+Carry that order into implementation and finalization assignments: focused changed-seam
+checks before bounded public-path comparisons and short profiles, then exhaustive
+qualification after a stable, viable performance candidate exists. Preserve required
+per-PR merge gates and final graph qualification; diagnostic runs are not retained
+qualification evidence.
+
 ## Simplification Within The Completion Packet
 
 At implementation start, inspect the affected existing code and verify any planner
@@ -135,6 +145,11 @@ packet governs scope, validation, and reporting.
 
 ## Compose With
 
+- [Go Performance Optimization](../go-performance-optimization/SKILL.md) when Go
+  runtime performance is material, for public-path activation, comparable measurements,
+  profiling diagnosis, ownership/lifetime checks, and scoped evidence reuse. For
+  material allocation work, require its maintained-arena/pool/buffer reuse decision
+  and lifetime/retention evidence in the completion packet.
 - `github-pr-mergeable` for PR readiness, review, latest-head CI, and merge execution. Use its bundled `scripts/codex_review_gate.py` for Codex state; never infer Codex completion from formal reviews alone. Repository-local proportionality and review-stop rules override that skill's default Codex cadence.
 - `github:gh-fix-ci` when GitHub Actions failures need targeted diagnosis.
 - `github:gh-address-comments` when unresolved PR review threads must be
@@ -163,6 +178,26 @@ their absence makes a required gate impossible to verify.
 - Where dependency policy permits, model `product -> reviewed/landed harness or schema -> artifact-only evidence`. Focused pre-review MUST cover provenance, concurrency/isolation, fail-closed validation, and wording; freeze exact runtime and harness subtree/blob identities before expensive collection.
 - Prefer a dedicated high-capacity runner with persistent build cache and durable artifact storage. Otherwise record `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` and the actual fallback; never invent infrastructure.
 - Classify candidate failures separately from proven unrelated CI flakes, rerun only affected gates, and require current-head merge gates. Artifact-only descendants preserve evidence only under exact runtime/harness subtree and implementation-blob identity; product or harness drift invalidates affected evidence.
+
+## Checkpoint And Evidence Pushes
+
+Before pushing a durable checkpoint or evidence packet, refresh live open-PR head
+repository/branch mappings for the destination and relevant upstream repositories,
+including fork, draft, and stacked PRs. Classify the actual diff and destination;
+an evidence-only commit on an open PR's head
+still advances that PR. If PR-head status is uncertain, preserve the ordinary CI
+path. Branch names and the absence of a local PR record do not establish that a
+push is outside a PR.
+
+For a non-PR checkpoint or evidence publication, prefer a repository-supported
+CI-skip mechanism when policy permits and no required validation depends on that
+push. Check the relevant workflow triggers: a skip trailer may not suppress every
+workflow. Batch related evidence rather than launching duplicate validation for
+each checkpoint, and record the classification, skip mechanism, and original
+runtime/harness/source bindings in the handoff. This does not waive required
+checks on implementation PRs or artifact-only PRs. If the branch later becomes
+a PR head, obtain the required current-head CI; a skipped run is not a passing
+gate. Do not change workflows or cancel other lanes' runs merely to enable this.
 
 ## Conservative Execution Budget
 

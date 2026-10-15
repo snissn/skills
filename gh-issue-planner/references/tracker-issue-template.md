@@ -279,8 +279,13 @@ Implementation phase:
 
 Close phase:
 
+When performance is primary, apply [the shared sequencing](../SKILL.md#performance-sensitive-feature-contract):
+focused changed-seam checks and bounded public-path comparisons/profiles establish
+a stable, viable candidate before exhaustive qualification, unless changed risk or
+repo policy requires earlier coverage. Required per-PR and final gates remain.
+
 - [ ] Re-run focused tests.
-- [ ] Re-run broader affected, race, recovery, reopen, or integration tests as the risk requires.
+- [ ] Complete broader affected, race, recovery, reopen, or integration tests as the risk requires before performance evidence, except for exhaustive qualification deferred by the performance-primary sequence above. All required tests still finish before merge.
 - [ ] Re-run the evidence required by the performance classification.
 - [ ] For performance-sensitive or performance-objective work, apply the feature-contract comparison (identical before/after commands for equivalent behavior) and report the relevant throughput or latency, `B/op`, `allocs/op`, peak/live memory, and domain counters; mark irrelevant axes `N/A` with rationale.
 - [ ] Treat material regressions as blocking: profile, optimize, rerun, and do not merge unless eliminated or explicitly accepted as minimized/correctness-required.
