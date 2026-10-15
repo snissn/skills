@@ -174,6 +174,26 @@ their absence makes a required gate impossible to verify.
 - Prefer a dedicated high-capacity runner with persistent build cache and durable artifact storage. Otherwise record `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` and the actual fallback; never invent infrastructure.
 - Classify candidate failures separately from proven unrelated CI flakes, rerun only affected gates, and require current-head merge gates. Artifact-only descendants preserve evidence only under exact runtime/harness subtree and implementation-blob identity; product or harness drift invalidates affected evidence.
 
+## Checkpoint And Evidence Pushes
+
+Before pushing a durable checkpoint or evidence packet, refresh live open-PR head
+repository/branch mappings for the destination and relevant upstream repositories,
+including fork, draft, and stacked PRs. Classify the actual diff and destination;
+an evidence-only commit on an open PR's head
+still advances that PR. If PR-head status is uncertain, preserve the ordinary CI
+path. Branch names and the absence of a local PR record do not establish that a
+push is outside a PR.
+
+For a non-PR checkpoint or evidence publication, prefer a repository-supported
+CI-skip mechanism when policy permits and no required validation depends on that
+push. Check the relevant workflow triggers: a skip trailer may not suppress every
+workflow. Batch related evidence rather than launching duplicate validation for
+each checkpoint, and record the classification, skip mechanism, and original
+runtime/harness/source bindings in the handoff. This does not waive required
+checks on implementation PRs or artifact-only PRs. If the branch later becomes
+a PR head, obtain the required current-head CI; a skipped run is not a passing
+gate. Do not change workflows or cancel other lanes' runs merely to enable this.
+
 ## Conservative Execution Budget
 
 Optimize for verified progress toward the agreed parent outcome per usage window.

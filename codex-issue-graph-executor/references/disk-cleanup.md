@@ -70,6 +70,16 @@ local branch and remote-branch retention separately under the helper's policy.
    the same batch. Missing identity/content evidence or any other mismatch means
    retain the target. Skip changed, active, locked, unreadable, or uncertain
    targets; do not infer inactivity merely from an agent finishing.
+   Assess consumers that plausibly use the target, using exact producer/consumer
+   releases, graph commands, and readable executable, open-file, or mapping
+   evidence where useful. Universal host process-map readability is not required.
+   An unreadable unrelated service does not by itself make a released target
+   uncertain; record why available command, ancestry, start-time, or ownership
+   evidence excludes a plausible connection. Retain the affected target if a
+   relevant consumer remains active or cannot be ruled out, or if target identity
+   or evidence preservation cannot be verified. Do not equate a release notice
+   alone with proof of inactivity or escalate privileges merely to inspect
+   unrelated processes.
 3. For a worktree, verify registration, current HEAD, clean tracked state,
    untracked/ignored contents, and preservation of required commits on durable
    refs. Delete only separately allowlisted disposable generated contents, then
