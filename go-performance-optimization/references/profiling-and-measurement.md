@@ -23,12 +23,17 @@ candidate production code into the baseline by accident.
 go test -c -o /evidence/before.test ./path/to/package
 # Build the candidate analogously as /evidence/after.test.
 
-# Alternate these invocations; retain separate files for every run.
+# Use a fresh evidence directory; increment 01 for each planned alternating pair.
 /evidence/before.test -test.run='^$' -test.bench='^BenchmarkPublicOperation$' \
-  -test.benchmem -test.benchtime=1s -test.count=1
+  -test.benchmem -test.benchtime=1s -test.count=1 \
+  > /evidence/before-01.txt 2> /evidence/before-01.stderr
 /evidence/after.test -test.run='^$' -test.bench='^BenchmarkPublicOperation$' \
-  -test.benchmem -test.benchtime=1s -test.count=1
-benchstat before.txt after.txt
+  -test.benchmem -test.benchtime=1s -test.count=1 \
+  > /evidence/after-01.txt 2> /evidence/after-01.stderr
+# After collecting every planned pair, combine each side's retained stdout.
+cat /evidence/before-*.txt > /evidence/before.txt
+cat /evidence/after-*.txt > /evidence/after.txt
+benchstat /evidence/before.txt /evidence/after.txt
 ```
 
 Use fixed iterations (for example `-test.benchtime=1000x`) when equal operation
