@@ -153,6 +153,29 @@ theorem, construction, or obstruction that satisfies the exit gate; prefer
 analytic reduction to brute-force certification when it proves the same
 predicate. Stop deepening the artifact once the gate is met.
 
+During uncertain scientific work, periodically compare accumulated results with
+the actual exit gate. Identify which necessary premise became established,
+which consequential unknown was resolved, and what mathematical or physical gap
+remains. Repeated scoped diagnostics, exact-source packets, and reviews do not
+by themselves demonstrate progress toward the parent claim.
+
+When composed with an issue-graph executor, use its bounded progress review
+([Codex checkpoints](../codex-issue-graph-executor/SKILL.md#outcome-and-algorithm-checkpoints)).
+Before another equivalent batch, compare the remaining cost and acceptance path
+with a materially different algorithm, representation, analytic reduction, or
+integration strategy. Check relevant landed and parallel results before
+recreating evidence. Prefer one reusable construction with qualified source
+substitution over per-case design/review cycles when it proves the same claim.
+Choose one bounded discriminator if the evidence cannot select a route, then
+revise the affected unexecuted graph from its result. Another review that merely
+restates the same uncertainty is not that discriminator.
+
+Keep this progress history across candidate names, workers, and context changes.
+Preserve exact source bindings, independent review, frozen definitions, failed
+artifacts, and accepted conditional scopes. A new algorithm does not waive
+scientific-definition review or turn resource exhaustion into a physical no-go;
+retiring a route leaves every unmet parent requirement open with an owner.
+
 ## Roles And Delegation
 
 When delegation is authorized, separate constructor, independent reviewer, and
