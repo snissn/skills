@@ -114,12 +114,44 @@ Reassess when evidence undermines the plan, not only when a candidate fails:
 - A new safety finding changes the necessary work or ordering.
 - An audit reveals that consolidating or removing existing structure materially
   simplifies the remaining implementation, changing planned scope or ownership.
+- Helper, admission, cleanup, or test-analysis machinery keeps growing while the
+  first real caller remains unwired; a checker repair itself becomes a subsystem.
+- Multiple local repair batches revisit the same invariant or repeatedly change
+  a supposedly stable predecessor contract, even when each batch adds green tests.
+- Profiles and uninstrumented results disagree, or repeated measurements do not
+  discriminate the proposed mechanism. More repetitions alone are not a plan.
+- The user reports churn, or SKILL.md's outcome-checkpoint backstop is reached.
 
 For abstract or materially uncertain work, also honor the tracker's named
 reassessment boundaries even when tests and child exit gates pass. Keep direct,
 well-understood work event-driven. The coordinator owns strategic reassessment;
 workers surface consequential evidence without running a separate graph review
 for every child.
+
+At a checkpoint, use existing evidence to answer five questions in the parent
+state, normally in a few bullets:
+
+1. What public behavior, useful progress, cost, or decision has advanced since the
+   last checkpoint? What remains unproven despite local green checks?
+2. Which assumption now explains the recurring work: algorithmic complexity,
+   representation, integration boundary, ownership/lifetime, or measurement?
+3. Is another patch the simplest credible route? Compare reuse/consolidation and
+   at least one structurally different approach when the evidence warrants it.
+   Consider public cost, implementation/review burden, and full lifecycle behavior;
+   avoid choosing solely by diff size or sunk effort.
+4. What single bounded experiment or end-to-end slice distinguishes the choices?
+   Name its real entrypoint, activation evidence, expected result, failure action,
+   and the point at which further helper construction stops. A new algorithm may
+   use an isolated reversible prototype; its success does not waive product gates.
+5. What changes now: continue with evidence, simplify, replace the mechanism,
+   split a coherent deliverable, or defer an unselected branch? Update affected
+   issue bodies/edges and worker assignments before resuming affected work.
+
+Do not append a ritual "continue" to each status update. A repeated unresolved
+trigger needs a changed hypothesis, discriminating evidence, or a concrete graph
+revision. If the mechanism is sound, record why and finish its next public proof.
+Keep one authoritative owner per obligation; preserve useful source and rejected
+evidence rather than restarting from scratch or creating duplicate graph nodes.
 
 Reuse available code, profiles, counters, tests, and review evidence. Investigate
 only a bounded question that could change the next decision. Reassessment does

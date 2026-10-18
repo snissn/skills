@@ -26,6 +26,16 @@ coordinator owns adoption and issue changes; hand off only with a complete
 non-PR output awaiting acceptance, at dependency-ready, or at a real-blocker or
 stop boundary.
 
+Also include the next public-path proof or decision, the last strategic checkpoint,
+and the next reassessment boundary. Report outcome movement separately from helper
+tests and commits. For uncertain, architectural, or performance work, after two
+coherent batches without the named advance, or a recurring contract/architecture
+failure, return one concise comparison of continuing versus simplifying/changing
+the approach before a third affected batch. Concrete known-solution work remains
+event-driven. Count local attempts. If the coordinator is unavailable, finish and
+preserve the assigned bounded batch; do not start new speculative or shared-contract
+work. Already authorized independent work may continue.
+
 ## Optional GPT-6.1 Sol Inventory Agent
 
 Do not use this template by default. The coordinator performs inventory
@@ -72,6 +82,7 @@ Graph state:
 - Non-goals: <NON_GOALS>
 - Required tests/benchmarks/evidence: <REQUIREMENTS>
 - Intended deliverable / target / acceptance owner: <PR_OR_ISSUE_UPDATE_OR_DECISION_OR_ARTIFACT>
+- Next public-path proof / falsifying result / reassessment boundary: <OUTCOME_CHECKPOINT>
 - Decision gates and conditional eligibility: <ACCEPTED_OUTPUTS_OR_NONE>
 - Your ownership boundary: <FILES_OR_MODULES>
 - Parallel siblings and boundaries: <SIBLINGS>

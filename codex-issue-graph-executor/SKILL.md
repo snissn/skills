@@ -143,6 +143,37 @@ it needs no separate audit node, agent, report, or ponytail dependency.
 When composing simplification helpers such as ponytail, the full completion
 packet governs scope, validation, and reporting.
 
+## Outcome And Algorithm Checkpoints
+
+For uncertain, architectural, or performance work, name the next public-path
+proof or decision that advances the parent outcome before assigning more code.
+Use the tracker's evidence boundaries alongside a backstop: reassess after two
+coherent implementation/repair batches without that advance, or about 45 minutes
+of active work without a strategic checkpoint, whichever comes first. A different
+task-specific backstop needs a recorded rationale; a distant milestone alone does
+not replace it. This is a short coordinator decision in existing state, not a
+requirement for another report, review agent, or test campaign; existing adviser
+triggers still apply. Concrete work with a known solution remains event-driven.
+
+Passing helper tests, new commits, more precise accounting, and a growing check
+suite are supporting evidence, not substitutes for the named outcome. Count local
+repair attempts too; changing file, branch, failure wording, or session does not
+reset a recurring blocker. User concern about churn triggers reassessment now.
+
+Apply [Graph Reassessment](references/dependency-execution.md#graph-reassessment)
+before another affected batch. Compare continuing, simplifying the existing seam,
+and a materially different algorithm/representation/integration order. Choose one
+bounded next proof and record continue, simplify, replace, split, or defer with
+evidence and preserved obligations. Sunk implementation cost is not a reason to
+keep an unsuitable approach. Do not weaken correctness or performance gates.
+
+Bound provisional work by that proof. Reopen `dependency-ready` when new evidence
+changes its contract; stop speculative helper expansion until the common path is
+proven. Coordinator unavailability permits finishing the already assigned bounded
+batch and preserving it, not an unlimited sequence of new shared-contract changes.
+Independent authorized work can continue. Reassessment steers continued execution;
+it is not completion of the unmet parent goal or a reason for repeated permission.
+
 ## Compose With
 
 - [Go Performance Optimization](../go-performance-optimization/SKILL.md) when Go

@@ -68,6 +68,20 @@ or present helper savings as public gains. For interacting changes, measure the
 combined candidate against the baseline. Measure an incremental counterfactual only
 when individual attribution matters, keeping mandatory fallback/copy work intact.
 
+Reconsider the algorithm and integration boundary after two coherent attempts
+fail to advance the public metric, or when helper wins disappear end to end.
+Compare the current approach with reuse of an existing bulk/ordered operation,
+less repeated work or materialization, and a different representation where
+appropriate. Estimate which can move the measured dominant cost before coding.
+Choose one bounded discriminating experiment, with a failure action; do not keep
+tuning constants or growing lifetime/accounting helpers around a weak mechanism.
+If instrumentation contradicts uninstrumented results, resolve the measurement
+boundary/noise question with a predeclared control before selecting another fix.
+An inconclusive control remains inconclusive; it does not require more repetitions
+or waive the unresolved performance gate.
+Carry consequential findings into the executing issue graph; a structural rewrite
+still needs evidence and preserved behavior, not just a larger implementation.
+
 ## Reuse Existing Allocation Domains
 
 For material allocation optimization, inventory the affected repository's arenas,

@@ -168,8 +168,19 @@ not ticket size or detail:
 - For an abstract outcome or unresolved architecture, require the coordinator
   to reassess the architecture and remaining plan at meaningful implementation
   or evidence boundaries, even when individual tickets pass. Name task-specific
-  boundaries where findings could change the next work; do not impose a fixed
-  cadence, extra reviewer, or benchmark campaign.
+  boundaries where findings could change the next work. Also name a lightweight
+  progress backstop for long uncertain execution; use the executor's
+  [outcome checkpoints](../codex-issue-graph-executor/SKILL.md#outcome-and-algorithm-checkpoints)
+  when composed with it. Do not require an extra reviewer or benchmark campaign.
+
+Make those boundaries decision-bearing: identify the next public-path proof,
+the premise that could fail, and which algorithm, representation, or integration
+order would be reconsidered. Repeated helper construction, local repair loops,
+or contract changes without outcome movement trigger revision even when tests
+pass. The resulting continue/simplify/replace/split/defer decision updates the
+affected remaining scopes and edges; a status-only note is insufficient. Preserve
+the outcome and gates, and keep unselected mechanisms conditional rather than
+building a complete speculative substrate ahead of its first useful integration.
 
 Keep strategic reassessment in the parent; add child-specific instructions only
 where they change execution. Detailed children inherit relevant parent
