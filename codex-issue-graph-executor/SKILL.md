@@ -190,6 +190,14 @@ engine-level feedback until a final Q node, or require exhaustive helper account
 before a safe, reversible public-path development check. Known execution hazards
 must be addressed; incomplete acceptance obligations remain explicit and open.
 
+Changes to default dispatch, profiles or shared ownership need early feedback
+from the whole owning package and affected public compatibility paths, beyond
+named new-feature controls. After repairing a panic or other first failure that
+hid the tail, finish that package before another repair push. Group failures by
+their common production or fixture cause and fix them as one coherent batch;
+avoid discovering the same migration one CI shard at a time. Reuse unchanged
+evidence; this does not require running the entire repository after every edit.
+
 At an outcome checkpoint, compare public capabilities delivered and qualified,
 unlanded coupled changes, and the next missing product behavior. If local green
 checks keep growing without that behavior, change the integration boundary or
