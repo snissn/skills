@@ -53,6 +53,15 @@ tests, docs, performance evidence, and acceptance, normally in one PR. Necessary
 shared-seam redesign or consolidation belongs in that packet, including migration
 of affected existing consumers and proof that the feature uses the shared path.
 
+For crosscutting engine work, plan early slices through ordinary production APIs,
+including their persistence/reopen boundary. If a shared kernel and its consumers
+must repeatedly change together, use one integrated implementation packet instead
+of independent layer freezes and handoff gates. Several issues may share a coherent
+delivery PR while retaining their own acceptance obligations. Use the full public
+capability matrix for developmental integration feedback during construction;
+reserve final certification for the required landed candidate. Helper completeness
+must not become a substitute prerequisite for the first useful product slice.
+
 Investigation packets own the question, consequential hypothesis, smallest
 discriminating inquiry, evidence, conclusion (including rejected or inconclusive
 hypotheses), and resulting plan/issue changes. An issue-revision packet names the

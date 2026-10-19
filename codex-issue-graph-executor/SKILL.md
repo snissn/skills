@@ -174,6 +174,28 @@ batch and preserving it, not an unlimited sequence of new shared-contract change
 Independent authorized work can continue. Reassessment steers continued execution;
 it is not completion of the unmet parent goal or a reason for repeated permission.
 
+## Integrated Product Feedback
+
+When shared layers and their production callers repeatedly change together,
+consolidate them onto one canonical integration candidate with one integration
+owner. Keep issue ownership and acceptance criteria, but do not turn every layer,
+helper extraction or contract freeze into a separate delivery barrier. A coherent
+PR may satisfy several coupled issues; split by independently useful public
+behavior and stable boundaries when that improves delivery and review.
+
+Start developmental integration checks while implementation is underway, using
+the intended public capability matrix and existing lifecycle tests. Final retained
+qualification still needs its declared landed authority. Do not postpone all
+engine-level feedback until a final Q node, or require exhaustive helper accounting
+before a safe, reversible public-path development check. Known execution hazards
+must be addressed; incomplete acceptance obligations remain explicit and open.
+
+At an outcome checkpoint, compare public capabilities delivered and qualified,
+unlanded coupled changes, and the next missing product behavior. If local green
+checks keep growing without that behavior, change the integration boundary or
+assignment before adding another supporting proof campaign. Record this in the
+existing tracker state; no additional audit artifact or reviewer is required.
+
 ## Compose With
 
 - [Go Performance Optimization](../go-performance-optimization/SKILL.md) when Go

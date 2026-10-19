@@ -246,6 +246,11 @@ terminal even when advisory or explicit historical thresholds were exceeded.
 
 ## Mature PR Before AI Review
 
+Align the review unit with the actual coupled implementation. One coherent PR may
+fulfill several related issues; do not manufacture per-layer PRs or review cycles
+when the shared code and production callers need joint integration. Keep every
+issue's acceptance criteria and required final qualification intact.
+
 Do not request Codex or other review-credit-consuming AI reviewers merely because a PR exists. Codex is the required final AI reviewer by default only when repository/workstream policy does not define a different proportional review or scientific acceptance gate; an internal review fallback is acceptable when hosted review cannot run. First make the PR mature enough that the requested review is likely to inspect the intended final shape:
 
 - the issue-wide implementation packet is complete and coherent: production
