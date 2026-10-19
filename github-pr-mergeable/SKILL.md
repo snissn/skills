@@ -183,8 +183,9 @@ Use latest-head evidence only.
 When repairing a timeout, identify whether its clock covers one test, the whole
 package, or the job, including earlier work sharing that budget. An isolated
 test pass does not clear a package timeout. Validate the repair once at the
-original budget scope before another repair push; preserve the workload and
-time limit. Use focused runs and profiles for diagnosis before that check.
+original budget scope before another repair push; preserve the original selector,
+workload, time limit, and relevant toolchain/resource settings. Use focused runs
+and profiles for diagnosis before that check.
 
 - If GitHub is backed up, cancel stale CI runs that are not for the current head of active PR branches when safe.
 - In stacked/chained PRs, cancel stale runs for superseded intermediate heads after a batch propagation; keep only latest-head CI for active PR heads.
