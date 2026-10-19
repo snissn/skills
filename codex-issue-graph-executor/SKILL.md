@@ -196,6 +196,11 @@ checks keep growing without that behavior, change the integration boundary or
 assignment before adding another supporting proof campaign. Record this in the
 existing tracker state; no additional audit artifact or reviewer is required.
 
+Keep the current candidate, results, failures and next proof in one rolling tracker
+checkpoint when the repository workflow permits. Link stable parent and qualification
+bodies to it instead of copying status after each control. Preserve source-bound
+history and acceptance criteria.
+
 ## Compose With
 
 - [Go Performance Optimization](../go-performance-optimization/SKILL.md) when Go
