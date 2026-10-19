@@ -133,6 +133,9 @@ If findings are real, fix them before treating the PR as review-ready.
 
 Every PR should have test evidence that matches its scope.
 
+- Before a costly package or matrix run, run existing cheap source/policy checks
+  affected by the batch, such as naming, generated-file or API inventories.
+  Audit and classify all changed entries together; preserve the guard itself.
 - Run focused tests for the changed package/path first.
 - Run broader affected tests before final review.
 - Add tests when coverage is missing; do not rely only on existing tests if the PR adds new behavior.
@@ -141,6 +144,12 @@ Every PR should have test evidence that matches its scope.
 - For public API changes, include end-to-end API tests, not just helper tests.
 
 Report exact commands and outcomes in the PR body or comment.
+
+If a complete run fails only such a source/policy check and its repair changes
+only tests or metadata, retain the completed runtime evidence at its actual
+source and rerun the guard plus any changed-risk controls. Do not repeat an
+unaffected full suite solely for that repair, or relabel older results as an
+exact-head run. Required latest-head CI still applies.
 
 ## Benchmarks And Performance Evidence
 
