@@ -226,12 +226,13 @@ their common production or fixture cause and fix them as one coherent batch;
 avoid discovering the same migration one CI shard at a time. Reuse unchanged
 evidence; this does not require running the entire repository after every edit.
 
-Before the first public probe, reuse maintained fixtures and codecs and trace
-the actual factory, resolved profile, write placement/backing paths, returned
-representation, codec/version dispatch, registration/eligibility, durability
-boundary, and terminal Close/reopen cleanup against source. Include this preflight
-in the implementation batch; helper names do not prove these contracts. It
-requires no separate review gate or helper-test campaign.
+Before broad structural work or the first public probe, reuse maintained fixtures
+and codecs and trace the actual factory, resolved profile, write placement/backing
+paths, returned representation, codec/version dispatch, registration/eligibility,
+durability boundary, and terminal Close/reopen cleanup against source. Include
+this preflight in the implementation batch; apply the Go skill's workload-to-seam
+and affected fraction check for performance work. Helper names do not prove these
+contracts. It requires no separate review gate or helper-test campaign.
 
 Composition must carry each feature's maintained registration and naming inventories,
 not only generated CI digests. Order independent public capability checks before

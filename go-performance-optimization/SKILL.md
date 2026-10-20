@@ -29,8 +29,13 @@ samples. An unexecuted benchmark is not a product regression or a gate rerun.
   phases cannot silently pass the original gate.
 - Inspect existing design, live adjacent work, and maintained primitives before
   choosing a fix. Trace the real public entry through dispatch, eligibility,
-  optimized implementation, fallback, publication, and cleanup. Identify affected
-  callers and ownership/lifetime contracts, including retry and failure paths.
+  optimized implementation, fallback, publication, and cleanup. Before broad
+  structural migration, bind the resolved workload/mode to the actual storage
+  domain and writer, the proposed changed seam and any required synchronization
+  or durability fence, and the target metric's measured affected fraction. Stop
+  a wrong-route hypothesis before construction; a sibling path or configured
+  default is not activation proof. Identify affected callers and ownership/lifetime
+  contracts, including retry and failure paths.
 - Define one operation, workload shape, lifecycle state, concurrency, and visibility
   or durability contract. Separate setup, warmup, steady work, flush/checkpoint, and
   teardown explicitly. Buffered acceptance, visible publication, and durable
@@ -65,7 +70,7 @@ collecting or interpreting evidence; it contains adaptable commands and traps.
    the smallest change or counterfactual that can discriminate it.
 4. Prefer removing repeated work, changing an unsuitable representation, consolidating
    a shared seam, or fixing dispatch over tuning a small leaf cost. Estimate the
-   public ceiling from the measured affected fraction before pursuing a local win.
+   public ceiling from that measured fraction before pursuing a local win.
    A structural change still owns its callers, format/docs changes, and failure
    behavior; profile rank alone is not justification for a broad rewrite.
 
@@ -158,10 +163,13 @@ initially failing fixtures. Test public behavior, not a copied eligibility predi
 
 ## Measure Early, Qualify The Stable Candidate
 
-After focused correctness is sound, run a bounded **uninstrumented** public A/B
-comparison early enough to redirect the approach. Alternate before/after runs on
-the same quiet host; prebuild outside timing and keep workload, configuration,
-toolchain, scheduler/concurrency, fixtures, and durability semantics equivalent.
+After focused changed-path correctness is sound, run a bounded **uninstrumented**
+public A/B comparison early enough to redirect the approach. An unrelated fixture
+setup repair must not delay an independent safe public discriminator; preserve
+the full failure and all final qualification obligations. Alternate before/after
+runs on the same quiet host; prebuild outside timing and keep workload,
+configuration, toolchain, scheduler/concurrency, fixtures, and durability semantics
+equivalent.
 Run diagnostic instrumentation separately. Serialize competing timed workloads and
 avoid measurement I/O interference; disjoint source work or correctness tests need
 not be globally serialized when they do not contaminate a measurement.
