@@ -54,6 +54,11 @@ local branch and remote-branch retention separately under the helper's policy.
   unrelated graph outputs, and shared persistent build/module/package caches.
   Broader cache/host cleanup requires explicit scope; report large unattributed
   or shared candidates with their sizes instead of deleting them.
+- Protect a borrowed CoW seed until every in-flight setup using it completes or
+  stops. Completed clones have independent file data and do not require the
+  linked seed directory to remain. Release that seed when its other consumers
+  finish, under the same checks as any worktree. Always preserve the repository's
+  primary/common Git storage while its linked worktrees remain.
 
 ## Reclaim And Verify
 
@@ -97,19 +102,26 @@ local branch and remote-branch retention separately under the helper's policy.
 5. Verify removed paths are absent and removed worktrees unregistered; confirm
    protected paths remain and remeasure free space. Report removed paths, kept
    paths/reasons, and observed filesystem deltas separately from size estimates
-   (hard links, snapshots, open files, and concurrent writes can change recovery).
+   (hard links, CoW block sharing, snapshots, open files, and concurrent writes
+   can change recovery). Summed worktree sizes are not a physical reclaim forecast:
+   deleting one APFS clone frees only blocks no remaining clone or snapshot
+   references.
 
 ## Completion And Pressure
 
 Use one reusable bounded agent when useful execution can proceed in parallel
-and the existing budget permits. Queue a batch instead of reserving an idle
-cleanup slot; perform small cleanup locally. Recheck queued targets when assigned.
+and the existing budget permits. Workers report path release at merge/retirement
+or when a test stage's last consumer finishes; do not defer that notice to graph
+closeout. Queue a batch instead of reserving an idle cleanup slot, then dispatch
+it at the next available slot while useful graph work continues. Perform small
+cleanup locally and recheck queued targets when assigned.
 If disk pressure prevents the next build/test, prioritize released scratch,
 briefly pause only affected producers, and resume after recovery. Do not weaken
 retention rules to make space. If only protected/uncertain data remains, record
 the storage blocker and concrete broader-cleanup candidates.
 
-Collect the result before ending execution, or explicitly stop the worker and
+Drain eligible queued batches before graph closeout. Collect the result before
+ending execution, or explicitly stop the worker and
 record remaining cleanup with its exact next action. Persist removed/retained
 paths and space observations in graph state. A queued deletion or a relocated
 worktree is not a completed cleanup result. Retained paths need an explicit
