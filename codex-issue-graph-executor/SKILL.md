@@ -325,6 +325,10 @@ Optimize for verified progress toward the agreed parent outcome per usage window
 - Reuse completed workers for their fix loops. Stop blocked, capacity-starved,
   or unnecessary work through the available lifecycle tools. Close/release agents
   when supported; interruption alone does not prove a runtime slot was freed.
+  In Codex, restart an idle or completed worker with `followup_task`;
+  `send_message` alone does not restart it. Record a runtime grant as queued
+  until the worker confirms execution started; sending the grant is not evidence
+  that a test or implementation is running.
 - Do not keep an agent pending for model capacity. After one capacity error or
   two minutes without starting useful work, stop its work and perform the task
   locally when possible. Do not automatically substitute another model. For
