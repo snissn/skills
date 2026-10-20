@@ -9,6 +9,12 @@ Optimize the user's actual workload and preserve its behavior. Use the repositor
 toolchain, benchmark conventions, and acceptance policy. This skill supplies the
 performance method; it does not authorize unrelated changes or replace PR gates.
 
+For a pinned Go toolchain, verify the driver, resolved `GOROOT`/`GOTOOLDIR`
+and `go tool compile -V` agree before a costly build. An absolute Go executable
+does not override an inherited `GOROOT`; bind the intended root explicitly.
+Retain setup failures separately and repair the environment before collecting
+samples. An unexecuted benchmark is not a product regression or a gate rerun.
+
 ## Establish The Work And The Boundary
 
 - Name the primary outcome and guardrails: latency/throughput, bytes and objects
