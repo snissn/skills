@@ -211,6 +211,12 @@ batch, preserving its current behavior and ownership contracts. Qualify that
 result directly; do not first certify an obsolete branch or merge unrelated
 experimental ancestry. This is source preflight, not another delivery gate.
 
+When a mechanism is stopped or deselected, identify and remove its production
+delta and coupled fixture/docs assumptions from the selected candidate before
+further promotion, preserving independent accepted fixes. Retain any part only
+when explicitly selected for an independent requirement; record that selection
+in the existing checkpoint.
+
 Start developmental integration checks while implementation is underway, using
 the intended public capability matrix and existing lifecycle tests. Final retained
 qualification still needs its declared landed authority. Do not postpone all
