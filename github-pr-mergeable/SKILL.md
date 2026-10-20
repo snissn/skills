@@ -284,6 +284,9 @@ Do not request Codex or other review-credit-consuming AI reviewers merely becaus
 - the issue-wide implementation packet is complete and coherent: production
   path/fallback, tests, required docs, and performance evidence;
 - focused tests and required benchmarks have run, or the PR body states why a required benchmark is not yet applicable;
+- touched executable inventories, allowlists, and generated manifests have been
+  refreshed through their maintained mechanism and their focused guards checked
+  before push; preserve the policy instead of relaxing it to admit new source;
 - the PR body or status comment includes current scope, tests, benchmark evidence, known risks, and non-goals;
 - internal deep review has found no known blocking correctness, performance, CI, or scope issues;
 - latest-head CI is running or already green for the head that should be reviewed.
