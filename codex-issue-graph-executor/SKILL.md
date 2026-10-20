@@ -198,6 +198,15 @@ their common production or fixture cause and fix them as one coherent batch;
 avoid discovering the same migration one CI shard at a time. Reuse unchanged
 evidence; this does not require running the entire repository after every edit.
 
+An authorized bounded verification batch includes routine compiler and fixture
+corrections that preserve the original contract and assertions. Workers may freeze
+the correction and continue within the assigned runtime budget without another
+coordinator permission handoff. Preserve each failed attempt and distinguish setup
+failure from an exercised product failure. Check maintained signatures and input
+shapes before lengthy fixture review; use the first focused run to reach the
+public boundary promptly. Production contract changes and repeated nonadvancing
+batches still trigger review and reassessment; this is not a blind-retry allowance.
+
 At an outcome checkpoint, compare public capabilities delivered and qualified,
 unlanded coupled changes, and the next missing product behavior. If local green
 checks keep growing without that behavior, change the integration boundary or
