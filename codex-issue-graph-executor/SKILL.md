@@ -326,6 +326,27 @@ Optimize for verified progress toward the agreed parent outcome per usage window
   when the worker is blocked, outside scope, or no longer useful.
 - Prefer sequential depth on the critical path over keeping every slot busy.
 
+## Worktree Creation
+
+Before assigning a new writable lane, read
+[references/worktree-creation.md](references/worktree-creation.md) and use
+`scripts/create_worktree.py` with a new destination/branch and an explicit base.
+Its default `auto` mode prefers native macOS CoW clones of tracked files from a
+quiescent, clean seed at that exact commit on the destination filesystem. Git
+creates the worktree registration, branch, and independent index. Ordinary Git
+checkout is the fallback when the seed or CoW support is unsuitable; choose
+`--mode git` explicitly when appropriate for a small checkout or controlled run.
+Reuse an eligible existing seed rather than manufacturing a baseline for every
+node. Do not copy ignored caches, live DBs, or benchmark outputs into lanes.
+
+Record the returned mode, pinned base, seed, and fallback reason in existing
+node notes and worker handoffs. Assign the worktree only after setup succeeds.
+An existing path/branch, filesystem pathname collision, changed setup ownership,
+or insufficient storage requires a concrete resolution; these are not reasons
+to force an overwrite or retry with a larger full copy. Preserve primary Git
+storage and protect a borrowed seed during setup. Completed CoW worktrees retain
+their file data independently, so a released linked seed can be cleaned normally.
+
 ## Asynchronous Disk Cleanup
 
 After a PR merges, delete its local worktree and disposable test/benchmark DBs,
@@ -342,14 +363,19 @@ Use one direct-child `gpt-6.1-sol` cleanup agent for sizeable released batches
 while useful graph work continues. Read
 [references/disk-cleanup.md](references/disk-cleanup.md) before assigning it and
 use the cleanup template in `references/worker-prompts.md`. It counts toward the
-existing concurrency budget; queue cleanup when slots are occupied. Batch and
-reuse this role instead of spawning a cleaner after every command. If delegation
-is unavailable or only cleanup remains, finish the eligible batch locally.
+existing concurrency budget; queue cleanup when slots are occupied and dispatch
+the released batch when a slot opens while useful graph work continues. Batch
+and reuse this role instead of spawning a cleaner after every command. Workers
+report released paths promptly, rather than waiting for their final handoff.
+If delegation is unavailable or only cleanup remains, finish the eligible batch
+locally; drain queued eligible batches before graph closeout.
 
 Start after a resolved merge, retired candidate, or completed test/benchmark
 stage releases its worktree or generated outputs. The coordinator assigns exact
-paths and sole deletion ownership; keep active/provisional lanes and retained
-evidence protected. Hand helper-skill post-merge cleanup to that owner rather
+paths and sole deletion ownership; keep active/provisional lanes, in-flight CoW
+seeds, primary/common Git storage, and retained evidence protected. Schedule
+cleanup around conflicting benchmark measurement windows. Hand helper-skill
+post-merge cleanup to that owner rather
 than running two cleaners. Releasing or queuing a path is not completed cleanup;
 verify actual deletion and removal of its worktree registration. Async means an
 exposed subagent running alongside
@@ -593,7 +619,9 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
 6. Present a concise graph snapshot and proceed immediately. Do not wait for
    plan approval because this skill defaults to execute-and-merge.
 7. Start ready nodes, including provisional descendants of `dependency-ready`
-   predecessors. Delegate one when useful local work can proceed alongside it;
+   predecessors. Create new writable lanes through **Worktree Creation**, record
+   setup results, and hand them to workers only after validation succeeds.
+   Delegate one when useful local work can proceed alongside it;
    otherwise implement locally. Add a second worker only when the conservative
    budget permits it. Keep inventory, graph state, integration, and merge
    authority allocation with the coordinator. Use a bounded GPT-6.1 Sol adviser
