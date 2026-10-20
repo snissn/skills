@@ -35,6 +35,25 @@ Ask for clarification only when a weak hint would block obvious safe parallelism
 or inferred edges conflict. Prefer a temporary design/foundation edge over
 parallel managers inventing incompatible contracts.
 
+## Parallel Construction And Delivery Boundaries
+
+When revising parallel execution, inspect sibling storage families, public
+operations and follow-ups for independent ownership and usable frozen contracts.
+Record construction prerequisites separately from merge, retirement and final
+qualification gates. A shared parent or sequential ticket list does not itself
+require sequential construction. Preserve actual shared-contract dependencies.
+
+Separate source concurrency from execution resources: independent source work
+can proceed while bounded correctness jobs run; performance measurements need
+their declared isolation. Apply the user's concurrency direction and the runtime
+budget rather than creating extra workers just to occupy available slots.
+
+Freeze an independently useful delivery batch once its public behavior is ready
+for qualification. Construct further capabilities as provisional successors;
+do not keep expanding that batch while its checks run. Integrate a successor
+into the current batch only for a concrete dependency or corrective need that
+outweighs restarting qualification. One integrator owns each shared candidate.
+
 ## Node States
 
 | State | Meaning | May Unblock Descendants | May Merge |
