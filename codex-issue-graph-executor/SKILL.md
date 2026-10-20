@@ -198,6 +198,13 @@ their common production or fixture cause and fix them as one coherent batch;
 avoid discovering the same migration one CI shard at a time. Reuse unchanged
 evidence; this does not require running the entire repository after every edit.
 
+Before the first public probe, reuse maintained fixtures and codecs and trace
+the actual factory, resolved profile, write placement/backing paths, returned
+representation, codec/version dispatch, registration/eligibility, durability
+boundary, and terminal Close/reopen cleanup against source. Include this preflight
+in the implementation batch; helper names do not prove these contracts. It
+requires no separate review gate or helper-test campaign.
+
 An authorized bounded verification batch includes routine compiler and fixture
 corrections that preserve the original contract and assertions. Workers may freeze
 the correction and continue within the assigned runtime budget without another
@@ -260,11 +267,6 @@ their absence makes a required gate impossible to verify.
 
 - Apply the canonical Retained Evidence Velocity policy linked from `github-pr-mergeable`.
 - Where dependency policy permits, model `product -> reviewed/landed harness or schema -> artifact-only evidence`. Focused pre-review MUST cover provenance, concurrency/isolation, fail-closed validation, and wording; freeze exact runtime and harness subtree/blob identities before expensive collection.
-- When adapting a public-path fixture, trace its resolved configuration, returned
-  representation, and backing paths through the maintained public entry and
-  helpers before freezing it. Check registration/eligibility along that same
-  route; helper names alone do not establish these contracts. Classify a broken
-  oracle separately from a product failure and retain the failed attempt.
 - Prefer a dedicated high-capacity runner with persistent build cache and durable artifact storage. Otherwise record `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` and the actual fallback; never invent infrastructure.
 - Classify candidate failures separately from proven unrelated CI flakes, rerun only affected gates, and require current-head merge gates. Artifact-only descendants preserve evidence only under exact runtime/harness subtree and implementation-blob identity; product or harness drift invalidates affected evidence.
 
