@@ -154,7 +154,14 @@ cleanup. If repeated compile or review findings show that mistake, inspect the
 affected mixed branches, retained callers and helper extractions together before
 another repair run; restore surviving behavior rather than merely deleting locals
 or calls.
+When compiler diagnostics are capped and successive runs only expose the next
+missing symbol, collect one uncapped diagnostic inventory before the next batch.
 Keep this inspection in the existing retirement packet and review.
+
+When counters constrain a proposed algorithm, establish whether their contract
+promises a complete census or only inspected work before treating old fixtures as
+product requirements. Preserve actual correctness and error-boundary obligations;
+qualify the selected algorithm through the public path and measured cost.
 
 At a checkpoint, use existing evidence to answer five questions in the parent
 state, normally in a few bullets:
