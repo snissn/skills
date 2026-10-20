@@ -183,6 +183,14 @@ helper extraction or contract freeze into a separate delivery barrier. A coheren
 PR may satisfy several coupled issues; split by independently useful public
 behavior and stable boundaries when that improves delivery and review.
 
+Fork successors from the nearest selected canonical contract. Before an expensive
+public proof, compare their ancestry and production diff with that candidate for
+inherited experiments, unselected retirements, or stale shared APIs. If present,
+project the selected feature patches into the canonical candidate as one coherent
+batch, preserving its current behavior and ownership contracts. Qualify that
+result directly; do not first certify an obsolete branch or merge unrelated
+experimental ancestry. This is source preflight, not another delivery gate.
+
 Start developmental integration checks while implementation is underway, using
 the intended public capability matrix and existing lifecycle tests. Final retained
 qualification still needs its declared landed authority. Do not postpone all
