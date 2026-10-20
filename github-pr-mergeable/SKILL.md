@@ -180,12 +180,24 @@ Do not optimize unrelated upstream cost inside every PR, but do not accept local
 
 Use latest-head evidence only.
 
+When a test may be flaky, apply
+[Recurring CI failures](references/recurring-ci-flakes.md): search its exact
+identity and prior fixes, start or adopt a bounded issue/documentation/repair/merge
+loop, and continue independent product work. Refresh unsuitable incidental fixture
+assumptions or budgets causally; preserve the asserted invariant and intentional
+deadline tests. Known recurrence permits a documented bounded gate rerun where
+policy allows, not an automatic waiver or retry-until-pass repair. Already-green
+current CI needs no rerun, and an adjacent repair need not block an eligible merge.
+
 When repairing a timeout, identify whether its clock covers one test, the whole
 package, or the job, including earlier work sharing that budget. An isolated
 test pass does not clear a package timeout. Validate the repair once at the
-original budget scope before another repair push; preserve the original selector,
-workload, time limit, and relevant toolchain/resource settings. Use focused runs
-and profiles for diagnosis before that check.
+relevant original budget scope before another repair push; preserve the selector,
+workload and relevant toolchain/resource settings. Preserve a product performance
+limit or intentional deadline invariant. An incidental fixture budget may be
+revised with the causal rationale and validation above; do not mistake that for
+qualifying an unchanged performance limit. Use focused runs and profiles for
+diagnosis before that check.
 
 - If GitHub is backed up, cancel stale CI runs that are not for the current head of active PR branches when safe.
 - In stacked/chained PRs, cancel stale runs for superseded intermediate heads after a batch propagation; keep only latest-head CI for active PR heads.

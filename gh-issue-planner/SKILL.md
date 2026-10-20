@@ -165,6 +165,17 @@ simplification helper's suggestions within these boundaries.
 
 ## Proportional Reassessment
 
+For a recurring CI failure, use the
+[bounded flake repair policy](../github-pr-mergeable/references/recurring-ci-flakes.md).
+Search the exact test/signature and prior merged repairs, reuse an existing owner
+where suitable, and choose one focused repair issue rather than another umbrella.
+Its completion packet owns causal fixture/source correction, relevant canonical
+docs or a no-change rationale, changed-risk validation, review, current CI and
+merge. Hand the executable packet to `codex-issue-graph-executor` and use
+`github-pr-mergeable` for final readiness and authorized merge.
+Keep unrelated product nodes independent, and distinguish known recurring test
+identity from proof of the new occurrence's cause.
+
 Match reassessment to uncertainty and the consequences of a wrong premise,
 not ticket size or detail:
 

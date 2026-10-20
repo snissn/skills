@@ -209,6 +209,15 @@ checkpoint when the repository workflow permits. Link stable parent and qualific
 bodies to it instead of copying status after each control. Preserve source-bound
 history and acceptance criteria.
 
+For suspected recurring CI flakes, apply the merge skill's
+[bounded repair and parallel progress policy](../github-pr-mergeable/references/recurring-ci-flakes.md).
+Search the exact test's historical issues and merged fixes before classification.
+Initiate or adopt the `gh-issue-planner` → `codex-issue-graph-executor` →
+`github-pr-mergeable` completion loop within the existing coordinator;
+do not stop at filing a ticket. Continue independent engine work and eligible
+merges. Make the repair a dependency only where an actual shared-code or required
+gate relationship needs it, and preserve the failed evidence and normal final gates.
+
 ## Compose With
 
 - [Go Performance Optimization](../go-performance-optimization/SKILL.md) when Go
