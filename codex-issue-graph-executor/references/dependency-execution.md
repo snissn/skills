@@ -54,6 +54,13 @@ do not keep expanding that batch while its checks run. Integrate a successor
 into the current batch only for a concrete dependency or corrective need that
 outweighs restarting qualification. One integrator owns each shared candidate.
 
+An early public refusal leaves later operations in that fixture unexercised.
+Before implementing their adapters, trace the actual producer's API and byte
+grammar through the existing consumer, including numeric constants and envelope
+variants. Matching format names or magic bytes do not prove compatibility.
+Use the real maintained producer in the first useful public roundtrip; avoid
+building a second codec or completing resource machinery around an assumed one.
+
 ## Node States
 
 | State | Meaning | May Unblock Descendants | May Merge |
