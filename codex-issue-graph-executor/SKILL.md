@@ -213,6 +213,11 @@ boundary, and terminal Close/reopen cleanup against source. Include this preflig
 in the implementation batch; helper names do not prove these contracts. It
 requires no separate review gate or helper-test campaign.
 
+Composition must carry each feature's maintained registration and naming inventories,
+not only generated CI digests. Order independent public capability checks before
+auxiliary inventories, or isolate their invocations, so bookkeeping drift cannot
+hide the product tail. All required inventories must still pass before delivery.
+
 An authorized bounded verification batch includes routine compiler and fixture
 corrections that preserve the original contract and assertions. Workers may freeze
 the correction and continue within the assigned runtime budget without another
