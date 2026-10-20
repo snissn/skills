@@ -296,6 +296,35 @@ not existing allocation, documentation, or final completion gates.
   and explicit acceptance if it exceeds the agreed budget or guardrail; a promise to optimize later or
   an old accepted gap cannot waive the new feature's allocation audit.
 
+## Orthogonal Performance Workstreams
+
+When a measured material performance or allocation gap coexists with a correctness
+blocker, split justified independent implementation into profile-ranked completion
+packets alongside the correctness repair. Reuse existing tickets where they own the
+outcome. Do not make every optimization wait for an unrelated repair or create a
+report-only layer in place of implementation.
+
+Record each packet's causal cost and estimated public-path ceiling, pinned canonical
+source/usable contract, owner, owned paths, consumed contracts, next bounded public
+proof, and exit/failure action. Keep a concise path-and-contract conflict map in the
+existing graph state. Disjoint files alone do not prove independence. Give shared
+API, representation, lifetime, or durability decisions one contract owner and resolve
+them before affected implementation; serialize only the actual conflicting surface.
+
+Distinguish construction prerequisites from merge and final qualification gates.
+Start independent packets and eligible follow-ups provisionally from the
+recorded usable contract while correctness repair or predecessor finalization runs.
+Revalidate affected work when that contract changes. Preserve scientific authority,
+repository restrictions, and all applicable correctness gates before merge/final
+qualification; a broken workload cannot supply a valid performance claim.
+
+Stay within user authorization and execution/resource budgets. Plan measurement
+exclusivity separately from source ownership. Require early comparable public-path
+A/B evidence for throughput, `B/op`, and `allocs/op` on allocation work, existing
+allocation-domain reuse or its justified exception, and a structural alternative
+when the measured ceiling cannot meet the goal. Do not fan out speculative pools,
+arenas, or accounting machinery merely to occupy lanes.
+
 ## Standalone Issue Workflow
 
 Do not load the tracker template or design a dependency graph.

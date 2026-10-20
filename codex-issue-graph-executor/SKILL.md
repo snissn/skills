@@ -174,6 +174,26 @@ batch and preserving it, not an unlimited sequence of new shared-contract change
 Independent authorized work can continue. Reassessment steers continued execution;
 it is not completion of the unmet parent goal or a reason for repeated permission.
 
+## Orthogonal Performance Workstreams
+
+For a measured material performance/allocation gap beside a correctness blocker,
+apply the planner's [orthogonal workstream policy](../gh-issue-planner/SKILL.md#orthogonal-performance-workstreams).
+Revise or adopt profile-ranked implementation packets with explicit owners and a
+path-and-contract conflict map; separate shared contract decisions from independent
+construction. Start justified independent optimization and eligible follow-ups
+provisionally from a pinned canonical source and usable contract while the unrelated
+repair proceeds. Source integration order and runtime grants must not become global
+construction barriers. Keep one integration owner for the shared candidate and
+reconcile changed contracts before affected integration.
+
+Use early public-path A/B throughput, `B/op`, and `allocs/op` to redirect allocation
+work; apply the Go skill's reuse/lifetime rules and reconsider structure when the
+measured ceiling is inadequate. Measurement isolation has its own resource gate.
+Known unsafe execution stays blocked; provisional construction does not certify a
+broken workload or waive applicable correctness, merge, or final qualification
+gates. Fan out only justified work within the user's concurrency/resource budget;
+do not substitute report-only machinery for the implementation outcome.
+
 ## Integrated Product Feedback
 
 When shared layers and their production callers repeatedly change together,
@@ -317,6 +337,9 @@ Optimize for verified progress toward the agreed parent outcome per usage window
   expected to save substantial elapsed time. Two is the normal hard ceiling.
 - Never use three or more concurrent subagents unless the user explicitly opts
   into high-concurrency execution for the current graph.
+  An explicit request to fan out across more than two safe independent workstreams
+  supplies that opt-in; use only the justified lanes and available resource budget.
+  Preserve the one/two-worker defaults when no such direction exists.
 - Keep at most one implementation worker per node. Reuse that worker for its
   fix loop; do not launch parallel implementer, benchmark, and review agents for
   the same PR.
@@ -558,7 +581,7 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
 - Normal subagent concurrency is at most one, may rise to two under the conservative
   budget, and may not exceed two without explicit user opt-in.
 - Keep one writer per contract/conflict surface. A named `contract_owner`
-  resolves cross-node decisions before parallel workers continue.
+  resolves cross-node decisions before affected parallel workers continue.
 - Do not declare a dependent PR mergeable or merge it until predecessor PRs are merged,
   required non-PR outputs are accepted, conditional eligibility is satisfied, and
   the dependent branch has been updated/revalidated on the final base.

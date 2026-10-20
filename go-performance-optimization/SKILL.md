@@ -88,6 +88,25 @@ or waive the unresolved performance gate.
 Carry consequential findings into the executing issue graph; a structural rewrite
 still needs evidence and preserved behavior, not just a larger implementation.
 
+## Separate Independent Optimization From Correctness Repair
+
+A measured material allocation/performance gap beside a correctness blocker calls
+for profile-ranked orthogonal implementation packets when contracts permit, using
+the planner's [workstream policy](../gh-issue-planner/SKILL.md#orthogonal-performance-workstreams).
+Assign owners, pinned canonical sources, and path/contract boundaries; resolve shared
+contract decisions separately. Start independent construction and eligible follow-ups
+provisionally while unrelated correctness repair runs, within authorization
+and resource budgets. Source integration or exclusive measurement slots do not
+require globally serial construction.
+
+Require early public-path A/B throughput, `B/op`, and `allocs/op` for allocation
+changes and estimate the public ceiling; choose structural alternatives when local
+tuning cannot meet the goal. Apply the allocation-domain inventory below before
+choosing a pool or arena. Run only diagnostics safe under the workload's correctness
+contract, label provisional evidence, and preserve applicable correctness gates for
+merge and final qualification. The intended output remains a measured improvement,
+not another reporting or accounting framework.
+
 ## Reuse Existing Allocation Domains
 
 For material allocation optimization, inventory the affected repository's arenas,
