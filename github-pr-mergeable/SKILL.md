@@ -176,6 +176,16 @@ Use markdown tables. Always include `ops/sec` when reporting `ns/op`. For other 
 
 Do not optimize unrelated upstream cost inside every PR, but do not accept local regressions from the PR’s own code. If performance drops after review fixes, identify the change that caused it, whether it was correctness-required, and whether local CPU/memcopy/allocation overhead can be removed. A PR with an unexplained or avoidable material regression is not mergeable even if CI and AI reviews are green. A PR with insufficient improvement against its explicit optimization gate is likewise not mergeable until it iterates, re-scopes, or links a blocker/waiver as described above.
 
+Within an authorized optimization graph, a measured material performance/allocation
+gap alongside a correctness blocker automatically triggers independent profile-ranked
+work under the [executor](../codex-issue-graph-executor/SKILL.md#orthogonal-performance-workstreams)
+and [planner](../gh-issue-planner/SKILL.md#orthogonal-performance-workstreams) policies.
+Apply [Go performance guidance](../go-performance-optimization/SKILL.md) where relevant;
+start eligible provisional construction without waiting for unrelated correctness
+repair, within ownership and resource budgets. Route unrelated costs to their owning
+packets rather than expanding every PR. This changes scheduling only: applicable
+correctness, performance, review, latest-head CI, and final qualification gates remain.
+
 ## CI Discipline
 
 Use latest-head evidence only.
