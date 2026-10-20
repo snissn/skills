@@ -147,6 +147,13 @@ well-understood work event-driven. The coordinator owns strategic reassessment;
 workers surface consequential evidence without running a separate graph review
 for every child.
 
+When retiring a representation, distinguish its predicates from shared work
+inside the guarded branches. A newly unused local can reveal deleted active
+validation, publication or cleanup. If repeated compile or review findings show
+that mistake, inspect the affected mixed branches together before another repair
+run; restore the surviving behavior rather than merely deleting the locals.
+Keep this inspection in the existing retirement packet and review.
+
 At a checkpoint, use existing evidence to answer five questions in the parent
 state, normally in a few bullets:
 
