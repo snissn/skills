@@ -447,18 +447,40 @@ coordinator is only waiting on the delegated reviewer/finalizer, reclaim ownersh
 The active readiness owner owns the continuous readiness loop from the first
 push, including when no ownership transfer occurred. Ordinary
 pending CI/review is not a reason to end the turn or require the user to say
-"resume" again. Use one native watch/event mechanism when available, or repeated
-bounded status polling with waits. Keep tool output compact and updates brief;
-avoid duplicate monitors, fresh reviews, pushes or tests just because time passed.
+"resume" again. Before waiting, inspect the remaining graph for meaningful
+authorized work: implement an independent ready node, start an eligible
+provisional successor from its recorded predecessor contract, resolve existing
+review findings, or prepare the merge packet (policy, description, evidence
+applicability, predecessor state, and cleanup ownership). Choose work that
+advances an acceptance criterion or removes a known merge blocker; do not
+manufacture tests, reports, tracker edits, or repeated inventories to fill time.
+Preserve one writer per surface, measurement isolation, and final-base gates.
+Record the concrete reason if no useful independent work can proceed.
+
+Start one quiet watch/event mechanism for the sole readiness owner and continue
+that work while it waits. Prefer [scripts/watch_ci.py](scripts/watch_ci.py) when
+its scope fits; read [references/ci-watcher.md](references/ci-watcher.md) for
+exact head/base and workflow-attempt bindings, exit events, bounded foreground
+invocations, and the asynchronous harness continuation pattern. The watcher
+surfaces a failed workflow job while sibling jobs are still running, distinguishes
+required from advisory PR checks, and reports observed failures without rerunning
+or merging. Its CI-success notification still requires the full live merge gate.
+Use a native event tool or bounded fallback polling when this helper is unavailable.
+Keep tool output compact and updates brief; avoid duplicate monitors, fresh
+reviews, pushes or tests just because time passed.
 The delegated-owner polling cadence does not prohibit monitoring external CI
 after reclaiming ownership. Keep individual blocking waits within harness limits.
 
-Use short watch/poll slices (at most 60 seconds per blocking call, or a shorter
-harness limit), and provide a concise progress update at least every 60 seconds
-while actively waiting. A slice expiring is a monitoring checkpoint, not an
-execution deadline. Recheck all outstanding gates after each event or slice;
-completed CI does not imply review completion, or vice versa. When nothing has
-changed, wait again and advance safe independent work where available.
+Keep individual blocking tool calls within 60 seconds or a shorter harness limit.
+A watcher process may run longer under supported asynchronous execution; yield
+control promptly so graph work continues and retain the continuation that delivers
+its eventual result. A shell background PID alone does not wake the agent.
+Follow the active harness's progress-update requirements; watcher liveness alone
+does not call for repeated CI status messages. A bounded invocation expiring is a
+monitoring checkpoint, not an execution deadline. Refresh outstanding gates after
+an actionable event; an unchanged slice needs no duplicate API inventory.
+Completed CI does not imply review completion, or vice versa. When nothing has
+changed, continue useful work or resume the quiet wait.
 
 If a gate appears stalled, inspect the actual run/review request, queue or runner
 state, provider errors, and available policy-approved recovery before deciding
