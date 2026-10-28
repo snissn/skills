@@ -28,6 +28,12 @@ CLEAN_RE = re.compile(
 )
 SHA_RE = re.compile(r"\b[0-9a-f]{7,40}\b", re.IGNORECASE)
 REQUEST_RE = re.compile(r"^\s*@codex\s+review(?:\s|$)", re.IGNORECASE | re.MULTILINE)
+QUOTA_RE = re.compile(
+    r"(?:reached your Codex usage limits for code reviews|"
+    r"code review (?:usage )?(?:quota|limit)(?: has been)? (?:reached|exceeded|exhausted))",
+    re.IGNORECASE,
+)
+REVIEW_STATE_RE = re.compile(r"<!--\s*codex-review-state:v1\s+(.*?)\s*-->", re.DOTALL)
 
 
 def _normalized_login(login: str) -> str:
@@ -55,6 +61,39 @@ def _head_matches(head: str, candidate: str | None) -> bool:
 def _reviewed_commit(body: str) -> str | None:
     match = REVIEWED_COMMIT_RE.search(body or "")
     return match.group(1).lower() if match else None
+
+
+def _structured_code_review(body: str) -> dict[str, Any] | None:
+    """Read only the code-review state; ambiguous/incomplete states prove no pass."""
+    markers = REVIEW_STATE_RE.findall(body)
+    if len(markers) != 1:
+        return None
+    try:
+        payload = json.loads(markers[0])
+    except (TypeError, ValueError):
+        return None
+    code = payload.get("code_review") if isinstance(payload, dict) else None
+    if not isinstance(code, dict):
+        return None
+    commit = code.get("commit_sha")
+    if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-fA-F]{40}", commit):
+        return None
+    status = code.get("status")
+    any_findings = code.get("has_any_findings")
+    unresolved = code.get("has_unresolved_findings")
+    if status in {"running", "failed"}:
+        if any(value is not None and type(value) is not bool for value in (any_findings, unresolved)):
+            return None
+        if unresolved is True and any_findings is not True:
+            return None
+    elif status == "completed":
+        if type(any_findings) is not bool or type(unresolved) is not bool:
+            return None
+        if unresolved and not any_findings:
+            return None
+    else:
+        return None
+    return {**code, "commit_sha": commit.lower()}
 
 
 def _parse_time(value: str | None) -> dt.datetime | None:
@@ -104,12 +143,38 @@ def classify(
 
     exact_artifacts: list[dict[str, Any]] = []
     clean_artifacts: list[dict[str, Any]] = []
+    structured_finding_heads: set[str] = set()
 
     for comment in data.get("comments", []):
         login = _login(comment.get("user"))
         if not _is_codex_login(login, configured):
             continue
         body = comment.get("body", "")
+        if "codex-review-state:v1" in body:
+            # A structured summary must not fall back to prose (which can
+            # describe a security review, stale head, or malformed state).
+            code = _structured_code_review(body)
+            if code and code["status"] == "completed" and code["has_any_findings"]:
+                structured_finding_heads.add(code["commit_sha"])
+            if not code or code["commit_sha"] != head:
+                continue
+            if code["status"] == "failed":
+                kind = "failed_comment"
+            elif code.get("has_unresolved_findings") is True:
+                kind = "findings_comment"
+            elif code["status"] == "running":
+                kind = "running_comment"
+            elif code["has_any_findings"]:
+                kind = "findings_comment"
+            else:
+                kind = "clean_comment"
+            item = _artifact(kind, comment.get("updated_at") or comment.get("created_at", ""),
+                             comment.get("html_url", ""), body, code["status"])
+            item["has_unresolved_findings"] = code.get("has_unresolved_findings")
+            exact_artifacts.append(item)
+            if kind == "clean_comment":
+                clean_artifacts.append(item)
+            continue
         if not _head_matches(head, _reviewed_commit(body)):
             continue
         kind = "clean_comment" if CLEAN_RE.search(body) else "codex_comment"
@@ -144,7 +209,7 @@ def classify(
         and not _is_codex_login(_login(comment.get("user")), configured)
     ]
     all_requests.sort(key=lambda item: item["timestamp"])
-    finding_heads = {
+    finding_heads = structured_finding_heads | {
         str(review.get("commit_id") or _reviewed_commit(review.get("body", ""))).lower()
         for review in data.get("reviews", [])
         if _is_codex_login(_login(review.get("user")), configured)
@@ -192,7 +257,33 @@ def classify(
             requests.append(_request_artifact(comment))
     requests.sort(key=lambda item: item["timestamp"])
 
+    # Quota replies often omit a SHA. Attribute those only to a preceding
+    # current-head request, never to a bot comment predating this head. An
+    # explicit stale SHA must not be rescued by temporal attribution.
+    for comment in data.get("comments", []):
+        body = comment.get("body") or ""
+        if not _is_codex_login(_login(comment.get("user")), configured) or not QUOTA_RE.search(body):
+            continue
+        if "codex-review-state:v1" in body:
+            continue
+        commit = _reviewed_commit(body)
+        timestamp = comment.get("created_at", "")
+        created = _parse_time(timestamp)
+        bound = _head_matches(head, commit) if commit else bool(
+            created and head_time and created >= head_time
+            and any(request["timestamp"] <= timestamp for request in requests)
+        )
+        if bound:
+            exact_artifacts.append(_artifact("quota_comment", timestamp,
+                                             comment.get("html_url", ""), body, "quota_exhausted"))
+    exact_artifacts.sort(key=lambda item: item["timestamp"])
+
     latest = exact_artifacts[-1] if exact_artifacts else None
+    substantive = [item for item in exact_artifacts
+                   if item["kind"] not in {"running_comment", "failed_comment", "quota_comment"}]
+    latest_substantive = substantive[-1] if substantive else None
+    running = [item for item in exact_artifacts if item["kind"] == "running_comment"]
+    latest_running = running[-1] if running else None
     latest_clean = clean_artifacts[-1] if clean_artifacts else None
     request_count = len(requests)
     latest_request = requests[-1] if requests else None
@@ -208,7 +299,14 @@ def classify(
         churn_reasons.append(f"finding-bearing heads {len(finding_heads)} reached hard limit {max_finding_heads}")
     churn_exhausted = bool(churn_reasons)
 
-    if unresolved_threads:
+    unavailable_artifacts = [item for item in exact_artifacts
+                             if item["kind"] in {"failed_comment", "quota_comment"}]
+    latest_unavailable = unavailable_artifacts[-1] if unavailable_artifacts else None
+    hosted_unavailable = bool(latest_unavailable and (
+        not latest_clean or latest_unavailable["timestamp"] > latest_clean["timestamp"]
+    ) and (not latest_running or latest_unavailable["timestamp"] >= latest_running["timestamp"]))
+
+    if unresolved_threads or (latest_substantive and latest_substantive.get("has_unresolved_findings") is True):
         state = "findings"
         clean = False
         should_request = False
@@ -217,17 +315,27 @@ def classify(
             if churn_exhausted and not allow_after_churn
             else "resolve every Codex finding before requesting another review"
         )
-    elif latest and latest["kind"] in {"clean_comment", "clean_review"}:
+    elif latest_substantive and latest_substantive["kind"] in {"clean_comment", "clean_review"}:
         state = "clean"
         clean = True
         should_request = False
         action = "stop requesting Codex reviews for this head"
+    elif hosted_unavailable:
+        state = "unavailable"
+        clean = False
+        should_request = False
+        action = "record hosted review failure/quota evidence and use the permitted exact-candidate internal fallback; no automatic waiver or retry"
     elif churn_exhausted and not allow_after_churn:
         state = "review_churn_blocked"
         clean = False
         should_request = False
         action = "stop review requests; perform a claim/architecture/scope reset and obtain explicit approval before resuming"
-    elif latest:
+    elif latest_running and (not latest_substantive or latest_running["timestamp"] >= latest_substantive["timestamp"]):
+        state = "pending"
+        clean = False
+        should_request = False
+        action = "wait for the running exact-head code review; do not post another trigger"
+    elif latest_substantive:
         state = "resolved_findings"
         clean = False
         should_request = request_count < max_requests
@@ -262,7 +370,13 @@ def classify(
         should_request = True
         action = "request one Codex review after the mature-head gate passes"
 
+    if hosted_unavailable and state == "findings":
+        action = "disposition every existing finding; record hosted failure/quota and use a permitted exact-candidate internal fallback, without automatic waiver or retry"
+
     return {
+        "hosted_unavailable": hosted_unavailable,
+        "latest_unavailable_artifact": latest_unavailable,
+        "unavailable_artifacts": unavailable_artifacts,
         "head": head,
         "state": state,
         "clean": clean,
@@ -474,6 +588,119 @@ def self_test() -> None:
     churn_with_clean = _fixture(head=head, comments=[*historical_requests, clean_comment], reviews=historical_reviews)
     result = classify(churn_with_clean, max_finding_heads=3)
     assert result["state"] == "clean" and result["review_churn_exhausted"]
+
+    def structured_comment(status: str, any_findings: Any = None,
+                           unresolved_findings: Any = None, **overrides: Any) -> dict[str, Any]:
+        code = dict(commit_sha=head, status=status, has_any_findings=any_findings,
+                    has_unresolved_findings=unresolved_findings)
+        code.update(overrides)
+        payload = dict(code_review=code, security_review=dict(
+            commit_sha=head, status="completed", has_any_findings=False,
+            has_unresolved_findings=False))
+        return dict(user=bot, created_at="2026-01-01T00:01:00Z",
+                    updated_at="2026-01-01T00:20:00Z", html_url="structured",
+                    body="<!-- codex-review-state:v1 " + json.dumps(payload) + " -->\nCodex Review Summary")
+
+    running_comment = structured_comment("running")
+    result = classify(_fixture(head=head, comments=[running_comment]))
+    assert result["state"] == "pending" and not result["should_request"]
+    assert result["exact_head_artifact_count"] == 1 and result["latest_artifact"]["kind"] == "running_comment"
+    result = classify(_fixture(head=head, comments=[trigger, running_comment]),
+                      now=dt.datetime(2026, 1, 1, 1, 0, tzinfo=dt.timezone.utc))
+    assert result["state"] == "pending" and not result["should_request"]
+
+    structured_clean = structured_comment("completed", False, False)
+    result = classify(_fixture(head=head, comments=[structured_clean, trigger]))
+    assert result["state"] == "clean" and not result["should_request"]
+    result = classify(_fixture(head=head, comments=[structured_clean], threads=[unresolved]))
+    assert result["state"] == "findings" and not result["should_request"]
+
+    # Updated-at, not the summary's original creation time, orders completions.
+    result = classify(_fixture(head=head, comments=[structured_clean], reviews=[finding_review]))
+    assert result["state"] == "clean"
+    later_running = {**running_comment, "updated_at": "2026-01-01T00:30:00Z"}
+    result = classify(_fixture(head=head, comments=[structured_clean, later_running, trigger]))
+    assert result["state"] == "clean" and not result["should_request"]
+    result = classify(_fixture(head=head, comments=[clean_comment, later_running]))
+    assert result["state"] == "clean" and not result["should_request"]
+    running_findings = structured_comment("running", True, True)
+    result = classify(_fixture(head=head, comments=[clean_comment, running_findings]))
+    assert result["state"] == "findings" and not result["should_request"]
+    assert result["latest_artifact"]["kind"] == "findings_comment"
+
+    structured_findings = structured_comment("completed", True, True)
+    result = classify(_fixture(head=head, comments=[clean_comment, structured_findings]))
+    assert result["state"] == "findings" and not result["should_request"]
+    assert result["finding_head_count"] == 1
+    result = classify(_fixture(head=head, comments=[structured_comment("completed", True, False)]))
+    assert result["state"] == "resolved_findings" and not result["clean"]
+    result = classify(_fixture(head=head, comments=[structured_comment("completed", True, False), later_running]))
+    assert result["state"] == "pending" and not result["should_request"]
+
+    # Malformed, stale, non-bot and security-only summaries cannot prove a pass.
+    ignored = [
+        structured_comment("completed", False, False, commit_sha="b" * 40),
+        structured_comment("completed", False, False, commit_sha="a" * 10),
+        structured_comment("completed", 0, False),
+        structured_comment("completed", False, None),
+        structured_comment("completed", False, True),
+        structured_comment("running", False, True),
+        structured_comment("running", None, True),
+        structured_comment("unknown", False, False),
+        {**structured_clean, "user": owner},
+        {**structured_clean, "body": '<!-- codex-review-state:v1 {bad json} -->'},
+        {**structured_clean, "body": '<!-- codex-review-state:v1 {"security_review":{"status":"completed"}} -->'},
+        {**structured_clean, "body": structured_clean["body"] * 2},
+    ]
+    for comment in ignored:
+        # Misleading legacy prose must not rescue a structured summary.
+        comment = {**comment, "body": comment["body"] + "\n" + clean_body}
+        result = classify(_fixture(head=head, comments=[comment]))
+        assert result["state"] == "not_requested" and not result["clean"]
+    security_findings = json.loads(REVIEW_STATE_RE.search(structured_clean["body"]).group(1))
+    security_findings["security_review"].update(has_any_findings=True, has_unresolved_findings=True)
+    result = classify(_fixture(head=head, comments=[{**structured_clean, "body":
+        "<!-- codex-review-state:v1 " + json.dumps(security_findings) + " -->"}]))
+    assert result["state"] == "clean"
+
+    # Failed summaries may retain generic finding flags: failure is no pass
+    # and no proof of actual findings. Real prior findings/threads still block.
+    failed = structured_comment("failed", True, True)
+    result = classify(_fixture(head=head, comments=[trigger, failed]))
+    assert result["state"] == "unavailable" and result["hosted_unavailable"]
+    assert not result["clean"] and not result["should_request"]
+    assert result["finding_head_count"] == 0
+    result = classify(_fixture(head=head, comments=[failed], threads=[unresolved]))
+    assert result["state"] == "findings" and result["hosted_unavailable"]
+    result = classify(_fixture(head=head, comments=[structured_findings,
+        {**failed, "updated_at": "2026-01-01T00:25:00Z"}]))
+    assert result["state"] == "findings"
+    result = classify(_fixture(head=head, comments=[structured_comment("failed", commit_sha="b" * 40)]))
+    assert result["state"] == "not_requested" and not result["hosted_unavailable"]
+    result = classify(_fixture(head=head, comments=[structured_comment("failed")]))
+    assert result["state"] == "unavailable"
+
+    quota = dict(user=bot, body="You have reached your Codex usage limits for code reviews.",
+                 created_at="2026-01-01T00:21:00Z", html_url="quota")
+    result = classify(_fixture(head=head, comments=[trigger, quota]))
+    assert result["state"] == "unavailable" and not result["should_request"]
+    assert result["latest_unavailable_artifact"]["url"] == "quota"
+    for ignored_quota in [
+        {**quota, "user": owner},
+        {**quota, "created_at": "2025-12-31T00:00:00Z"},
+        {**quota, "body": quota["body"] + "\nReviewed commit: " + "b" * 40},
+    ]:
+        result = classify(_fixture(head=head, comments=[trigger, ignored_quota]))
+        assert not result["hosted_unavailable"]
+    result = classify(_fixture(head=head, comments=[quota]))
+    assert result["state"] == "not_requested" and not result["hosted_unavailable"]
+    result = classify(_fixture(head=head, comments=[trigger, quota,
+        {**structured_clean, "updated_at": "2026-01-01T00:25:00Z"}]))
+    assert result["state"] == "clean" and not result["hosted_unavailable"]
+    result = classify(_fixture(head=head, comments=[failed, quota, later_running, trigger]))
+    assert result["state"] == "pending" and not result["should_request"]
+    result = classify(_fixture(head=head, comments=[structured_clean, failed, quota, trigger]))
+    assert result["state"] == "clean" and not result["should_request"]
 
     rest_calls: list[list[str]] = []
     first_page = [{"id": index} for index in range(100)]

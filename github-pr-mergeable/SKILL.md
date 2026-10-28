@@ -59,7 +59,7 @@ A regression includes worse `ns/op`, `ops/sec`, `B/op`, `allocs/op`, rebuild/sto
 1. Mark the PR **not mergeable / performance-blocked** in the handoff or PR comment.
 2. Profile and optimize the changed path before mergeability can be claimed; remove avoidable extra work, allocations, copies, I/O, locks, scans, or setup inside the measured boundary.
 3. Rerun the identical before/after benchmark matrix on the latest head and update the PR evidence.
-4. Claim mergeability only if the regression is eliminated, or if the remaining regression is proven correctness-required/unavoidable, minimized, explicitly documented with impact and profiles, and accepted by the coordinator/user.
+4. Claim mergeability only if the regression is eliminated, or if a remaining evidence-backed, bounded tradeoff is explicitly documented with impact and profiles and accepted by the coordinator/user under applicable gates. A substantial speed win can justify a measured storage cost when requirements permit; distinguish pending maintenance and reserves from live data rather than assuming either explains the cost.
 
 Do not normalize regressions as “expected overhead” without this investigation and explicit acceptance.
 
@@ -111,8 +111,10 @@ python3 "${CODEX_HOME:-${HOME}/.codex}/skills/github-pr-mergeable/scripts/codex_
 The classifier inventories explicitly paginated issue comments, formal reviews,
 and review threads without requiring version-specific `gh api --slurp` support.
 Exit `0` means the Codex-specific gate is clean; exit `2` means its JSON result
-names the pending request, findings, unresolved threads, retry exhaustion, or
-PR-lifetime churn stop. A churn-stop result is an action boundary, not
+names the pending request, findings, unresolved threads, hosted failure or quota,
+retry exhaustion, or PR-lifetime churn stop. An `unavailable` result is not a
+clean review; check the linked provider evidence and the exact-candidate fallback
+contract. A churn-stop result is an action boundary, not
 permission to ignore threads. If repository policy supplies a bounded
 alternative scientific acceptance path, evaluate and record that path
 separately. CI and the other merge gates remain separate.
@@ -174,7 +176,7 @@ Benchmark comments/descriptions should include domain-appropriate metrics. For G
 
 Use markdown tables. Always include `ops/sec` when reporting `ns/op`. For other domains, use metrics that match the claimed improvement, such as wall time, per-unit latency, p95/p99, memory footprint, bundle size, browser responsiveness, GPU/CPU utilization, or per-stage timing.
 
-Do not optimize unrelated upstream cost inside every PR, but do not accept local regressions from the PR’s own code. If performance drops after review fixes, identify the change that caused it, whether it was correctness-required, and whether local CPU/memcopy/allocation overhead can be removed. A PR with an unexplained or avoidable material regression is not mergeable even if CI and AI reviews are green. A PR with insufficient improvement against its explicit optimization gate is likewise not mergeable until it iterates, re-scopes, or links a blocker/waiver as described above.
+Do not optimize unrelated upstream cost inside every PR. If performance drops after review fixes, identify the change that caused it, why it is needed, and whether local CPU/memcopy/allocation overhead can be removed. A PR with an unexplained or avoidable material regression is not mergeable even if CI and AI reviews are green; assess any remaining tradeoff under the regression gate above. A PR with insufficient improvement against its explicit optimization gate is likewise not mergeable until it iterates, re-scopes, or links a blocker/waiver as described above.
 
 Within an authorized optimization graph, a measured material performance/allocation
 gap alongside a correctness blocker automatically triggers independent profile-ranked

@@ -75,6 +75,32 @@ Test-first start, implementation, and close are logical phases inside an
 implementation packet. They are not instructions to create separate PRs, push every small
 change, or wait for CI/review after each phase.
 
+## Implementation-Ready Ticket Bodies
+
+Put the executable plan in the owning issue body, not only in conversation,
+an advisor report, a parent summary, or a local artifact. A competent implementer
+with that issue and the named repository revision must be able to identify the
+first edit/test, required behavior, affected callers, preservation boundaries,
+and completion evidence without repeating architecture discovery. A list of
+directories and generic "update tests/docs" checkboxes is insufficient.
+
+For implementation drafting, readiness review, or apply, use
+[Implementation-Ready Tickets](references/implementation-ready-tickets.md).
+Include a source-pinned file/symbol action map, ordered concrete tasks, relevant
+behavior/error/effect requirements, named validation and pass/fail evidence, and
+explicit remaining decisions. For retirement/removal, include the concrete
+delete/migrate/extract/keep inventory and proof that no unwanted implementation
+or fallback survives. Scale the detail to the task; small changes need no large
+template, and deferred mechanisms must not masquerade as selected designs.
+
+Separate fixed outcomes and guardrails from implementation choices that can
+change with evidence. Recheck paths against the assigned source; within existing
+authorization, revise stale bodies, inventories, owners and edges before dependent
+work follows them. Do not require per-file permission, preserve a wrong deletion
+instruction, or silently weaken the outcome. The reference defines the revision
+and readiness checks; neither a detailed ticket nor a skill edit authorizes graph
+execution.
+
 ## Shared Workflow
 
 1. Identify the requested operating mode and target repository with user input, `gh repo view`, or the current checkout.
@@ -335,7 +361,7 @@ Do not load the tracker template or design a dependency graph.
    code, necessary seam cleanup/redesign, and related-work coordination or ordering
    constraints. Do not overstate what the code or linked evidence proves.
 3. Reuse or update an existing issue when it already owns the outcome; otherwise recommend or draft one new issue.
-4. Add relevant validation, performance, documentation, branch, PR, review, and CI requirements, plus reassessment instructions only where preflight identified material uncertainty. Performance-sensitive standalone features must include the shared feature contract. Do not add tracker milestones or process boilerplate.
+4. Make the owning body implementation-ready under [the ticket contract](#implementation-ready-ticket-bodies). Add relevant validation, performance, documentation, branch, PR, review, and CI requirements, plus reassessment instructions only where preflight identified material uncertainty. Performance-sensitive standalone features must include the shared feature contract. Do not add tracker milestones or process boilerplate.
 5. In apply mode, create or update the issue with `gh issue create` or `gh issue edit` after checking available labels.
 6. Verify any write, then return the issue URL, disposition, scope boundaries, and coordination constraints.
 
@@ -353,7 +379,7 @@ Do not load the tracker template or design a dependency graph.
    assign every completion gate exactly one authoritative owner.
 6. Identify the exact workstream, current evidence, non-goals, milestone order, owner boundaries, expected proof, and adjacent in-flight work that must not be disturbed.
 7. Read [references/tracker-issue-template.md](references/tracker-issue-template.md) for the reusable issue structure.
-8. Draft with concrete, current facts and the proportionate reassessment instructions from preflight. Do not overstate what the code proves or convert every reported metric into an optimization target.
+8. Draft every executable child under [the ticket-body contract](#implementation-ready-ticket-bodies), carrying its file/symbol actions, behavior and validation into that child's body rather than leaving them only in the parent or advisory output. Use concrete, current facts and proportionate reassessment instructions. Do not overstate what the code proves or convert every reported metric into an optimization target.
 9. For every PR-bearing milestone, define the behavior or invariant that drives its test-first loop. Require a failing test before implementation, or an explicit exception with the alternative correctness evidence.
 10. Classify each PR or milestone as **not performance-relevant**, **possibly performance-relevant**, **performance-sensitive**, or **performance-objective**. State the evidence required for that class and the metrics that match the affected path. Include the shared feature contract for performance-sensitive/objective nodes, with allocation and documentation exit gates in each owning child.
 11. Include checkbox milestones that can serve as a work log. Keep test-first
@@ -402,6 +428,7 @@ Repo extensions preserve project-specific conventions without hardcoding them in
 - Select metrics by risk. Throughput and latency measure execution behavior; `B/op` and `allocs/op` measure allocation efficiency; peak RSS, peak/live heap, or retained heap measure memory pressure. Do not substitute allocation metrics for footprint evidence when memory residency is the risk.
 - Do not require simultaneous improvement in every metric. Define the objective and guardrails, measure tradeoffs, and require explicit acceptance for a remaining material regression.
 - Use hard numeric regression thresholds only when the harness, fixture, repetition policy, and noise tolerance are stable enough to support them. Until then, require reproducible human-reviewed evidence and a reliability plan rather than inventing a precise gate.
+- When the user explicitly changes a benchmark host qualification rule, update the plan and applicable general harness policy, keep prior results labeled under their original rule, and plan execution under the new rule. Do not make the retired rule a standing blocker or claim it passed retroactively.
 - Use benchmark metrics that match the domain. Throughput-sensitive work should include throughput; latency-sensitive work should include latency percentiles or per-unit timing; memory-sensitive work should include allocation or footprint metrics.
 - Require performance evidence to compare **before vs after** for each claimed optimization or hot-path/storage change with a pre-change equivalent (use the shared feature contract for genuinely new behavior), including baseline commit/branch, candidate commit/branch, delta/ratio, and whether the comparison used identical commands, fixture size, hardware, and environment. Do not accept a current-only benchmark as proof of improvement.
 - Require exact commands, hardware/context, benchmark boundaries, and domain counters for performance work.
@@ -409,7 +436,7 @@ Repo extensions preserve project-specific conventions without hardcoding them in
 - Plan checkpoint/evidence publication separately from PR validation under the executor's [Checkpoint And Evidence Pushes](../codex-issue-graph-executor/SKILL.md#checkpoint-and-evidence-pushes) policy: live PR-head classification comes before a repository-supported CI skip for a non-PR publication. Required current-head CI still applies to implementation and artifact-only PRs, including later promotion of a checkpoint branch.
 - Prefer a dedicated high-capacity runner, persistent build cache, and durable artifact storage. If any is unavailable, require typed `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` plus the real fallback; never imply that infrastructure exists.
 - Classify candidate failures separately from proven unrelated CI flakes, rerun only affected gates, and require current-head merge gates. Preserve artifact-only descendant evidence only when explicit runtime/harness subtree and implementation blob provenance is identical; product or harness drift invalidates affected evidence.
-- State a performance regression gate: material regressions in runtime, throughput, latency, memory, allocation, storage/rebuild overhead, or relevant counters are not acceptable by default; the PR must profile and optimize before mergeability can be claimed, or document that the remaining minimized regression is correctness-required and explicitly accepted by the coordinator/user.
+- State a performance regression gate: material regressions in runtime, throughput, latency, memory, allocation, storage/rebuild overhead, or relevant counters are not acceptable by default; profile and optimize before mergeability can be claimed, or document an evidence-backed, bounded tradeoff explicitly accepted by the coordinator/user under applicable gates.
 - For optimization work, state an insufficient-improvement gate: if the claimed/north-star metric does not move by the tracker-defined threshold, the issue remains incomplete even when tests and CI pass. The PR or issue must either fix the gate, narrow itself to instrumentation-only, or open/link a blocking follow-up that owns the measured next bottleneck before downstream/final-gate work can claim completion. Default tracker behavior is iterative and thorough: do not close as "insufficient" unless the user explicitly stops or accepts an open-blocker outcome.
 - Require per-milestone exit gates with numeric targets or explicit qualitative pass/fail evidence. Each gate should include: intended path/counter proof, reproducible comparison commands, success threshold, and failure action.
 - Require PR start, implementation, and close phases inside one coherent
@@ -419,6 +446,17 @@ Repo extensions preserve project-specific conventions without hardcoding them in
   into separate pushes or review waits.
 - Derive required reviewers and stop rules from repo/user policy; do not mandate all AI providers. Use `github-pr-mergeable` when available for exact-head review classification. Request review only on mature PRs (coherent code, relevant tests/benchmarks, current body, no known blockers, CI running or green); stop on a clean required result and renew only when changes or unresolved findings require it. Respect explicit review caps.
 - Record hosted Codex quota, usage-limit, rate-limit, capacity, or service unavailability as `CODEX_REVIEW_UNAVAILABLE_QUOTA`, never acceptance or a finding. An internal read-only subagent review or, when delegation cannot run, a separate same-agent mock subagent review is an acceptable fallback under [the shared contract](../github-pr-mergeable/references/internal-review-fallback.md). Record the actual mode/model, exact candidate, paths/claims, checks, findings, `ACCEPT` or `REJECT`, and no candidate edits. Later scientific or review-relevant edits require renewed review. State any explicit target-repository requirement for a separately independent reviewer, named model, or hosted-only review.
+- For executable PR packets, assign one readiness owner through required CI,
+  review, authorized merge, and final verification. Pending CI/review is work in
+  progress, not a completed packet or a blocker by itself. Carry the executor's
+  [continuous monitoring and resumable checkpoint contract](../codex-issue-graph-executor/SKILL.md#critical-path-finalization-and-monitoring)
+  into execution requirements: bounded watch/poll calls, progress updates,
+  inspection of genuinely stalled gates, policy-approved recovery, and a durable
+  exact-head continuation checkpoint for a real harness exit. Do not prescribe
+  duplicate review requests, endless waits on confirmed unavailable services, or
+  a new user permission request merely because CI/review is still progressing.
+  This specifies execution ownership; planning-only mode still ends after its
+  requested planning deliverable and does not start PR monitoring.
 - If CI is backed up, scope any proposed stale-run cancellation to superseded runs of the selected PR, subject to execution authorization and repo policy. Issue planning does not authorize cancelling CI or disturbing other lanes.
 - Never mark aspirational work as already proven. Use “current evidence,” “target,” and “completion criteria” distinctly.
 - For umbrella work in apply mode, create a parent tracker for sequencing and acceptance, then child issues for executable slices. Cross-link children from the umbrella and link the umbrella from every child.

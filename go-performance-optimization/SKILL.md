@@ -42,6 +42,14 @@ samples. An unexecuted benchmark is not a product regression or a gate rerun.
   completion are different boundaries; keep the selected contract identical across
   comparisons and report deferred work. Do not improve timing by moving required
   work beyond the boundary or silently changing its amortization.
+- A faster fixed-workload run can give background maintenance less elapsed time before
+  an endpoint storage snapshot. Report that snapshot as measured; distinguish live
+  data, pending cleanup, and intentional reserve where evidence permits. Compare
+  matched idle/maintenance and sustained-load behavior, physical allocated space,
+  and maintenance cost when material. A substantial speed win can justify an
+  explicitly accepted, measured and bounded space tradeoff when requirements permit;
+  do not assume cleanup will happen, rewrite the endpoint result, or silently waive
+  correctness, durability, or an applicable acceptance threshold.
 - Prove activation under the actual public configuration. A passing helper test or
   equivalent output can hide fallback. Prefer an existing selector, transaction
   statistic, or artifact; avoid mutable global hooks or production instrumentation
@@ -178,8 +186,8 @@ A few short pairs can show direction and reject a weak approach; label them
 accordingly. Choose final repetition/duration and workload coverage for the claim
 and noise, retain every planned sample, and use an appropriate statistical summary.
 Do not rerun until significance appears. Investigate missed targets or material
-regressions before declaring success; preserve explicit acceptance for unavoidable
-residual costs. New behavior needs old-workload guardrails and feature-enabled
+regressions before declaring success; preserve explicit acceptance for remaining
+evidence-backed, bounded tradeoffs. New behavior needs old-workload guardrails and feature-enabled
 incremental/scaling evidence when no equivalent before case exists.
 
 Once the candidate is coherent and viable, finish all affected tests, race,

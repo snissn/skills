@@ -89,6 +89,28 @@ compatibility requirements, or why the current seam already fits. Put these chan
 and their regression/integration/performance evidence in the owning feature packet;
 carry node-specific details into each child.
 
+## Concrete Implementation Tasks
+
+For each selected implementation node, put its executable instructions in that
+issue body using [the ticket-body contract](implementation-ready-tickets.md).
+Do not leave the real plan only in this tracker, chat or an advisory artifact.
+
+| Path / symbol at audited revision | Required action/result | Retained consumer/invariant | Named validation |
+| --- | --- | --- | --- |
+| Exact existing path or explicitly new file | Concrete edit, extraction, caller migration or deletion | Behavior/ownership that must survive | Test, command and pass/fail observable |
+
+Provide the first useful test/edit and consequential task ordering, and spell out
+defaults, supported inputs, unsupported/error behavior and effect boundaries.
+Name the existing commands/fixtures or clearly proposed tests, expected assertions
+and completion evidence. Delete unused table/sections for a small task; do not
+replace meaningful requirements with generic "update tests/docs" checkboxes.
+
+For retirement, enumerate delete/migrate/extract/keep dispositions, including
+shared-code dependencies, clients/defaults/decoders, tests, docs, generated sources
+and benchmark producers/validators. Specify allowed remaining references and
+the final inventory/call-path checks proving removal. Refresh the map as source
+or evidence changes; the outcome and guardrails remain authoritative.
+
 ## Assumptions And Reassessment
 
 Keep this section for abstract outcomes or material uncertainty; omit it for
@@ -103,6 +125,11 @@ direct work with an established cause and solution.
   acceptance criteria, guardrails, ownership, useful work, and history.
 - Record consequential revisions and map remaining obligations to live owners.
   Keep strategic checks here; add child-specific checks only where useful.
+- Distinguish fixed outcomes/contracts from provisional edit mechanics. Within
+  existing authorization, update stale child bodies/file maps and affected edges
+  before dependent work follows them; no per-file permission is needed. Record
+  source/evidence changes without silently weakening acceptance or obeying a
+  deletion list that would remove required shared code.
 
 ## Feature Path, Allocation, And Documentation Contract
 
@@ -288,7 +315,7 @@ repo policy requires earlier coverage. Required per-PR and final gates remain.
 - [ ] Complete broader affected, race, recovery, reopen, or integration tests as the risk requires before performance evidence, except for exhaustive qualification deferred by the performance-primary sequence above. All required tests still finish before merge.
 - [ ] Re-run the evidence required by the performance classification.
 - [ ] For performance-sensitive or performance-objective work, apply the feature-contract comparison (identical before/after commands for equivalent behavior) and report the relevant throughput or latency, `B/op`, `allocs/op`, peak/live memory, and domain counters; mark irrelevant axes `N/A` with rationale.
-- [ ] Treat material regressions as blocking: profile, optimize, rerun, and do not merge unless eliminated or explicitly accepted as minimized/correctness-required.
+- [ ] Treat material regressions as blocking: profile, optimize, rerun, and do not merge unless eliminated or accepted as an evidence-backed, bounded tradeoff under applicable gates.
 - [ ] Verify public-path selection, allocation minimization, and affected docs before feature completion.
 - [ ] Verify existing consumers and the feature use the intended shared implementation, required migrations/retirements are complete, and related ownership/contracts remain respected.
 - [ ] Follow repo-required review identities and the shared skill's maturity, stop, and quota-fallback rules; repeat only when changed evidence requires review.
@@ -432,7 +459,7 @@ Define the standard benchmark matrix. Include:
 
 An instrumentation or benchmark-harness PR is judged on correctness, repeatability, attribution boundaries, and representativeness. It does not need to make the product faster merely because it emits performance data.
 
-Regression gate: if the candidate is materially worse in runtime, throughput, latency, memory, allocations, storage/rebuild overhead, browser responsiveness, or relevant counters, the issue/PR remains incomplete until the team profiles and optimizes the changed path. A remaining regression needs explicit coordinator/user acceptance, a clear correctness or scope rationale, and updated evidence.
+Regression gate: if the candidate is materially worse in runtime, throughput, latency, memory, allocations, storage/rebuild overhead, browser responsiveness, or relevant counters, the issue/PR remains incomplete until the team profiles and optimizes the changed path. A remaining regression needs explicit coordinator/user acceptance, an evidence-backed and bounded tradeoff rationale, and updated evidence under applicable gates.
 
 Insufficient-improvement gate: if the candidate is not materially worse but also does not meet the milestone's stated improvement/saturation target, the milestone is still incomplete for optimization work. The next action must be one of: fix and rerun, explicitly re-scope the milestone as instrumentation/safety only, or open/link a blocking follow-up for the newly measured bottleneck before downstream final-gate work proceeds.
 
@@ -481,6 +508,9 @@ Before creating or editing the issue, verify:
 - [ ] Related landed/in-flight work, owners, overlapping paths, consumed contracts, and readiness gates are reflected in the design.
 - [ ] Code reuse and seam redesign/cleanup were explicitly considered; necessary changes and existing consumer migration belong to the owning feature packet.
 - [ ] The issue distinguishes current state from desired state.
+- [ ] Each selected implementation issue contains its concrete source-pinned edit map, first tasks, behavior/error/effect requirements and named validation; the implementer does not need conversation history.
+- [ ] Retirement work enumerates delete/migrate/extract/keep actions and shared dependencies, allowed remaining references, and final completeness checks.
+- [ ] Required decisions and provisional mechanics are distinguished; the body explains how in-scope findings revise tasks/edges while preserving the outcome and guards.
 - [ ] The issue distinguishes implementation work from evidence work.
 - [ ] Existing issues have explicit retain, narrow, supersede, close, or defer dispositions.
 - [ ] Every blocking edge is explicit and every completion gate has one authoritative owner.

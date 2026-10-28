@@ -91,6 +91,13 @@ The coordinator remains responsible for live issue checks and all mutations.
 Before drafting or applying issues, verify representative source paths/symbols,
 existing-issue dispositions, and dependency claims at the intended base.
 
+Carry the accepted technical blueprint into each owning issue body under
+[Implementation-Ready Tickets](implementation-ready-tickets.md). The advisor's
+output is not a substitute for durable executor instructions. Verify the complete
+destructive action inventory, including shared-code exceptions, before treating
+a removal packet as ready; representative checks alone do not qualify an exhaustive
+deletion claim.
+
 An issue is implementation-ready when a capable executor can begin with the
 named red test and edit map without repeating architecture discovery. The
 executor must still revalidate the assigned head and may adjust local mechanics;

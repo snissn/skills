@@ -189,6 +189,16 @@ reconcile changed contracts before affected integration.
 Use early public-path A/B throughput, `B/op`, and `allocs/op` to redirect allocation
 work; apply the Go skill's reuse/lifetime rules and reconsider structure when the
 measured ceiling is inadequate. Measurement isolation has its own resource gate.
+The benchmark host remains under the measurement owner's custody until timed work,
+profiling, and host-side artifact reads or transfers have all stopped. A CPU-only
+quiet check does not establish disk or network isolation. Do not start the next
+measurement while a previous lane is copying artifacts from that host; record and
+disposition any overlap against the original isolation contract.
+When the user explicitly revises an impractical measurement qualification rule,
+implement the authorized general rule and continue execution. Preserve the old
+result under its original criteria, document the new criteria and their limits,
+and obtain the applicable new-head CI and comparable evidence; do not treat the
+superseded rule as an immutable blocker or relabel an old failure as a pass.
 Known unsafe execution stays blocked; provisional construction does not certify a
 broken workload or waive applicable correctness, merge, or final qualification
 gates. Fan out only justified work within the user's concurrency/resource budget;
@@ -434,13 +444,30 @@ coordinator is only waiting on the delegated reviewer/finalizer, reclaim ownersh
   Continue the same PR locally without another review, push, implementer or
   approval request unless changed code, a real finding or policy requires it.
 
-After transfer, the main thread owns the continuous readiness loop. Ordinary
+The active readiness owner owns the continuous readiness loop from the first
+push, including when no ownership transfer occurred. Ordinary
 pending CI/review is not a reason to end the turn or require the user to say
 "resume" again. Use one native watch/event mechanism when available, or repeated
 bounded status polling with waits. Keep tool output compact and updates brief;
 avoid duplicate monitors, fresh reviews, pushes or tests just because time passed.
 The delegated-owner polling cadence does not prohibit monitoring external CI
 after reclaiming ownership. Keep individual blocking waits within harness limits.
+
+Use short watch/poll slices (at most 60 seconds per blocking call, or a shorter
+harness limit), and provide a concise progress update at least every 60 seconds
+while actively waiting. A slice expiring is a monitoring checkpoint, not an
+execution deadline. Recheck all outstanding gates after each event or slice;
+completed CI does not imply review completion, or vice versa. When nothing has
+changed, wait again and advance safe independent work where available.
+
+If a gate appears stalled, inspect the actual run/review request, queue or runner
+state, provider errors, and available policy-approved recovery before deciding
+it is blocked. Ordinary queueing, slow execution, and unchanged polls alone do
+not establish unavailability. Do not wait indefinitely on confirmed unavailable
+infrastructure or a required reviewer: record the evidence, attempted permitted
+recovery/fallback, responsible owner, and concrete unblock condition. Do not
+submit duplicate review requests or cancel/restart healthy runs to manufacture
+progress. Review-request caps bound requests, not monitoring of an existing one.
 
 Persist the owner, exact head, outstanding gate and next action. On completion,
 recheck live readiness status and merge/proceed immediately when
@@ -460,6 +487,16 @@ contracts, run the smallest useful reproduction when feasible, and retry only
 failed jobs once; diagnose any repeat instead of cycling reruns.
 End the turn for completion, an explicit pause, a genuine blocker requiring new
 authority/input, or a harness limit—not merely an unchanged pending status.
+Before an unavoidable harness exit, persist a resumable checkpoint: repository,
+PR/issue URLs, branch/worktree, exact head/base, sole readiness owner, pending
+run/job URLs or IDs, review request/result IDs and SHA bindings, evidence paths,
+retry/request counts, last observed state/time, and next command or event to
+inspect. State the actual exit limit and that acceptance remains incomplete;
+an arbitrary self-imposed polling budget is not a harness limit. On continuation,
+refresh live head/base and outstanding gates first, reuse applicable evidence,
+and resume the existing loop without another permission or review request.
+Do not claim background monitoring after exit unless an actual supported watcher
+remains active and its ownership and delivery mechanism are recorded.
 Do not invent automatic wake or create a goal just to wait. Continuous monitoring
 does not waive predecessor merges, required exact-head reviews, required
 current-head CI or landed-source evidence requirements, or grant new merge authority.

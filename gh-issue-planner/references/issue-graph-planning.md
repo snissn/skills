@@ -73,6 +73,13 @@ performance-relevant, possibly performance-relevant, performance-sensitive, or
 performance-objective so benchmark requirements are deliberate rather than copied
 uniformly across the graph.
 
+Apply [the implementation-ready body contract](implementation-ready-tickets.md)
+to each selected implementation node. The parent ledger and advisory blueprint
+do not replace the child's concrete file/symbol actions, behavior/error rules and
+validation. Retirement nodes carry a source-pinned delete/migrate/extract/keep
+inventory and end-of-removal accounting; unresolved speculative mechanisms remain
+conditional rather than falsely detailed executable tasks.
+
 Each executable node names its deliverable, target location, evidence, and acceptance
 owner under SKILL.md's completion-packet rules. Implementation packets own production
 callers/fallback, shared-seam changes and existing consumer migration, reused code,
@@ -207,6 +214,15 @@ in-flight work, experiment history, and unrelated owners' scope. Map each
 remaining obligation to a live owner before retiring a node. Linking a follow-up
 does not satisfy an unmet parent goal. Record a concise revision in the parent:
 finding and evidence, affected nodes/edges, the revised plan, and preserved gates.
+
+Update the affected issue bodies' edit maps, task order, behavior contracts and
+validation together with the ledger. Record the new source identity and evidence
+invalidated by the change. In-scope file discoveries and implementation corrections
+do not require per-file approval; use the existing authority and the
+[revision rules](implementation-ready-tickets.md#revision-during-implementation).
+A detailed old file list is not a reason to delete required shared code or preserve
+an obsolete implementation. Stale execution instructions must become explicitly
+historical before dependent work follows the revised contract.
 
 Replanning does not authorize a new goal/repository, weaker thresholds,
 reopening accepted gaps without their revisit trigger or new direction, or

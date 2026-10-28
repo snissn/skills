@@ -105,7 +105,8 @@ Rules:
   real blocker. An opened PR, first test, or partial code change is not completion.
 - Run required checks once; repeat or broaden only for changes, failures, or
   unresolved risks. Preserve commands, results, and the SHA they tested.
-- Treat material performance regressions as blockers.
+- Treat material performance regressions as blockers unless explicitly accepted
+  with evidence by the coordinator/user under applicable gates.
 - Do not request Codex or other AI reviews until the PR is
   mature enough to avoid review-credit churn.
 - Keep the PR draft while the issue completion packet is incomplete. Do not
