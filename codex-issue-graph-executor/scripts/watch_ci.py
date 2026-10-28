@@ -27,7 +27,11 @@ query($owner: String!, $name: String!, $number: Int!, $cursor: String) {
           pageInfo { hasNextPage endCursor }
           nodes {
             __typename
-            ... on CheckRun { databaseId name status conclusion detailsUrl isRequired(pullRequestNumber: $number) }
+            ... on CheckRun {
+              databaseId name status conclusion startedAt completedAt detailsUrl
+              isRequired(pullRequestNumber: $number)
+              checkSuite { workflowRun { databaseId runAttempt } }
+            }
             ... on StatusContext { context state targetUrl isRequired(pullRequestNumber: $number) }
           }
         }
@@ -153,6 +157,31 @@ def read_snapshot(args, deadline):
     return snapshot
 
 
+def check_execution(check):
+    run = (check.get("checkSuite") or {}).get("workflowRun") or {}
+    return (check.get("databaseId"), check.get("startedAt"), check.get("completedAt"),
+            run.get("databaseId"), run.get("runAttempt"))
+
+
+def acknowledged_advisories(args, snapshot, baseline=None):
+    """IDs explicitly dispositioned by the owner, valid only for this execution."""
+    previous = {item.get("databaseId"): item for item in (baseline or {}).get("checks", [])
+                if item.get("__typename") == "CheckRun"}
+    accepted = set()
+    for check in snapshot.get("checks", []):
+        check_id = check.get("databaseId")
+        if (check.get("__typename") != "CheckRun" or check_id not in args.acknowledge_advisory_check_id or
+                check["isRequired"] or check["name"] in args.require_check or
+                check["status"] != "COMPLETED" or check.get("conclusion") != "FAILURE" or
+                not check.get("completedAt")):
+            continue
+        if baseline is not None and (check_id not in previous or
+                                     check_execution(check) != check_execution(previous[check_id])):
+            continue
+        accepted.add(check_id)
+    return accepted
+
+
 def evaluate(args, snapshot, baseline=None):
     """Return (event, exit code, details), or None while still pending."""
     pr = snapshot.get("pr")
@@ -212,6 +241,7 @@ def evaluate(args, snapshot, baseline=None):
         ready = ready and status == "completed" and conclusion == "success"
 
     names = set()
+    acknowledged = acknowledged_advisories(args, snapshot, baseline)
     # Surface required failures ahead of advisory failures from the same snapshot.
     for check in sorted(snapshot.get("checks", []), key=lambda item:
                         not (item.get("isRequired") or item.get("name", item.get("context")) in args.require_check)):
@@ -221,6 +251,7 @@ def evaluate(args, snapshot, baseline=None):
             conclusion = check.get("conclusion") or ""
             required = check["isRequired"] or name in args.require_check
             classification = {"check": name, "required": required,
+                              "check_id": check.get("databaseId"),
                               "scope": "required" if required else "advisory",
                               "conclusion": conclusion}
             good = status == "COMPLETED" and (conclusion == "SUCCESS" or
@@ -228,7 +259,13 @@ def evaluate(args, snapshot, baseline=None):
             if conclusion == "CANCELLED":
                 return "cancelled", 5, classification
             if conclusion in {"FAILURE", "TIMED_OUT", "STARTUP_FAILURE"}:
-                return "failure" if required else "advisory_failure", 1 if required else 4, classification
+                if check.get("databaseId") in acknowledged:
+                    good = True
+                else:
+                    return "failure" if required else "advisory_failure", 1 if required else 4, classification
+            elif check.get("databaseId") in args.acknowledge_advisory_check_id:
+                return "intervention", 4, {**classification,
+                    "reason": "acknowledgement no longer matches a completed advisory FAILURE"}
             if status == "WAITING" or conclusion in {"ACTION_REQUIRED", "STALE"} or (
                     required and conclusion in {"NEUTRAL", "SKIPPED"}):
                 return "intervention", 4, classification
@@ -250,7 +287,8 @@ def evaluate(args, snapshot, baseline=None):
         ready = False
     if ready:
         return "ci_success", 0, {"checks": len(snapshot.get("checks", [])),
-                                 "run_ids": args.run_id, "merge_authorized": False}
+                                 "run_ids": args.run_id, "merge_authorized": False,
+                                 "acknowledged_advisory_check_ids": sorted(acknowledged)}
     return None
 
 
@@ -260,14 +298,17 @@ def emit(args, event, **details):
                       "time": datetime.now(timezone.utc).isoformat(), **details}), flush=True)
 
 
-def observed_failures(snapshot):
+def observed_failures(snapshot, acknowledged=()):
     """Keep every observed failed check/job in the notification for diagnosis."""
     failures = []
     for check in snapshot.get("checks", []):
         state = check.get("conclusion") or check.get("state")
         if state in {"FAILURE", "ERROR", "TIMED_OUT", "STARTUP_FAILURE", "CANCELLED", "ACTION_REQUIRED", "STALE"}:
             failures.append({"check": check.get("name", check.get("context")), "state": state,
-                             "required": check["isRequired"], "url": check.get("detailsUrl", check.get("targetUrl"))})
+                             "required": check["isRequired"], "check_id": check.get("databaseId"),
+                             "completed_at": check.get("completedAt"),
+                             "acknowledged_advisory": check.get("databaseId") in acknowledged,
+                             "url": check.get("detailsUrl", check.get("targetUrl"))})
     for run in snapshot.get("runs", []):
         for job in run.get("jobs", []):
             if job.get("conclusion") in {"failure", "timed_out", "startup_failure", "cancelled", "action_required", "stale"}:
@@ -280,21 +321,32 @@ def watch(args):
     started = time.monotonic()
     deadline = started + args.max_wait if args.max_wait else None
     baseline = None
-    emit(args, "watching", run_ids=args.run_id, run_attempts=args.run_attempt)
+    snapshot = {}
+    last_failure_metadata = {"acknowledged_advisory_check_ids": [], "observed_failures": []}
+    emit(args, "watching", run_ids=args.run_id, run_attempts=args.run_attempt,
+         requested_advisory_acknowledgement_ids=args.acknowledge_advisory_check_id)
     try:
         while True:
             snapshot = read_snapshot(args, deadline)
             result = evaluate(args, snapshot, baseline)
+            acknowledged = acknowledged_advisories(args, snapshot, baseline)
+            last_failure_metadata = {"acknowledged_advisory_check_ids": sorted(acknowledged),
+                                     "observed_failures": observed_failures(snapshot, acknowledged)}
+            acknowledgement_baseline = baseline
             if result:
                 # A second read prevents reporting success from an already changed head,
                 # cancelled/rerun workflow, or pagination race. Final merge gates still apply.
                 if result[0] == "ci_success":
+                    acknowledgement_baseline = baseline or snapshot
                     confirmation = read_snapshot(args, deadline)
-                    result = evaluate(args, confirmation, baseline or snapshot)
+                    result = evaluate(args, confirmation, acknowledgement_baseline)
                     snapshot = confirmation
                 if result:
                     event, code, details = result
-                    emit(args, event, **details, observed_failures=observed_failures(snapshot),
+                    acknowledged = acknowledged_advisories(args, snapshot, acknowledgement_baseline)
+                    if "acknowledged_advisory_check_ids" not in details:
+                        details["acknowledged_advisory_check_ids"] = sorted(acknowledged)
+                    emit(args, event, **details, observed_failures=observed_failures(snapshot, acknowledged),
                          run_bindings=[{key: run[key] for key in ("id", "head_sha", "run_attempt", "workflow_id")}
                                        for run in snapshot.get("runs", [])])
                     return code
@@ -304,13 +356,17 @@ def watch(args):
                 raise TimeoutError
             time.sleep(min(args.poll_interval, remaining))
     except TimeoutError:
-        emit(args, "checkpoint", reason="max_wait reached; CI remains unaccepted")
+        acknowledged = acknowledged_advisories(args, snapshot, baseline)
+        emit(args, "checkpoint", reason="max_wait reached; CI remains unaccepted",
+             acknowledged_advisory_check_ids=sorted(acknowledged),
+             observed_failures=observed_failures(snapshot, acknowledged))
         return 124
     except (WatchError, KeyError, TypeError, ValueError) as exc:
-        emit(args, "error", reason=str(exc))
+        emit(args, "error", reason=str(exc), **last_failure_metadata)
         return 2
     except KeyboardInterrupt:
-        emit(args, "watch_cancelled", reason="watcher interrupted; remote runs unchanged")
+        emit(args, "watch_cancelled", reason="watcher interrupted; remote runs unchanged",
+             **last_failure_metadata)
         return 130
 
 
@@ -324,6 +380,8 @@ def parse_args(argv=None):
     parser.add_argument("--run-attempt", action="append", default=[], metavar="RUN_ID:ATTEMPT",
                         help="Pin an already recorded attempt, especially when resuming")
     parser.add_argument("--require-check", action="append", default=[], help="Expected check name; repeat as needed")
+    parser.add_argument("--acknowledge-advisory-check-id", type=int, action="append", default=[], metavar="ID",
+                        help="Exact CheckRun databaseId whose advisory FAILURE the owner already dispositioned")
     parser.add_argument("--poll-interval", type=float, default=60, help="Seconds between snapshots, minimum 15")
     parser.add_argument("--max-wait", type=float, default=50, help="Seconds until checkpoint exit; 0 waits until event")
     args = parser.parse_args(argv)
@@ -337,6 +395,10 @@ def parse_args(argv=None):
         parser.error("--base requires --pr; run-only mode cannot monitor a PR base")
     if args.require_check and not args.pr:
         parser.error("--require-check requires --pr")
+    if args.acknowledge_advisory_check_id and not args.pr:
+        parser.error("--acknowledge-advisory-check-id requires --pr")
+    if any(check_id <= 0 for check_id in args.acknowledge_advisory_check_id):
+        parser.error("acknowledged advisory check IDs must be positive")
     for sha in [args.head, args.base] if args.base else [args.head]:
         if not re.fullmatch(r"[0-9a-fA-F]{40}", sha):
             parser.error("head/base bindings must be full 40-character SHAs")

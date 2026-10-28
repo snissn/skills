@@ -41,7 +41,7 @@ the first observed attempt is pinned for this invocation. It never switches runs
 
 | Exit | Event | Readiness-owner action |
 | --- | --- | --- |
-| 0 | `ci_success` | Selected runs and observed checks succeeded, confirmed by a second read. Refresh all live required checks, test-merge/base identity, review findings/threads, approvals and predecessor gates before any merge. Late-registering/missing unlisted checks remain possible. |
+| 0 | `ci_success` | Selected runs succeeded; observed checks have accepted outcomes or an explicitly acknowledged advisory failure, confirmed by a second read. Refresh all live required checks, test-merge/base identity, review findings/threads, approvals and predecessor gates before any merge. Late-registering/missing unlisted checks remain possible. |
 | 1 | `failure` | Diagnose the recorded required PR check or explicitly selected workflow/job. An already failed initial snapshot also exits immediately. |
 | 2 | `error` | Snapshot unavailable/incomplete, permission/rate/API problem, or timeout. No success inferred; investigate before resuming. |
 | 3 | `superseded` | PR head/base/base branch or selected workflow attempt changed. Preserve old evidence and refresh the candidate bindings. |
@@ -61,6 +61,38 @@ named checks with those outcomes prompt inspection; apply repository policy in
 the full gate. A neutral/skipped selected workflow result also prompts inspection.
 Review-decision changes wake the watcher, but it does not monitor individual
 review comments or threads and does not replace the Codex review classifier.
+
+## Already dispositioned advisory failures
+
+After the coordinator has inspected the actual failure and recorded its disposition
+in the readiness evidence, it may pass `--acknowledge-advisory-check-id ID` for
+that exact GitHub CheckRun `databaseId`. Record the ID, head/base, execution times
+and workflow attempt when available, evidence, owner, and why continued monitoring
+is appropriate. The flag carries that existing disposition; it neither grants
+waiver authority nor changes repository checks or merge requirements. Do not
+automatically generate it from a nonrequired label, familiar check name, or an
+earlier flag list. Refresh the evidence before reusing it on a new invocation.
+
+```text
+--acknowledge-advisory-check-id EXACT_ALREADY_DISPOSITIONED_CHECKRUN_DATABASE_ID
+```
+
+This suppresses repeat wakeups only for the same completed, advisory `FAILURE`.
+It never suppresses a GitHub-required check, an explicitly named `--require-check`,
+a selected workflow/job failure, cancellation, timeout, or unknown/incomplete state.
+A different CheckRun ID is never acknowledged by name. A changed execution
+timestamp or workflow attempt during the invocation invalidates the acknowledgement
+and wakes the owner, including changes during the final confirmation read.
+An absent completion timestamp fails closed. If an app reuses a CheckRun ID
+without reporting any changed execution identity, the API cannot establish that
+rerun; inspect and refresh the actual disposition before a new invocation.
+
+Acknowledged failures remain `FAILURE` in `observed_failures`, with `check_id`,
+`completed_at`, and `acknowledged_advisory: true`. Final notifications and bounded
+checkpoints list the effective `acknowledged_advisory_check_ids`; the start line
+records requested IDs. Preserve the original failure and disposition alongside
+this output. CI-success notification with an acknowledged advisory failure still
+requires the complete live merge gate and cannot certify an unresolved requirement.
 
 ## Asynchronous Codex continuation
 

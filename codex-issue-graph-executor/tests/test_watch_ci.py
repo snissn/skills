@@ -23,7 +23,10 @@ def args(*extra):
 
 def check(name="build", status="IN_PROGRESS", conclusion=None, required=True):
     return {"__typename": "CheckRun", "name": name, "databaseId": 1, "status": status,
-            "conclusion": conclusion, "isRequired": required}
+            "conclusion": conclusion, "isRequired": required,
+            "startedAt": "2026-10-28T20:00:00Z",
+            "completedAt": "2026-10-28T20:01:00Z" if status == "COMPLETED" else None,
+            "checkSuite": {"workflowRun": None}}
 
 
 def snapshot(*checks):
@@ -151,6 +154,91 @@ class WatchTests(unittest.TestCase):
     def test_multiple_failures_preserved_in_notification(self):
         state = snapshot(check("one", "COMPLETED", "FAILURE"), check("two", "COMPLETED", "FAILURE", False))
         self.assertEqual([item["check"] for item in w.observed_failures(state)], ["one", "two"])
+
+    def test_acknowledged_advisory_waits_for_pending_then_reports_success_with_failure_retained(self):
+        selected = args("--acknowledge-advisory-check-id", "1")
+        failed = check("advisory", "COMPLETED", "FAILURE", False)
+        pending = snapshot(failed, dict(check(), databaseId=2))
+        green = snapshot(failed, dict(check(status="COMPLETED", conclusion="SUCCESS"), databaseId=2))
+        self.assertIsNone(w.evaluate(selected, pending))
+        self.assertEqual(w.evaluate(args(), pending)[:2], ("advisory_failure", 4))
+        output = io.StringIO()
+        with patch.object(w, "read_snapshot", side_effect=[pending, green, green]), \
+             patch.object(w.time, "sleep"), contextlib.redirect_stdout(output):
+            self.assertEqual(w.watch(selected), 0)
+        event = json.loads(output.getvalue().splitlines()[-1])
+        self.assertEqual(event["acknowledged_advisory_check_ids"], [1])
+        self.assertEqual(event["observed_failures"][0]["check_id"], 1)
+        self.assertTrue(event["observed_failures"][0]["acknowledged_advisory"])
+        self.assertEqual(event["observed_failures"][0]["state"], "FAILURE")
+
+    def test_advisory_acknowledgement_never_suppresses_a_different_id_or_required_check(self):
+        selected = args("--acknowledge-advisory-check-id", "1")
+        failed = check("advisory", "COMPLETED", "FAILURE", False)
+        for changed, expected in [(dict(failed, databaseId=2), ("advisory_failure", 4)),
+                                  (dict(failed, isRequired=True), ("failure", 1)),
+                                  (dict(failed, conclusion="CANCELLED"), ("cancelled", 5)),
+                                  (dict(failed, conclusion="TIMED_OUT"), ("advisory_failure", 4)),
+                                  (dict(failed, status="IN_PROGRESS", conclusion=None), ("intervention", 4)),
+                                  (dict(failed, conclusion="UNKNOWN"), ("intervention", 4))]:
+            with self.subTest(check=changed):
+                self.assertEqual(w.evaluate(selected, snapshot(changed))[:2], expected)
+        explicitly_required = args("--acknowledge-advisory-check-id", "1", "--require-check", "advisory")
+        self.assertEqual(w.evaluate(explicitly_required, snapshot(failed))[:2], ("failure", 1))
+
+    def test_advisory_acknowledgement_does_not_survive_new_attempt_or_changed_execution(self):
+        selected = args("--acknowledge-advisory-check-id", "1")
+        failed = check("advisory", "COMPLETED", "FAILURE", False)
+        failed["checkSuite"] = {"workflowRun": {"databaseId": 10, "runAttempt": 1}}
+        original = snapshot(failed)
+        for changed in [dict(failed, completedAt="2026-10-28T20:02:00Z"),
+                        dict(failed, checkSuite={"workflowRun": {"databaseId": 10, "runAttempt": 2}}),
+                        dict(failed, databaseId=2), dict(failed, completedAt=None)]:
+            with self.subTest(check=changed):
+                self.assertEqual(w.evaluate(selected, snapshot(changed), original)[:2], ("advisory_failure", 4))
+        self.assertEqual(w.evaluate(selected, snapshot(dict(failed, isRequired=True)), original)[:2], ("failure", 1))
+
+    def test_changed_advisory_attempt_during_success_confirmation_is_not_acknowledged(self):
+        selected = args("--acknowledge-advisory-check-id", "1")
+        failed = check("advisory", "COMPLETED", "FAILURE", False)
+        original = snapshot(failed)
+        changed = snapshot(dict(failed, completedAt="2026-10-28T20:02:00Z"))
+        output = io.StringIO()
+        with patch.object(w, "read_snapshot", side_effect=[original, changed]), contextlib.redirect_stdout(output):
+            self.assertEqual(w.watch(selected), 4)
+        event = json.loads(output.getvalue().splitlines()[-1])
+        self.assertEqual(event["event"], "advisory_failure")
+        self.assertEqual(event["acknowledged_advisory_check_ids"], [])
+        self.assertFalse(event["observed_failures"][0]["acknowledged_advisory"])
+
+    def test_selected_workflow_failure_cannot_be_acknowledged_as_advisory(self):
+        selected = args("--run-id", "10", "--acknowledge-advisory-check-id", "1")
+        state = snapshot(check("unit", "COMPLETED", "FAILURE", False))
+        state["runs"] = [run(jobs=[{"id": 99, "name": "unit", "status": "completed", "conclusion": "failure"}])]
+        self.assertEqual(w.evaluate(selected, state)[:2], ("failure", 1))
+
+    def test_acknowledged_failure_is_retained_at_checkpoint(self):
+        selected = args("--acknowledge-advisory-check-id", "1")
+        pending = snapshot(check("advisory", "COMPLETED", "FAILURE", False), dict(check(), databaseId=2))
+        output = io.StringIO()
+        with patch.object(w, "read_snapshot", return_value=pending), patch.object(w.time, "sleep"), \
+             patch.object(w.time, "monotonic", side_effect=[0, 51]), contextlib.redirect_stdout(output):
+            self.assertEqual(w.watch(selected), 124)
+        event = json.loads(output.getvalue().splitlines()[-1])
+        self.assertEqual(event["acknowledged_advisory_check_ids"], [1])
+        self.assertTrue(event["observed_failures"][0]["acknowledged_advisory"])
+
+    def test_acknowledged_failure_is_retained_when_later_api_read_fails(self):
+        selected = args("--acknowledge-advisory-check-id", "1")
+        pending = snapshot(check("advisory", "COMPLETED", "FAILURE", False), dict(check(), databaseId=2))
+        output = io.StringIO()
+        with patch.object(w, "read_snapshot", side_effect=[pending, w.WatchError("API unavailable")]), \
+             patch.object(w.time, "sleep"), contextlib.redirect_stdout(output):
+            self.assertEqual(w.watch(selected), 2)
+        event = json.loads(output.getvalue().splitlines()[-1])
+        self.assertEqual(event["event"], "error")
+        self.assertEqual(event["acknowledged_advisory_check_ids"], [1])
+        self.assertTrue(event["observed_failures"][0]["acknowledged_advisory"])
 
     def test_changed_pr_stops_without_querying_old_runs(self):
         state = snapshot()
