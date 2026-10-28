@@ -10,6 +10,13 @@ Use explicit role effort and follow the runtime's fork restrictions in `SKILL.md
 do not inherit a different parent model or automatically substitute another model.
 Include large generated paths and their retention/disposal status in every
 implementation or finalization handoff.
+For writable lanes, supply the validated worktree setup result: mode, pinned
+base, seed, and fallback reason from `scripts/create_worktree.py`. Workers begin
+only after successful setup; they do not share an index or modify a borrowed
+seed during copying. Ask workers to report exact disposable path releases when
+their last command/consumer finishes so the coordinator can dispatch async
+cleanup alongside remaining graph work. Required evidence and unique work need
+explicit retention reasons.
 
 Carry consequential planner simplification findings into implementation
 assignments. Ready-issue, provisional-descendant, and finalization workers apply
@@ -280,6 +287,7 @@ Load <CODEX_HOME>/skills/codex-issue-graph-executor/references/disk-cleanup.md.
 Hosts and exact released paths, sizes, owners, retention decisions, and expected
 path/filesystem identities and content snapshots: <ALLOWLIST>.
 Protected paths, active consumers, and measurement windows: <PROTECTED_CONTEXT>.
+In-flight CoW setup seeds and primary/common Git storage: <SEED_AND_GIT_PROTECTION>.
 Repository/worktree HEADs and retained evidence locations: <IDENTITIES_AND_EVIDENCE>.
 Time box and stop conditions: <BOUNDS>.
 
@@ -291,6 +299,8 @@ at the coordinator's verified durable location. Remote-branch retention does
 not block eligible local deletion. A queued or moved path is not removed.
 Keep scans/deletion outside conflicting benchmark measurement windows. Report
 new large candidates to the coordinator for release; do not expand your scope.
+Completed CoW clones do not depend on retaining a released linked seed's files.
+Report observed free-space recovery separately from summed clone sizes.
 Do not edit source, merge, commit, push, request reviews, or spawn subagents.
 Return removed paths, retained paths with reasons, worktree registration checks,
 and before/after filesystem free space with estimates labeled separately. Stop
