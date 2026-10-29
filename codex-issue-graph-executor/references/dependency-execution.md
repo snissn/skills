@@ -43,6 +43,14 @@ Record construction prerequisites separately from merge, retirement and final
 qualification gates. A shared parent or sequential ticket list does not itself
 require sequential construction. Preserve actual shared-contract dependencies.
 
+Apply the same analysis within one issue: causal review, reproduction narrowing,
+test design, and independent client/harness preparation may be separate ready
+slices. Record their prerequisites, source snapshot, file/worktree ownership and
+one integration/acceptance owner in existing graph state. Unknown causal decisions
+block dependent production fixes, not independent preparation. Repair merges gate
+the declared final evidence, not every downstream source task. A completed slice
+does not complete the issue or waive its combined acceptance obligations.
+
 Separate source concurrency from execution resources: independent source work
 can proceed while bounded correctness jobs run; performance measurements need
 their declared isolation. Apply the user's concurrency direction and the runtime
@@ -253,9 +261,12 @@ Predecessor #A changed since snapshot:
 - Apply SKILL.md's budget: one useful worker, at most two independent
   assignments normally. Do not create a worker solely to poll.
 - Parallelize implementation only when workers have isolated worktrees and
-  disjoint ownership boundaries and no shared contract decision remains.
-- Serialize nodes that touch the same public API, storage format, migration,
-  benchmark interpretation, hot-loop helper, or frequently conflicting files.
+  disjoint ownership boundaries and their slices' required contract decisions
+  are settled. Unresolved decisions leave independent preparation eligible.
+- Serialize conflicting decisions and edits to a public API, storage format,
+  migration, benchmark interpretation, hot-loop helper, or overlapping files.
+  Sharing a stable API or issue does not itself serialize independent tests,
+  consumers, diagnosis, or preparation; keep one shared contract owner.
 - Set the active worker count to the minimum of the runtime limit, the number of
   safely independent tasks, the skill budget, and the machine/repository resource limit. Preserve
   coordinator capacity.
@@ -265,9 +276,10 @@ Predecessor #A changed since snapshot:
 
 ## Finalization Ownership
 
-An issue worker owns its deliverable packet until an accepted non-PR output, a mature
-`dependency-ready` PR, or a real blocker. The PR readiness loop below applies to
-PR-bearing packets. Finalize locally unless a delegated
+The integration owner owns the full node packet until an accepted non-PR output,
+a mature `dependency-ready` PR, or a real blocker. Slice workers hand their scoped
+outputs to that owner; their acceptance does not complete the node. The PR
+readiness loop below applies to PR-bearing packets. Finalize locally unless a delegated
 direct-child finalizer enables concrete useful parallel work. The active owner
 handles complete finding inventory, coherent repair batches, latest-head
 CI/review and thread resolution; merge authority remains explicit. While

@@ -387,9 +387,11 @@ Optimize for verified progress toward the agreed parent outcome per usage window
   An explicit request to fan out across more than two safe independent workstreams
   supplies that opt-in; use only the justified lanes and available resource budget.
   Preserve the one/two-worker defaults when no such direction exists.
-- Keep at most one implementation worker per node. Reuse that worker for its
-  fix loop; do not launch parallel implementer, benchmark, and review agents for
-  the same PR.
+- Choose ready assignments by their dependencies and conflict surfaces, not the
+  number of issues. Several workers may own independent slices of one node
+  within this budget; keep one integration and acceptance owner for the node.
+  Follow **Parallel Slices Within A Node** below. Reuse slice workers for their
+  fix loops; do not duplicate implementation, expensive runs, or evidence.
 - Do not delegate inventory, status polling, simple CI log extraction, tracker
   edits, branch synchronization, or merge commands as standalone work. PR
   finalization is active ownership, not an agent assigned only to wait for CI;
@@ -423,6 +425,31 @@ Optimize for verified progress toward the agreed parent outcome per usage window
   push, review, or handoff boundary. Request a concise status once; stop only
   when the worker is blocked, outside scope, or no longer useful.
 - Prefer sequential depth on the critical path over keeping every slot busy.
+
+## Parallel Slices Within A Node
+
+Split a node when genuinely independent work can advance its outcome concurrently.
+In existing graph state and worker handoffs, name each slice's deliverable,
+source/contract snapshot, prerequisites, owned files and worktree, required
+evidence, integration owner, and acceptance boundary. Each writer uses an isolated
+worktree; the integration owner alone changes the canonical candidate and accepts
+the combined packet. Coordinate shared seams before conflicting edits.
+
+Source/causal review, reproduction narrowing, test design, and independent client
+or harness preparation may run alongside one another or a repair. An unresolved
+cause permits bounded diagnosis and reusable preparation, not a speculative
+causal production fix before the issue's reproduction/decision gate. Start usable
+downstream preparation without waiting for unrelated repair merges; retain actual
+contract dependencies and final qualification/merge gates. A reviewer consumes a
+pinned candidate; later relevant edits require reassessing that review.
+
+Separate source ownership from runtime ownership. Give each expensive reproduction,
+benchmark, or retained-evidence run one execution owner and share its artifacts;
+parallel slices do not authorize duplicate runs or waive resource/isolation rules.
+Integrate useful slices into the coherent issue packet rather than creating a PR
+or delivery gate for every worker. A slice handoff does not complete the node.
+Apply the concurrency budget and stricter repository/scientific restrictions;
+intra-ticket parallelism is not unlimited fanout or new execution authority.
 
 ## Asynchronous Disk Cleanup
 
@@ -617,11 +644,11 @@ without the implementer's conclusions.
 Record requested versus actual routing only when observable. Never invent model
 selection, async flags, lifecycle tools, or capacity that the harness lacks.
 
-Delegate only work with a clear outcome, ownership boundary, base SHA, non-goals,
-required evidence, stop conditions, time box, and handoff format. Prefer a
-single implementation worker in an isolated worktree. Serialize shared
-contract and conflict surfaces, and leave the second slot unused unless a
-specific independent assignment justifies it.
+Delegate a whole packet or bounded intra-node slice with a clear outcome,
+ownership boundary, base SHA, prerequisites, non-goals, required evidence, stop
+conditions, time box, handoff format, and integration owner. Use an isolated
+worktree per writer and serialize only actual shared contract/conflict surfaces.
+Use additional slots only for ready independent work within the execution budget.
 
 If subagent tools are unavailable or no task has a safe delegation boundary,
 execute locally and record why. Do not pretend work was delegated.
@@ -657,11 +684,12 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
   integration work over low-value micro-optimization.
 - Workers may open or update PRs, but they must not merge unless explicitly
   delegated by the coordinator.
-- An issue worker owns the total issue completion packet through a stable
+- Each node has one owner accountable for the total completion packet through a stable
   `dependency-ready` PR candidate, accepted non-PR output, or real blocker. A plan
   is a handoff boundary only when the assigned packet is an evidence-backed
   plan/issue revision; an opened PR, first test, or isolated code change is not
-  implementation completion.
+  implementation completion. Slice workers own their explicitly assigned outputs;
+  the integration owner accepts them and remains accountable for the full packet.
 - Finalize a mature issue-complete PR locally unless delegation enables concrete
   useful parallel work. A delegated direct-child finalizer may edit, test,
   commit, push, update the PR and resolve threads; merge needs explicit delegated
@@ -676,8 +704,8 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
 - Workers are direct children by default and may not delegate recursively.
 - Normal subagent concurrency is at most one, may rise to two under the conservative
   budget, and may not exceed two without explicit user opt-in.
-- Keep one writer per contract/conflict surface. A named `contract_owner`
-  resolves cross-node decisions before affected parallel workers continue.
+- Keep one writer per overlapping edit/conflict surface. A named `contract_owner`
+  resolves cross-slice and cross-node decisions before affected parallel workers continue.
 - Do not declare a dependent PR mergeable or merge it until predecessor PRs are merged,
   required non-PR outputs are accepted, conditional eligibility is satisfied, and
   the dependent branch has been updated/revalidated on the final base.
@@ -729,9 +757,11 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
    notes, tracker order, and conflict/contract risk. Read the planner's
    reassessment instructions and identify consequential assumptions and decision
    boundaries where present.
-4. Record a conflict/contract and routing table for every node:
+4. Record a conflict/contract and routing table for every node and active slice:
    `contract_surface`, `conflict_surface`, `execution_mode`, `contract_owner`,
    `agent_role`, `requested_model`, `requested_effort`, and routing rationale.
+   For split nodes, include slice prerequisites, owned files/worktree, integration
+   owner and acceptance boundary in the existing state; no separate tracker is needed.
 5. Post or update durable graph state before implementation. Prefer a parent
    issue comment with marker `<!-- codex-issue-graph-executor:state -->`;
    otherwise use a local manifest and report the fallback. Record large generated
@@ -739,10 +769,11 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
    and disposable/retained status; carry them into worker handoffs.
 6. Present a concise graph snapshot and proceed immediately. Do not wait for
    plan approval because this skill defaults to execute-and-merge.
-7. Start ready nodes, including provisional descendants of `dependency-ready`
-   predecessors. Delegate one when useful local work can proceed alongside it;
-   otherwise implement locally. Add a second worker only when the conservative
-   budget permits it. Keep inventory, graph state, integration, and merge
+7. Start ready work, including independent slices within one node and provisional
+   descendants of `dependency-ready` predecessors. Select assignments by usable
+   contracts, prerequisites and conflict surfaces, not node count. Delegate when
+   useful local or sibling work can proceed alongside it within the conservative
+   budget; otherwise implement locally. Keep inventory, graph state, integration, and merge
    authority allocation with the coordinator. Use a bounded GPT-6.1 Sol adviser
    only under the triggers above.
 8. Track node state transitions in durable graph state and any local manifest: `pending`, `running`, `dependency-ready`, `fix-needed`, `review-scope-reset`, `mergeable-candidate`, `merged`, `completed` (accepted non-PR output), or `blocked`. Record deliverable contracts and accepted output links/versions. Track requested and actual agent routing separately.

@@ -11,6 +11,12 @@ do not inherit a different parent model or automatically substitute another mode
 Include large generated paths and their retention/disposal status in every
 implementation or finalization handoff.
 
+An assignment may own a whole issue or an independent slice within it. Use
+[Parallel Slices Within A Node](../SKILL.md#parallel-slices-within-a-node) for the
+split, prerequisites, file/worktree boundaries and one integration/acceptance
+owner. Slice completion is a handoff to that owner, not issue completion or a
+reason to create a separate PR. Keep the same concurrency and runtime budget.
+
 Carry consequential planner simplification findings into implementation
 assignments. Ready-issue, provisional-descendant, and finalization workers apply
 [Simplification Within The Completion Packet](../SKILL.md#simplification-within-the-completion-packet)
@@ -59,10 +65,12 @@ Task:
 
 ## Ready-Issue Worker
 
-Use when all recorded predecessor gates pass, including accepted non-PR outputs,
-or when there are no predecessors. Use **Provisional Descendant Worker** for
-dependency-ready PR predecessors awaiting merge once decision and eligibility
-gates pass; do not wait for their CI/review/merge or request work-ahead opt-in.
+Use when the assigned node or slice's construction prerequisites pass, including
+required accepted non-PR outputs, or when it has no prerequisites. Independent
+preparation can be ready while other parts of its issue remain blocked. Use
+**Provisional Descendant Worker** for work consuming dependency-ready PR snapshots
+before merge once its decision and eligibility gates pass; do not wait for their
+CI/review/merge or request work-ahead opt-in.
 
 ```text
 You are a Codex worker for issue #<ISSUE> in <OWNER>/<REPO>.
@@ -75,7 +83,10 @@ Load and follow:
 - <CODEX_HOME>/skills/codex-issue-graph-executor/SKILL.md
 
 Graph state:
-- This issue's recorded predecessor gates are satisfied: <MERGED_PRS_AND_ACCEPTED_OUTPUTS_OR_NONE>.
+- Assignment: <WHOLE_NODE_OR_NAMED_SLICE>; integration/acceptance owner: <OWNER>.
+- Slice prerequisites, usable contract and sibling boundaries: <DEPENDENCIES_AND_OWNERSHIP>.
+- This assignment's construction prerequisites are satisfied: <USABLE_SNAPSHOTS_AND_ACCEPTED_OUTPUTS_OR_NONE>.
+- Remaining issue merge/final-qualification gates: <REMAINING_GATES_OR_NONE>.
 - Worktree and candidate SHA: <WORKTREE> / <HEAD_SHA>
 - Base ref/SHA: <BASE_REF> / <BASE_SHA>
 - Parent tracker/invariants: <SUMMARY>
@@ -91,7 +102,7 @@ Graph state:
 Rules:
 - You are not alone in the codebase. Do not revert changes made by others.
 - Enumerate every root/nested `AGENTS.md` applicable to your owned paths at the assigned head and report its review cap/stop rules.
-- Deliver only this issue's scope; resolve routine choices without approval.
+- Deliver only the assigned node or slice scope; resolve routine choices without approval.
 - Apply SKILL.md's simplification policy to existing code and the candidate diff;
   deliver the full outcome and preserve required behavior/evidence.
 - Own the assigned deliverable packet under SKILL.md. For implementation, include
@@ -101,8 +112,10 @@ Rules:
   actual revision and preserved gates; apply GitHub changes only when that write
   authority was assigned, otherwise return the proposed patch for the coordinator.
   Do not invent a PR for an accepted non-code output or claim the parent goal met.
-  Carry the packet to coordinator acceptance, a stable dependency-ready PR, or a
-  real blocker. An opened PR, first test, or partial code change is not completion.
+  Carry a whole-node packet to coordinator acceptance, a stable dependency-ready
+  PR, or a real blocker. For a slice, deliver its complete assigned output and
+  evidence to the integration owner; do not claim node acceptance or mergeability.
+  An opened PR, first test, or partial assigned change is not completion.
 - Run required checks once; repeat or broaden only for changes, failures, or
   unresolved risks. Preserve commands, results, and the SHA they tested.
 - Treat material performance regressions as blockers unless explicitly accepted
@@ -116,8 +129,9 @@ Rules:
   authority.
 - Do not spawn subagents.
 
-Return a handoff for a complete non-PR output awaiting coordinator acceptance,
-a dependency-ready PR candidate, a real blocker, or a coordinator stop request.
+Return a handoff for the complete assigned slice or non-PR output awaiting owner
+acceptance, a whole-node dependency-ready PR candidate, a real blocker, or a
+coordinator stop request. Identify remaining integration and node obligations.
 Use `review-scope-reset` only for an exhausted
 explicit hard cap or coordinator-confirmed recurring material
 contract/architecture failure; advisory review history does not change node
@@ -184,6 +198,8 @@ Requested routing: gpt-6.1-sol / <medium for routine work; high for complex work
 
 This is provisional downstream work. These PR predecessors await merge:
 <PR_PREDECESSORS>. Accepted non-PR outputs and eligibility: <ACCEPTED_GATES>.
+Assignment: <WHOLE_NODE_OR_NAMED_SLICE>; prerequisites/files/worktree: <BOUNDARY>.
+Integration/acceptance owner and parallel siblings: <OWNER_AND_SIBLINGS>.
 
 You may implement against this contract snapshot:
 <SNAPSHOT>.
