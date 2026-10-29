@@ -115,6 +115,20 @@ class JobNotificationTests(unittest.TestCase):
         self.assertEqual(events[-1]["job_id"], 100)
         self.assertEqual(events[-1]["observed_failures"][0]["job_id"], 100)
 
+    def test_duplicate_run_selectors_notify_once_per_snapshot_and_invocation(self):
+        selected = args("--run-id", "10", "--run-id", "10", "--notify-job-id", "10:99")
+        progress = self.states([job()])
+        progress["runs"].append(copy.deepcopy(progress["runs"][0]))
+        green = copy.deepcopy(progress)
+        green["checks"] = [check(status="COMPLETED", conclusion="SUCCESS")]
+        for item in green["runs"]:
+            item.update(status="completed", conclusion="success")
+        code, events, reads = self.watch(selected, [progress, progress, green, green])
+        self.assertEqual(code, 0)
+        self.assertEqual(reads, 4)
+        self.assertEqual([e["event"] for e in events], ["watching", "job_completed", "ci_success"])
+        self.assertEqual(events[0]["run_ids"], [10, 10])  # Existing selector handling stays unchanged.
+
     def test_terminal_failures_take_priority_over_same_snapshot_progress(self):
         selected = args("--run-id", "10", "--notify-job-id", "10:99")
         for kind in ["selected", "sibling", "required_check", "advisory_check"]:

@@ -320,6 +320,7 @@ def observed_failures(snapshot, acknowledged=()):
 def notify_job_completions(args, snapshot, notified):
     """Emit optional progress only after the snapshot's terminal checks pass."""
     completed = []
+    queued = set()
     for run in snapshot.get("runs", []):
         for job_id in args.notify_job_id.get(run["id"], []):
             jobs = [job for job in run.get("jobs", []) if job["id"] == job_id]
@@ -332,7 +333,7 @@ def notify_job_completions(args, snapshot, notified):
                     job.get("run_attempt", run["run_attempt"]) != run["run_attempt"]):
                 raise WatchError("Selected job does not match its workflow run/attempt")
             key = (run["id"], run["run_attempt"], job_id)
-            if job["status"].lower() != "completed" or key in notified:
+            if job["status"].lower() != "completed" or key in notified or key in queued:
                 continue
             if not job.get("conclusion") or not job.get("completed_at"):
                 raise WatchError("Completed selected job is missing conclusion or completion time")
@@ -341,6 +342,7 @@ def notify_job_completions(args, snapshot, notified):
                 "conclusion": job["conclusion"].lower(), "started_at": job.get("started_at"),
                 "completed_at": job["completed_at"], "url": job.get("html_url"),
                 "scope": "explicit_workflow", "terminal": False, "merge_authorized": False}))
+            queued.add(key)
     for key, details in completed:
         emit(args, "job_completed", **details)
         notified.add(key)
