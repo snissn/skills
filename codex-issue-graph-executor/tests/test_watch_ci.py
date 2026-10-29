@@ -51,6 +51,169 @@ def base_response(oid=BASE):
     return {"data": {"repository": {"ref": {"target": {"oid": oid}}}}}
 
 
+def job(job_id=99, conclusion="success", run_id=10, attempt=1):
+    return {"id": job_id, "name": f"job-{job_id}", "run_id": run_id, "run_attempt": attempt,
+            "status": "completed", "conclusion": conclusion,
+            "started_at": "2026-10-28T20:00:00Z", "completed_at": "2026-10-28T20:01:00Z",
+            "html_url": f"https://github.com/owner/repo/actions/runs/{run_id}/job/{job_id}"}
+
+
+class JobNotificationTests(unittest.TestCase):
+    def watch(self, selected, states):
+        output = io.StringIO()
+        with patch.object(w, "read_snapshot", side_effect=states) as read, \
+             patch.object(w.time, "sleep"), contextlib.redirect_stdout(output):
+            code = w.watch(selected)
+        return code, [json.loads(line) for line in output.getvalue().splitlines()], read.call_count
+
+    def states(self, jobs=None, completed=False):
+        state = snapshot(check(status="COMPLETED", conclusion="SUCCESS") if completed else check())
+        state["runs"] = [run("completed" if completed else "in_progress",
+                             "success" if completed else None, jobs=jobs)]
+        return state
+
+    def test_completion_once_while_workflow_continues_to_confirmed_success(self):
+        selected = args("--run-id", "10", "--run-attempt", "10:1", "--notify-job-id", "10:99")
+        pending = self.states()
+        progress = self.states([job()])
+        green = self.states([job()], completed=True)
+        code, events, reads = self.watch(selected, [pending, progress, progress, green, green])
+        self.assertEqual(code, 0)
+        self.assertEqual(reads, 5)
+        self.assertEqual([e["event"] for e in events], ["watching", "job_completed", "ci_success"])
+        notification = events[1]
+        self.assertEqual((notification["run_id"], notification["attempt"], notification["workflow_id"],
+                          notification["job_id"], notification["conclusion"]), (10, 1, 20, 99, "success"))
+        self.assertEqual((notification["head"], notification["base"]), (HEAD, BASE))
+        self.assertFalse(notification["terminal"])
+        self.assertFalse(notification["merge_authorized"])
+
+    def test_repeatable_selection_is_exact_across_runs_and_jobs(self):
+        selected = args("--run-id", "10", "--run-id", "11", "--notify-job-id", "10:99",
+                        "--notify-job-id", "10:100", "--notify-job-id", "11:199")
+        pending = self.states([job(), job(100), job(101)])
+        other = run(jobs=[job(199, run_id=11)])
+        other["id"] = 11
+        pending["runs"].append(other)
+        green = copy.deepcopy(pending)
+        green["checks"] = [check(status="COMPLETED", conclusion="SUCCESS")]
+        for item in green["runs"]:
+            item.update(status="completed", conclusion="success")
+        code, events, _ = self.watch(selected, [pending, pending, green, green])
+        self.assertEqual(code, 0)
+        self.assertEqual([(e["run_id"], e["job_id"]) for e in events if e["event"] == "job_completed"],
+                         [(10, 99), (10, 100), (11, 199)])
+
+    def test_early_success_does_not_hide_later_sibling_failure(self):
+        selected = args("--run-id", "10", "--notify-job-id", "10:99")
+        progress = self.states([job()])
+        failed = self.states([job(), job(100, "failure")])
+        code, events, reads = self.watch(selected, [progress, failed])
+        self.assertEqual(code, 1)
+        self.assertEqual(reads, 2)
+        self.assertEqual([e["event"] for e in events], ["watching", "job_completed", "failure"])
+        self.assertEqual(events[-1]["job_id"], 100)
+        self.assertEqual(events[-1]["observed_failures"][0]["job_id"], 100)
+
+    def test_terminal_failures_take_priority_over_same_snapshot_progress(self):
+        selected = args("--run-id", "10", "--notify-job-id", "10:99")
+        for kind in ["selected", "sibling", "required_check", "advisory_check"]:
+            with self.subTest(kind=kind):
+                state = self.states([job()])
+                if kind == "selected":
+                    state["runs"][0]["jobs"][0]["conclusion"] = "failure"
+                elif kind == "sibling":
+                    state["runs"][0]["jobs"].append(job(100, "failure"))
+                else:
+                    state["checks"].append(check("broken", "COMPLETED", "FAILURE", kind == "required_check"))
+                code, events, _ = self.watch(selected, [state])
+                self.assertIn(code, [1, 4])
+                self.assertEqual(len(events), 2)
+                self.assertIn(events[-1]["event"], ["failure", "advisory_failure"])
+
+    def test_identity_changes_suppress_completion_and_end_watch(self):
+        selected = args("--run-id", "10", "--notify-job-id", "10:99")
+        pending = self.states()
+        for field in ["head_sha", "run_attempt", "workflow_id", "baseBranchOid"]:
+            with self.subTest(field=field):
+                changed = self.states([job()])
+                if field == "baseBranchOid":
+                    changed["pr"][field] = "c" * 40
+                else:
+                    changed["runs"][0][field] = "c" * 40 if field == "head_sha" else 2
+                code, events, _ = self.watch(selected, [pending, changed])
+                self.assertEqual(code, 3)
+                self.assertEqual([e["event"] for e in events], ["watching", "superseded"])
+
+    def test_explicit_attempt_mismatch_never_notifies(self):
+        state = self.states([job()])
+        selected = args("--run-id", "10", "--run-attempt", "10:2", "--notify-job-id", "10:99")
+        code, events, _ = self.watch(selected, [state])
+        self.assertEqual(code, 3)
+        self.assertEqual(events[-1]["event"], "superseded")
+
+    def test_success_confirmation_has_priority_over_progress(self):
+        selected = args("--run-id", "10", "--notify-job-id", "10:99")
+        green = self.states([job()], completed=True)
+        changed = copy.deepcopy(green)
+        changed["pr"]["headRefOid"] = "c" * 40
+        code, events, _ = self.watch(selected, [green, changed])
+        self.assertEqual(code, 3)
+        self.assertEqual([e["event"] for e in events], ["watching", "superseded"])
+
+    def test_default_remains_quiet_with_completed_constituent_job(self):
+        green = self.states([job()], completed=True)
+        code, events, _ = self.watch(args("--run-id", "10"), [self.states([job()]), green, green])
+        self.assertEqual(code, 0)
+        self.assertEqual([e["event"] for e in events], ["watching", "ci_success"])
+        self.assertNotIn("requested_job_notifications", events[0])
+
+    def test_unselected_job_and_missing_target_do_not_invent_a_gate(self):
+        green = self.states([job(100)], completed=True)
+        green["runs"][0]["jobs"][0]["name"] = "job-99"  # Same name cannot substitute for exact ID.
+        selected = args("--run-id", "10", "--notify-job-id", "10:99")
+        code, events, _ = self.watch(selected, [green, green])
+        self.assertEqual(code, 0)
+        self.assertEqual([e["event"] for e in events], ["watching", "ci_success"])
+
+    def test_incomplete_or_wrong_job_identity_fails_closed(self):
+        selected = args("--run-id", "10", "--notify-job-id", "10:99")
+        for field, value in [("run_id", 11), ("run_attempt", 2), ("completed_at", None), ("conclusion", None)]:
+            with self.subTest(field=field):
+                state = self.states([job()])
+                state["runs"][0]["jobs"][0][field] = value
+                code, events, _ = self.watch(selected, [state])
+                self.assertEqual(code, 2)
+                self.assertEqual([e["event"] for e in events], ["watching", "error"])
+
+    def test_pending_job_then_duplicate_identity_are_not_notified(self):
+        selected = args("--run-id", "10", "--notify-job-id", "10:99")
+        pending = self.states([job()])
+        pending["runs"][0]["jobs"][0].update(status="in_progress", conclusion=None, completed_at=None)
+        duplicate = self.states([job(), job()])
+        code, events, _ = self.watch(selected, [pending, duplicate])
+        self.assertEqual(code, 2)
+        self.assertEqual([e["event"] for e in events], ["watching", "error"])
+
+    def test_neutral_completion_is_a_diagnostic_not_ci_acceptance(self):
+        selected = args("--run-id", "10", "--notify-job-id", "10:99")
+        state = self.states([job(conclusion="neutral")])
+        code, events, _ = self.watch(selected, [state, w.WatchError("offline stop")])
+        self.assertEqual(code, 2)
+        self.assertEqual([e["event"] for e in events], ["watching", "job_completed", "error"])
+        self.assertEqual(events[1]["conclusion"], "neutral")
+
+    def test_selection_arguments_require_unique_positive_job_and_selected_run(self):
+        for extra in [("--notify-job-id", "10:99"),
+                      ("--run-id", "10", "--notify-job-id", "11:99"),
+                      ("--run-id", "10", "--notify-job-id", "10:0"),
+                      ("--run-id", "10", "--notify-job-id", "99"),
+                      ("--run-id", "10", "--notify-job-id", "10:99", "--notify-job-id", "10:99")]:
+            with self.subTest(extra=extra), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    args(*extra)
+
+
 class WatchTests(unittest.TestCase):
     def test_pending_and_missing_checks_do_not_pass(self):
         self.assertIsNone(w.evaluate(args(), snapshot()))

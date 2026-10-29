@@ -31,7 +31,7 @@ unchanged polls print nothing. Failures wake on the next snapshot rather than
 waiting for sibling jobs or the workflow to finish. This is polling, so normal
 notification latency includes the poll interval and API calls.
 
-The process writes JSON lines: one start line and one event line. Keep the output
+By default the process writes JSON lines: one start line and one terminal event line. Keep the output
 with the existing readiness evidence if failures matter; the final line preserves
 all observed failed checks/jobs with their original IDs and run attempts. Never
 overwrite the original failure with a later retry result. A new invocation cannot
@@ -94,6 +94,43 @@ records requested IDs. Preserve the original failure and disposition alongside
 this output. CI-success notification with an acknowledged advisory failure still
 requires the complete live merge gate and cannot certify an unresolved requirement.
 
+## Selected job completion progress
+
+When an artifact audit can start before sibling shards finish, optionally repeat
+`--notify-job-id RUN_ID:JOB_ID` for exact GitHub workflow job IDs within selected
+`--run-id` runs. For example, add `--notify-job-id 456:789` to the pinned command
+above. This is an observation target, not a new required check or a workflow
+completion condition. A missing target produces no notification and does not
+alter the existing full-watch completion rules. Discover and record the exact job
+ID first; names, substrings and historical replacement IDs are not selectors.
+
+Each completed selected job emits one `job_completed` JSON line per invocation,
+including an already completed job in the first snapshot. Unchanged polls remain
+quiet. The event includes exact head/base, run ID, pinned attempt, workflow ID,
+job ID/name, conclusion, completion time and URL; `terminal: false` and
+`merge_authorized: false` distinguish progress from the final `ci_success` event.
+The watcher continues monitoring the full selected workflow and PR head/live base.
+It uses the existing snapshots without extra API reads or a polling-rate change.
+Pin `--run-attempt` when resuming; otherwise the first observed attempt is pinned.
+Once-only delivery is local to this process: a fresh invocation may report the
+same completed job again, so retain its run/attempt/job identity with the receipt.
+
+Existing terminal outcomes take priority over progress from the same snapshot:
+failure, cancellation, intervention, supersession and errors stop the watch as
+before. A failed selected job uses that existing terminal failure notification;
+a sibling failure can suppress a selected success notification in that snapshot.
+Full CI success is still confirmed by a second read before either its final
+completion progress or success event. A missing conclusion/completion time or
+mismatched selected job run/attempt fails closed. Neutral/skipped completion can
+be reported as progress while the run continues; it grants no acceptance and
+does not suppress the existing final workflow policy.
+
+Success means the job finished, not that its artifact's samples/provenance were
+audited. Start the read-only audit under the exact reported identity while sibling
+CI continues. Preserve all original failures and the full merge gate. If using
+the async continuation below, forward nonempty output while the process is still
+running; waiting only for process exit would hide this early notification.
+
 ## Asynchronous Codex continuation
 
 Use this pattern only when `functions.exec`, `yield_control`, and exec sessions
@@ -119,6 +156,9 @@ if (!launch.session_id) {
   // Each tool wait is bounded; do not poll GitHub again in the model loop.
   while (true) {
     const update = await tools.write_stdin({session_id: session, chars: "", yield_time_ms: 30000, max_output_tokens: 1800});
+    if (update.session_id && update.output) {
+      notify({event: "ci_watcher_progress", session_id: session, output: update.output});
+    }
     if (!update.session_id) {
       notify({event: "ci_watcher_exit", session_id: session, exit_code: update.exit_code, output: update.output});
       break;

@@ -317,14 +317,45 @@ def observed_failures(snapshot, acknowledged=()):
     return failures
 
 
+def notify_job_completions(args, snapshot, notified):
+    """Emit optional progress only after the snapshot's terminal checks pass."""
+    completed = []
+    for run in snapshot.get("runs", []):
+        for job_id in args.notify_job_id.get(run["id"], []):
+            jobs = [job for job in run.get("jobs", []) if job["id"] == job_id]
+            if len(jobs) > 1:
+                raise WatchError("Duplicate selected job identity in workflow snapshot")
+            if not jobs:
+                continue
+            job = jobs[0]
+            if (job.get("run_id", run["id"]) != run["id"] or
+                    job.get("run_attempt", run["run_attempt"]) != run["run_attempt"]):
+                raise WatchError("Selected job does not match its workflow run/attempt")
+            key = (run["id"], run["run_attempt"], job_id)
+            if job["status"].lower() != "completed" or key in notified:
+                continue
+            if not job.get("conclusion") or not job.get("completed_at"):
+                raise WatchError("Completed selected job is missing conclusion or completion time")
+            completed.append((key, {"run_id": run["id"], "attempt": run["run_attempt"],
+                "workflow_id": run["workflow_id"], "job_id": job_id, "job": job["name"],
+                "conclusion": job["conclusion"].lower(), "started_at": job.get("started_at"),
+                "completed_at": job["completed_at"], "url": job.get("html_url"),
+                "scope": "explicit_workflow", "terminal": False, "merge_authorized": False}))
+    for key, details in completed:
+        emit(args, "job_completed", **details)
+        notified.add(key)
+
+
 def watch(args):
     started = time.monotonic()
     deadline = started + args.max_wait if args.max_wait else None
     baseline = None
     snapshot = {}
+    notified_jobs = set()
     last_failure_metadata = {"acknowledged_advisory_check_ids": [], "observed_failures": []}
     emit(args, "watching", run_ids=args.run_id, run_attempts=args.run_attempt,
-         requested_advisory_acknowledgement_ids=args.acknowledge_advisory_check_id)
+         requested_advisory_acknowledgement_ids=args.acknowledge_advisory_check_id,
+         **({"requested_job_notifications": args.notify_job_id} if args.notify_job_id else {}))
     try:
         while True:
             snapshot = read_snapshot(args, deadline)
@@ -343,6 +374,8 @@ def watch(args):
                     snapshot = confirmation
                 if result:
                     event, code, details = result
+                    if event == "ci_success":
+                        notify_job_completions(args, snapshot, notified_jobs)
                     acknowledged = acknowledged_advisories(args, snapshot, acknowledgement_baseline)
                     if "acknowledged_advisory_check_ids" not in details:
                         details["acknowledged_advisory_check_ids"] = sorted(acknowledged)
@@ -350,6 +383,7 @@ def watch(args):
                          run_bindings=[{key: run[key] for key in ("id", "head_sha", "run_attempt", "workflow_id")}
                                        for run in snapshot.get("runs", [])])
                     return code
+            notify_job_completions(args, snapshot, notified_jobs)
             baseline = baseline or snapshot
             remaining = args.poll_interval if deadline is None else deadline - time.monotonic()
             if remaining <= 0:
@@ -379,6 +413,8 @@ def parse_args(argv=None):
     parser.add_argument("--run-id", type=int, action="append", default=[])
     parser.add_argument("--run-attempt", action="append", default=[], metavar="RUN_ID:ATTEMPT",
                         help="Pin an already recorded attempt, especially when resuming")
+    parser.add_argument("--notify-job-id", action="append", default=[], metavar="RUN_ID:JOB_ID",
+                        help="Emit once-only job completion progress without ending the watch; repeat as needed")
     parser.add_argument("--require-check", action="append", default=[], help="Expected check name; repeat as needed")
     parser.add_argument("--acknowledge-advisory-check-id", type=int, action="append", default=[], metavar="ID",
                         help="Exact CheckRun databaseId whose advisory FAILURE the owner already dispositioned")
@@ -415,6 +451,15 @@ def parse_args(argv=None):
             parser.error("each --run-attempt must bind a distinct selected run")
         attempts[run_id] = attempt
     args.run_attempt = attempts
+    notifications = {}
+    for binding in args.notify_job_id:
+        if not re.fullmatch(r"[1-9][0-9]*:[1-9][0-9]*", binding):
+            parser.error("--notify-job-id must be RUN_ID:JOB_ID")
+        run_id, job_id = map(int, binding.split(":"))
+        if run_id not in args.run_id or job_id in notifications.get(run_id, []):
+            parser.error("each --notify-job-id must bind a distinct job in a selected run")
+        notifications.setdefault(run_id, []).append(job_id)
+    args.notify_job_id = notifications
     args.head = args.head.lower()
     args.base = args.base.lower() if args.base else None
     return args
