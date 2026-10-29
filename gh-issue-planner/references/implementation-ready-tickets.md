@@ -2,7 +2,8 @@
 
 Use when drafting or applying implementation issues, or reviewing whether an
 existing ticket is ready for an implementer. This is a body-content contract,
-not a requirement for another tracker, report, agent, or approval ceremony.
+not a requirement for another tracker or approval ceremony. The independent
+readiness review below checks the executable body itself.
 Keep requirements proportional: a small edit may need only a few precise
 sentences; an architectural deletion needs an inventory and explicit contracts.
 
@@ -36,6 +37,10 @@ selected implementation, and these details wherever relevant:
   directory for the initial check and affected suites/harnesses, plus expected
   pass/fail observables. Add the applicable performance contract and repo merge
   gates; "run tests" and "no regressions" alone are not acceptance evidence.
+  Assert errors at the tested boundary: a wire code/message is distinct from
+  an internal Go sentinel. For grouped mutations with fallback/retry, require
+  proof of no prior publication before retry and deterministic prepublication
+  versus ambiguous/postpublication outcome and reopen controls.
 - **Completion and decisions:** say what output closes the packet, who accepts
   it, which dependencies consume accepted decisions versus merged code, and
   what remains unresolved. Replace phrases such as "where appropriate" or
@@ -108,6 +113,41 @@ path the implementer's sole access to required instructions.
 
 ## Revision During Implementation
 
+### Reproduction Evidence For Bug Repairs
+
+Name three states separately in the body: (1) retained error logs and source,
+(2) the runnable reproduction recipe and source-grounded confidence in it, and
+(3) whether baseline RED has actually been observed and preserved on the unfixed
+revision. Include RED source/build identity, public entry, backend/profile/ACK,
+fixture/workload, failing assertions, errors and cleanup evidence when it exists.
+Do not upgrade logs, source inference, a proposed test or a recipe to observed RED.
+
+If the exact trigger is unknown, define the bounded next reproduction/diagnostic
+inquiry and decision owner as the first execution gate. Keep the production patch
+conditional on a demonstrated cause. An inconclusive reproduction remains
+inconclusive; it cannot justify weakening a test, manufacturing a different
+failure, or issuing a helper-only GREEN. After the gate, keep the meaningful RED,
+repair and GREEN coverage in one integrated change. Rerun the identical public
+path and assertions on the fixed source, with source/config changes disclosed.
+Storage repairs include acknowledged-value read-back, checkpoint, checked close,
+fresh reopen, profile-appropriate recovery and outward error propagation. An old
+backend fixture is not proof of COW behavior. Respect explicitly required
+graph/skill readiness review before implementation; a clarity verdict does not
+grant execution, PR or merge authority.
+
+For lifecycle qualification, name the producer that actually observes the
+original Close/Flush return, its source-pinned change/dependency and owner, error
+receipt and exit propagation. A shell cannot recover a discarded return; a
+second flush is not an observation of the first. Require an injected negative
+control where ordinary operation counts/timing pass but the original close
+fails. Preserve timing boundaries and reject missing/failed receipts.
+
+Separate random performance-fixture checks (counts, required keys/fields and
+pre-close versus post-reopen state preservation) from exact-write correctness.
+The latter needs retained expected writes and explicit concurrency semantics in
+a separately labeled deterministic fixture; do not silently replace or
+instrument the timed workload and claim identical performance evidence.
+
 Treat the file map as verified at a stated revision, not as a permanent patch.
 Make the outcome, supported/unsupported behavior, preservation requirements and
 acceptance guards explicit; identify provisional mechanics separately.
@@ -142,10 +182,27 @@ state boundaries, protect shared code, and tell when the packet is complete?
 Check that each task has an observable exit and each retirement target has a
 disposition. Verify paths, symbols and commands against the audited revision;
 label unexecuted commands and proposed test names honestly.
+Verify command syntax, working directory, flags and fixture availability against
+source/docs; state execution status separately. A checked command recipe is not
+evidence that its tests or benchmarks ran during planning.
 
-For a complex packet or an explicit implementability request, a bounded independent
-read-through can improve this check. Give the reviewer the actual issue body and
-named repository/policies, not hidden intended answers or chat context. Ask for
-their first actions, consequential unresolved decisions and missing acceptance
-criteria. Fix substantive ambiguity or mark its affected work unready. This is
-not a mandatory extra reviewer/model or a claim that implementation has run.
+For new or substantively revised executable issue bodies, an independent
+`gpt-6.1-terra` sub-agent readiness review is required before publication or an
+implementation-ready claim. Start with only the actual bodies, source revision,
+applicable repository policy and necessary referenced evidence, not the author's
+conversation history or hidden intended answers. A single bounded review may
+cover the related graph; do not repeat review for unchanged bodies or status-only
+updates.
+
+Require a per-ticket READY/NOT READY verdict and the implementer's first concrete
+test/edit, consequential unresolved decisions, conflicting scope/edges, missing
+behavior/error/lifecycle requirements, and ambiguous acceptance evidence. For
+investigations, judge whether the inquiry and decision boundary are executable;
+do not demand that an unknown root cause already be solved. For evidence tasks,
+check that workload, comparisons, unsupported/invalid cells and claim limits are
+explicit. Resolve consequential findings and have Terra recheck the affected
+text; retain the reviewed body identity and verdict with the planning artifacts.
+If the required model is unavailable, state that the readiness check is pending
+instead of substituting another model or claiming readiness. This is a ticket
+clarity review, not PR approval, evidence that implementation ran, or permission
+to execute the graph. Inspect-only work and structure sketches need no such pass.

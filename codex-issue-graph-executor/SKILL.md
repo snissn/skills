@@ -100,6 +100,36 @@ secondary objectives distinct from guardrails; a measurement budget or resource 
 is not proof of optimization. Parent completion requires its agreed outcome gates,
 not merely accepted child outputs or linked follow-ups.
 
+## Bug Reproduction And RED/GREEN Evidence
+
+For a bug repair, distinguish retained error evidence, a runnable recipe and an
+actually observed baseline RED. Before a production repair, verify the recipe
+against the selected source/public entry/backend/profile; run and preserve RED on
+the unfixed source with exact build/configuration, assertions, errors and cleanup
+evidence. Source inspection, an old log or an unexecuted test is not RED. If the
+trigger is uncertain, execute the issue's bounded reproduction/diagnosis gate
+first, record inconclusive outcomes, and leave patch mechanics undecided until
+causal evidence supports them. Do not fabricate RED by injecting an unrelated
+failure or weakening checks.
+
+Demonstrate GREEN on the identical intended public path, workload and assertions;
+a legacy fixture is not COW proof. Storage repairs include acknowledged-value
+read-back, checkpoint, checked close, fresh reopen/profile-appropriate recovery
+and error propagation, with actual backend activation. Preserve all original
+failures and meaningful assertions. Keep reproduction, fix and coverage in one
+integrated change instead of separate proof-only delivery cycles. When the user
+requires a coordinator/ROOT graph or skill readiness review before implementation,
+keep implementation pending until that actual review is recorded; ticket clarity
+review or publication is not a substitute or new execution authority.
+
+Assert the public boundary's actual error representation separately from internal
+causal errors. Retry grouped mutations only with proof of no prior publication;
+exercise prepublication fallback and ambiguous/postpublication no-retry outcomes.
+Observe the original Close/Flush return at its producer, propagate errors and
+validate an injected close failure even when operation totals pass; a shadow
+flush cannot recover a discarded return. Keep random-workload persistence checks
+distinct from deterministic exact-value fixtures with retained expected state.
+
 When performance is the primary outcome, apply the sequencing in the planner's
 [performance-sensitive feature contract](../gh-issue-planner/SKILL.md#performance-sensitive-feature-contract).
 For optimizations, carry its public-entry red/green regression or justified exception,
