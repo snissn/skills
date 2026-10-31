@@ -9,7 +9,12 @@ Select `gpt-6.1-sol` through the spawn/config fields, not the prompt alone.
 Use explicit role effort and follow the runtime's fork restrictions in `SKILL.md`;
 do not inherit a different parent model or automatically substitute another model.
 Include large generated paths and their retention/disposal status in every
-implementation or finalization handoff.
+implementation or finalization handoff. Also supply the checkout method/Git common
+directory, resolved shared `GOCACHE`/`GOMODCACHE`, and lane-specific
+`TMPDIR`/`GOTMPDIR` and output paths under
+[Storage And Build Cache Defaults](../SKILL.md#storage-and-build-cache-defaults).
+Workers inherit these paths without allocating replacement caches or clearing
+shared caches. Any isolated-cache exception includes its reason and disposal owner.
 
 Carry consequential planner simplification findings into implementation
 assignments. Ready-issue, provisional-descendant, and finalization workers apply

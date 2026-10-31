@@ -52,6 +52,11 @@ local branch and remote-branch retention separately under the helper's policy.
   release before deletion, not a new user prompt for already authorized scope.
 - Preserve primary checkouts, active/provisional worktrees, user files, real DBs,
   unrelated graph outputs, and shared persistent build/module/package caches.
+  Include resolved shared `GOCACHE`/`GOMODCACHE` paths in the protected-path list,
+  even when they sit under a task-looking directory. Workers must not run
+  `go clean -cache` or `go clean -modcache` against them during lane cleanup.
+  An explicitly isolated cache is eligible only under its recorded exception,
+  disposal owner and normal release checks.
   Broader cache/host cleanup requires explicit scope; report large unattributed
   or shared candidates with their sizes instead of deleting them.
 

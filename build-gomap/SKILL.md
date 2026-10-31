@@ -5,7 +5,7 @@ description: Retrieve snissn/gomap, provision its Go 1.26 toolchain and CGO prer
 
 # Build `snissn/gomap`
 
-Use this skill to reproduce a Linux/amd64 build of `snissn/gomap`. Prefer a normal Git clone. When the shell cannot resolve GitHub, retrieve the same pinned source and Go toolchain through the Go module proxy or an available direct-download tool.
+Use this skill to reproduce a Linux/amd64 build of `snissn/gomap`. Reuse an assigned worktree at the requested source snapshot, or prefer a linked worktree from an existing repository before creating a new clone. When the shell cannot resolve GitHub, retrieve the same pinned source and Go toolchain through the Go module proxy or an available direct-download tool.
 
 ## Known-good reference build
 
@@ -78,29 +78,35 @@ Do not invoke a package manager when the required tools are already installed.
 
 ## 2. Create an isolated workspace
 
+Choose an absolute task-specific `WORK_ROOT` under the host's preferred
+high-capacity storage (for example `/mnt/fast4tb`), after verifying that mount is
+available and writable. The working-directory fallback below is for hosts without
+a configured storage location. Keep temporary data and outputs local to this run;
+configure shared Go caches after selecting the toolchain in step 6.
+
 ```bash
 set -euo pipefail
 
 export WORK_ROOT="${WORK_ROOT:-$PWD/gomap-build-work}"
 export DOWNLOAD_DIR="$WORK_ROOT/downloads"
 export SOURCE_PARENT="$WORK_ROOT/source"
-export CACHE_ROOT="$WORK_ROOT/cache"
 export LOG_DIR="$WORK_ROOT/logs"
 export ARTIFACT_DIR="$WORK_ROOT/artifacts"
+export TMPDIR="$WORK_ROOT/tmp"
+export GOTMPDIR="$TMPDIR/go"
 
 mkdir -p \
   "$DOWNLOAD_DIR" \
   "$SOURCE_PARENT" \
-  "$CACHE_ROOT" \
   "$LOG_DIR" \
-  "$ARTIFACT_DIR"
-
-export GOMODCACHE="$CACHE_ROOT/go-mod"
-export GOCACHE="$CACHE_ROOT/go-build"
-mkdir -p "$GOMODCACHE" "$GOCACHE"
+  "$ARTIFACT_DIR" \
+  "$TMPDIR" \
+  "$GOTMPDIR"
 ```
 
-Using isolated Go caches makes the dependency state inspectable and prevents unrelated user-cache contents from masking missing downloads.
+Do not allocate per-run Go caches for ordinary builds. Use the explicit cold-cache
+mode in step 6 only when dependency acquisition from empty caches is part of the
+requested proof, and record its reason, paths and disposal owner.
 
 ## 3. Configure Go module access
 
@@ -159,27 +165,39 @@ Never echo, log, archive, or commit a credential-bearing proxy URL. In reports, 
 
 ## 4. Acquire the source
 
-### Preferred path: clone GitHub and pin the commit
+### Preferred path: reuse a repository and pin the commit
+
+If a coordinator already supplied `GOMAP_SOURCE` at the requested snapshot,
+verify its source identity under the task's contract and skip source creation.
+Do not reset or delete an existing path. Otherwise set `GOMAP_EXISTING_REPO` to a
+suitable local repository when available; ensure the pinned commit is present
+(fetch it if needed) before adding the worktree. Clone only when none is available.
 
 ```bash
 export GOMAP_REPOSITORY='https://github.com/snissn/gomap.git'
-export GOMAP_COMMIT='4c00c886a9d7059f143e1d564aa602ed583a6cc5'
-export GOMAP_SOURCE="$SOURCE_PARENT/gomap"
+export GOMAP_COMMIT="${GOMAP_COMMIT:-4c00c886a9d7059f143e1d564aa602ed583a6cc5}"
+export GOMAP_SOURCE="${GOMAP_SOURCE:-$SOURCE_PARENT/gomap}"
 
-rm -rf "$GOMAP_SOURCE"
-git clone "$GOMAP_REPOSITORY" "$GOMAP_SOURCE"
+test ! -e "$GOMAP_SOURCE"
+if [[ -n "${GOMAP_EXISTING_REPO:-}" ]]; then
+  git -C "$GOMAP_EXISTING_REPO" worktree add --detach "$GOMAP_SOURCE" "$GOMAP_COMMIT"
+else
+  git clone "$GOMAP_REPOSITORY" "$GOMAP_SOURCE"
+  git -C "$GOMAP_SOURCE" checkout --detach "$GOMAP_COMMIT"
+fi
 cd "$GOMAP_SOURCE"
-git checkout --detach "$GOMAP_COMMIT"
 
 test "$(git rev-parse HEAD)" = "$GOMAP_COMMIT"
 ```
 
-When explicitly asked to build the latest `main`, resolve and record the current commit first, then pin it:
+When explicitly asked to build the latest `main`, resolve and record the current
+commit before the acquisition block, then use that pin instead of the reference
+commit above:
 
 ```bash
-git clone "$GOMAP_REPOSITORY" "$GOMAP_SOURCE"
-cd "$GOMAP_SOURCE"
-GOMAP_COMMIT="$(git rev-parse HEAD)"
+export GOMAP_REPOSITORY='https://github.com/snissn/gomap.git'
+export GOMAP_COMMIT="$(git ls-remote "$GOMAP_REPOSITORY" refs/heads/main | awk '{print $1}')"
+test -n "$GOMAP_COMMIT"
 printf 'Resolved main commit: %s\n' "$GOMAP_COMMIT"
 ```
 
@@ -250,7 +268,37 @@ Use a platform-appropriate Go 1.26+ toolchain for other operating systems or arc
 
 ## 6. Configure dependency and build settings
 
+Ordinary builds reuse persistent `GOCACHE` and `GOMODCACHE` in the same user/trust
+boundary. Honor paths supplied by the coordinator or host; otherwise resolve the
+toolchain's existing defaults. When allocating new shared caches, choose reusable
+paths on the host's preferred high-capacity storage, outside `WORK_ROOT`, and
+supply them before the block below. Never silently replace them with per-run
+paths or change global Go configuration. Both caches support concurrent Go commands.
+
+Set `GOMAP_CACHE_MODE=cold` only for an explicit empty-cache acquisition check.
+That mode requires unused run-local cache paths and never deletes an existing
+cache to manufacture a cold start. Retries with populated caches are warm reuse,
+not new cold-cache evidence. Preserve any declared benchmark/cache contract.
+
 ```bash
+export GOMAP_CACHE_MODE="${GOMAP_CACHE_MODE:-shared}"
+case "$GOMAP_CACHE_MODE" in
+  shared)
+    export GOCACHE="${GOCACHE:-$(go env GOCACHE)}"
+    export GOMODCACHE="${GOMODCACHE:-$(go env GOMODCACHE)}"
+    ;;
+  cold)
+    export GOCACHE="$WORK_ROOT/cache/go-build"
+    export GOMODCACHE="$WORK_ROOT/cache/go-mod"
+    if [[ -e "$GOCACHE" || -e "$GOMODCACHE" ]]; then
+      printf '%s\n' 'cold-cache check requires unused cache paths; choose a fresh WORK_ROOT' >&2
+      exit 1
+    fi
+    ;;
+  *) printf 'unknown GOMAP_CACHE_MODE: %s\n' "$GOMAP_CACHE_MODE" >&2; exit 1 ;;
+esac
+mkdir -p "$GOCACHE" "$GOMODCACHE"
+
 export GOPROXY="${GOPROXY:-https://proxy.golang.org,direct}"
 export GOSUMDB="${GOSUMDB:-sum.golang.org}"
 export CGO_ENABLED=1
@@ -279,7 +327,12 @@ Why these settings were used:
 - `CGO_ENABLED=1` permits packages and binaries that use C-backed dependencies to compile normally.
 - `GOFLAGS=-p=1` limits Go package build parallelism and reduces memory and concurrent network pressure.
 - `GOMAXPROCS=2` caps runtime CPU use during compilation.
-- Dedicated `GOMODCACHE` and `GOCACHE` directories retain fetched modules and compiled packages for retries.
+- Shared `GOMODCACHE` and `GOCACHE` retain modules and compiled packages across worktrees and retries. Lane cleanup must preserve them; only an explicitly isolated cache follows the run's disposal policy.
+
+Go's build cache handles ordinary Go source, compiler and option changes. It does
+not detect changes to external C libraries used by CGO; force the affected rebuild
+(for example with `-a`) or record a scoped cache exception. Use `go test -count=1`
+when fresh test execution is required without discarding compiled packages.
 
 ### Dependency acquisition strategy
 

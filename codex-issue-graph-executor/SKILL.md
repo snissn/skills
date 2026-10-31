@@ -320,6 +320,42 @@ their absence makes a required gate impossible to verify.
 - Prefer a dedicated high-capacity runner with persistent build cache and durable artifact storage. Otherwise record `INFRASTRUCTURE_UNAVAILABLE: <runner|cache|storage>: <reason>` and the actual fallback; never invent infrastructure.
 - Classify candidate failures separately from proven unrelated CI flakes, rerun only affected gates, and require current-head merge gates. Artifact-only descendants preserve evidence only under exact runtime/harness subtree and implementation-blob identity; product or harness drift invalidates affected evidence.
 
+## Storage And Build Cache Defaults
+
+Before allocating a lane, resolve the repository's existing Git common directory
+and reusable host cache paths; record them in existing graph notes and handoffs.
+Prefer registered `git worktree add` checkouts from that repository at the pinned
+source snapshot. Reuse an assigned lane across its fix loop; create a separate
+clone only when independent repository state is required or no suitable local
+repository exists. Worktrees share Git objects, but still materialize working
+files and generated outputs.
+
+Ordinary Go builds share persistent `GOCACHE` and `GOMODCACHE` within the same
+user/trust boundary. Inspect `go env GOCACHE GOMODCACHE`, reuse configured shared
+paths, and pass the resolved absolute paths to workers. Place newly allocated
+shared caches on the host's preferred high-capacity storage, outside disposable
+lane roots. Do not create per-worker, per-issue, or per-head caches by default,
+silently replace supplied cache paths,
+or change global settings with `go env -w`. Go handles normal source, compiler,
+and option changes. External C-library changes under CGO need an explicit rebuild
+or a justified cache exception.
+
+Keep `TMPDIR`/`GOTMPDIR`, DBs, mutable datasets, binaries and benchmark output
+separate per lane. Follow host storage policy; verify the preferred high-capacity
+mount is available and writable before placing heavy data there. Isolated caches
+are exceptions for an explicit cold-cache/dependency-acquisition check, cache
+diagnosis, or demonstrated compatibility/trust requirement. Record the reason,
+exact paths and disposal owner. Preserve declared benchmark/cache contracts;
+ordinary lane cleanup must not clear shared caches.
+
+For required file copies, prefer verified same-filesystem copy-on-write support
+(APFS cloning on macOS or reflinks on a supporting Linux filesystem). Record an
+unsupported fallback as a full copy; do not assume savings from the OS name or
+`--reflink=auto`. Directory copies or hardlinked writable files do not replace
+registered Git worktrees. Partial clones such as `--filter=blob:none` are optional
+for new repositories when on-demand history access is acceptable; they do not
+reduce materialized checkout files or build output.
+
 ## Checkpoint And Evidence Pushes
 
 Before pushing a durable checkpoint or evidence packet, refresh live open-PR head
