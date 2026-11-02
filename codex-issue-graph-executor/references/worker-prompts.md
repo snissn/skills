@@ -49,6 +49,12 @@ prove natural activation, check focused safety and ordinary-path costs, then obt
 a bounded public comparison before broad qualification. Report a rejected or
 inconclusive idea plainly; do not substitute forced activation or repeated samples
 for the missing proof. Known-cause fixes need no extra experiment ceremony.
+While an experiment or check is pending, advance an independent question or cheap
+prototype test within the assigned scope on noncompeting resources; protect the
+running source, binary, fixture, and measurement host. Do not only poll when useful
+safe work exists. Surface an out-of-scope follow-up to the coordinator rather than
+expanding ownership. Collect the result promptly and update the next action; if no
+safe overlap exists, report that constraint instead of fabricating another task.
 
 ## Optional GPT-6.1 Sol Inventory Agent
 

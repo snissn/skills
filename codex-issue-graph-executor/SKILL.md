@@ -185,6 +185,21 @@ batch and preserving it, not an unlimited sequence of new shared-contract change
 Independent authorized work can continue. Reassessment steers continued execution;
 it is not completion of the unmet parent goal or a reason for repeated permission.
 
+## Productive Work While Experiments Run
+
+When a benchmark, profile, build, or CI check is pending, proactively advance the
+highest-value independent in-scope question instead of only polling. Reuse existing
+evidence to form the next hypothesis, inspect its source route, build a small
+isolated prototype, and run a cheap discriminator on noncompeting resources. Use
+[productive experiment waits](../go-performance-optimization/references/efficient-experiments.md#use-experiment-waits-productively)
+to choose overlap and protect the running candidate. Do this locally when delegation
+is unavailable; otherwise reuse permitted workers within the existing budget.
+Keep one measurement owner per host and do not consume its CPU, memory, disk, or
+network with competing tests/builds. Queue those runs or use independent resources.
+Collect the pending result promptly, revise the ranking, and return to its next
+critical action. If no safe useful overlap exists, wait and state that constraint
+briefly; do not create work or expand scope just to occupy capacity.
+
 ## Orthogonal Performance Workstreams
 
 For a measured material performance/allocation gap beside a correctness blocker,
@@ -442,7 +457,9 @@ Optimize for verified progress toward the agreed parent outcome per usage window
   minutes without visible implementation progress as a checkpoint, not a
   push, review, or handoff boundary. Request a concise status once; stop only
   when the worker is blocked, outside scope, or no longer useful.
-- Prefer sequential depth on the critical path over keeping every slot busy.
+- Prioritize the critical path; use its unavoidable waits for useful independent
+  research, prototypes, and tests within these limits. Available slots alone do
+  not justify work, and measurement exclusivity does not serialize all exploration.
 
 ## Asynchronous Disk Cleanup
 

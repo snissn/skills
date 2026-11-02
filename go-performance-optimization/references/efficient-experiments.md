@@ -20,9 +20,11 @@ Keep five short fields in the existing ticket or working checkpoint:
 
 Use existing profiles and exact source routes first. Estimate the public ceiling
 from affected work without adding overlapping cumulative percentages or treating
-helper savings as an end-to-end prediction. Prefer one decision-changing experiment
-to several speculative implementations. Any already-authorized helper gets a
-bounded unanswered question; reuse its answer rather than repeating discovery.
+helper savings as an end-to-end prediction. Keep a short ranked set of unanswered
+questions and favor cheap discriminators over speculative production implementations.
+Overlap independent experiments when resources and contracts permit. Any
+already-authorized helper gets a bounded unanswered question; reuse its answer
+rather than repeating discovery.
 
 ## Climb The Evidence Ladder, Stop On Failure
 
@@ -51,7 +53,36 @@ bounded unanswered question; reuse its answer rather than repeating discovery.
 
 A failed step redirects the idea rather than automatically earning a larger
 campaign. A promising public result earns attention to unresolved regressions and
-delivery before more speculative optimization. Prototype success is not acceptance.
+delivery; use unavoidable waits for independent exploration. Prototype success
+is not acceptance.
+
+## Use Experiment Waits Productively
+
+A pending experiment is an opportunity to make progress on the next independent
+question. Before an intentional wait, choose useful in-scope work and begin it
+when safe; do not default to repeated polling or status-only updates.
+
+- Start from the ranked questions and existing profiles/source. Select a different
+  cause, an orthogonal mechanism, or an independent control with its own cheap
+  discriminator and failure action. Do not assume the pending result is positive.
+- Inspect the route, prepare a disposable prototype or fixture, and actually run
+  its bounded mechanism/safety check when noncompeting resources are available.
+  Independent experiment execution need not wait for the current run to finish.
+- Protect the running experiment's pinned source, binary, configuration, fixtures,
+  and database. Use isolated outputs and source ownership. Keep dependent promotion
+  conditional until the result or required contract is known; label evidence by
+  the candidate it actually tested.
+- Keep the benchmark host exclusive. Source work against an existing local copy
+  and tests on another host can overlap; a separate process, directory, or container
+  on the same host does not prove CPU, memory, disk, or network isolation. Queue
+  competing builds, tests, profile decoding, and artifact reads/transfers.
+- Use the coordinator directly or existing authorized workers within their scope
+  and concurrency limits. This loop creates no new delegation, execution, or
+  spending authority and requires no additional scheduler or queue artifact.
+- Collect the pending result promptly using bounded/event-driven checks. Re-rank
+  questions, stop ideas its evidence invalidates, and prioritize the next critical
+  action. If no safe useful overlap exists, wait; note the concrete constraint in
+  the normal checkpoint rather than inventing work to fill capacity.
 
 ## Resolve Uncertainty Without Churn
 

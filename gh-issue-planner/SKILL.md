@@ -279,6 +279,13 @@ controls, early public comparison, then qualification of a viable candidate. Use
 for details. Keep speculative successors conditional; an experiment plan does not
 need a new report, framework, or issue for each step.
 
+For long-running experiments, identify a useful independent question and cheap
+prototype/check that can advance while results are pending. Record its source and
+contract prerequisites, ownership, resource needs, and stop condition in existing
+graph state. Separate measurement exclusivity from construction dependencies;
+serialize the actual shared resource or contract, not all exploration. A pending
+experiment should not block independent in-scope research or safe prototype tests.
+
 When performance is the primary outcome, put diagnosis and speedup checks on the
 graph's critical path. Establish a current public-path baseline and, where meaningful,
 an original/pre-project anchor. Compare coherent candidates with bounded runs on the

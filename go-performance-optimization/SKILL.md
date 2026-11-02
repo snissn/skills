@@ -73,6 +73,11 @@ experiment only when it can resolve a named uncertainty. Known-cause repairs nee
 no additional experiment ceremony. A useful rejection is progress; report it
 separately from an accepted public-path improvement.
 
+Use long-running experiment waits to advance the next independent hypothesis:
+inspect existing evidence, build a small prototype, and run a cheap discriminator
+on noncompeting resources. Follow [productive waits](references/efficient-experiments.md#use-experiment-waits-productively);
+measurement isolation reserves the affected resources, not the whole investigation.
+
 ## Diagnose Before Choosing The Fix
 
 Read [Profiling And Measurement](references/profiling-and-measurement.md) when
