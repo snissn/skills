@@ -61,6 +61,18 @@ samples. An unexecuted benchmark is not a product regression or a gate rerun.
 For a planning request, capture the evidence gaps and smallest useful experiment;
 do not launch a benchmark campaign merely to draft an issue.
 
+## Choose The Cheapest Useful Experiment
+
+For an uncertain optimization, use the [efficient experiment loop](references/efficient-experiments.md):
+state the observed cost, causal hypothesis, smallest intervention, discriminator,
+and failure action in the existing ticket or working note. Prefer a disposable
+prototype using maintained primitives before building production infrastructure.
+Prove natural activation and check ordinary-path costs before broad qualification;
+zero activation rejects that route for the current workload. Choose another
+experiment only when it can resolve a named uncertainty. Known-cause repairs need
+no additional experiment ceremony. A useful rejection is progress; report it
+separately from an accepted public-path improvement.
+
 ## Diagnose Before Choosing The Fix
 
 Read [Profiling And Measurement](references/profiling-and-measurement.md) when

@@ -147,6 +147,17 @@ packet governs scope, validation, and reporting.
 
 For uncertain, architectural, or performance work, name the next public-path
 proof or decision that advances the parent outcome before assigning more code.
+For an uncertain optimization, carry the observed cost, causal hypothesis, smallest
+intervention, discriminator, and failure action into the assignment. Select the
+cheapest inquiry that can change the decision; reuse existing source/profile evidence
+and maintained primitives before speculative implementation. Apply the
+[efficient experiment loop](../go-performance-optimization/references/efficient-experiments.md)
+for performance work: prove natural activation, check focused safety and ordinary
+costs, then obtain an early public result before broad qualification. Zero activation
+or adverse ordinary-path cost stops promotion until its cause is resolved. Once a
+candidate has worthwhile public benefit, prioritize its remaining gates and delivery
+over opening another optimization branch.
+
 Use the tracker's evidence boundaries alongside a backstop: reassess after two
 coherent implementation/repair batches without that advance, or about 45 minutes
 of active work without a strategic checkpoint, whichever comes first. A different
@@ -272,8 +283,11 @@ existing tracker state; no additional audit artifact or reviewer is required.
 
 Keep the current candidate, results, failures and next proof in one rolling tracker
 checkpoint when the repository workflow permits. Link stable parent and qualification
-bodies to it instead of copying status after each control. Preserve source-bound
-history and acceptance criteria.
+bodies to it instead of copying status after each control. Update it for changed
+source, contracts, decisions, or next consequential actions; batch routine status
+maintenance. Reuse applicable evidence and unchanged artifact producers: fix a faulty
+checker/decoder and replay the original artifact rather than rerunning its producer.
+Preserve source-bound history and acceptance criteria.
 
 For suspected recurring CI flakes, apply the merge skill's
 [bounded repair and parallel progress policy](../github-pr-mergeable/references/recurring-ci-flakes.md).

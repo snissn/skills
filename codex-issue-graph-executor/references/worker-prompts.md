@@ -41,6 +41,15 @@ event-driven. Count local attempts. If the coordinator is unavailable, finish an
 preserve the assigned bounded batch; do not start new speculative or shared-contract
 work. Already authorized independent work may continue.
 
+For uncertain performance work, include the observed cost, causal hypothesis,
+smallest prototype using existing code, discriminator, and failure action. Apply the
+[efficient experiment loop](../../go-performance-optimization/references/efficient-experiments.md)
+to ready and provisional assignments: check the source route and fixture first,
+prove natural activation, check focused safety and ordinary-path costs, then obtain
+a bounded public comparison before broad qualification. Report a rejected or
+inconclusive idea plainly; do not substitute forced activation or repeated samples
+for the missing proof. Known-cause fixes need no extra experiment ceremony.
+
 ## Optional GPT-6.1 Sol Inventory Agent
 
 Do not use this template by default. The coordinator performs inventory

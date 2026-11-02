@@ -268,6 +268,17 @@ material allocation work, carry its existing-arena/pool/buffer inventory and
 reuse-or-justified-exception acceptance into the issue. Carry only relevant
 requirements; planning alone does not require runs.
 
+For an uncertain optimization, embed a compact experiment in the owning ticket:
+observed cost, causal hypothesis, smallest intervention using existing code,
+discriminating observation, and failure/stop action. State what effect would matter
+relative to measurement noise without inventing a speedup from profile percentages.
+Order work by the cheapest evidence that can change the next decision: route and
+fixture checks, disposable prototype, natural activation and focused safety/cost
+controls, early public comparison, then qualification of a viable candidate. Use the
+[efficient experiment loop](../go-performance-optimization/references/efficient-experiments.md)
+for details. Keep speculative successors conditional; an experiment plan does not
+need a new report, framework, or issue for each step.
+
 When performance is the primary outcome, put diagnosis and speedup checks on the
 graph's critical path. Establish a current public-path baseline and, where meaningful,
 an original/pre-project anchor. Compare coherent candidates with bounded runs on the
