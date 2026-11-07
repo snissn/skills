@@ -1,0 +1,15 @@
+interface:
+  display_name: Pro to Sol on 185
+  short_description: Verify Pro packets and deliver tested Sol integrations
+  default_prompt: Use $pro-to-sol-185 to retrieve this completed Pro packet, transfer
+    it to 185, and carry out the authorized issue, implementation, review and merge
+    workflow.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
