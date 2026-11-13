@@ -93,6 +93,40 @@ delete/migrate/extract/keep inventory and proof that no unwanted implementation
 or fallback survives. Scale the detail to the task; small changes need no large
 template, and deferred mechanisms must not masquerade as selected designs.
 
+Each implementation body must include an ordered checkbox checklist. Each task
+names the exact file(s), function/type/test or section to change, the required
+change and observable result; include audited line anchors when useful. Give the
+first failing regression (or justified exception), required fixture/backend and
+profiles, assertions, runnable validation commands, and focused/race/affected-suite
+checks. Distinguish existing tests from proposed tests. A directory inventory,
+"add tests", "handle errors" or "update docs" alone is not an executable task.
+For unresolved causes, make the first reproduction and diagnostic checklist
+specific and define the evidence needed before choosing the repair; do not invent
+a patch to make the plan look complete.
+
+For bug repairs, distinguish retained error evidence, a source-grounded runnable
+reproduction recipe, and an actually observed RED on the unfixed revision. State
+reproducer confidence and why the selected public path/fixture should exercise
+the failure. A branch inspection or recipe is not observed RED. When confidence
+is uncertain, make bounded reproduction/diagnosis the first execution gate and
+leave patch mechanics undecided until that gate produces causal evidence. Require
+the executor to preserve RED, then demonstrate GREEN with the same path, workload
+and checks, including ACK/read-back, checkpoint, checked close, reopen/recovery
+and error propagation for storage changes. Keep reproduction, repair and coverage
+in the integrated change; do not fabricate RED or substitute legacy coverage for
+the intended COW owner. Preserve any explicitly requested graph/skill readiness
+review before implementation; ticket publication is not that approval.
+
+Before publishing new or substantively revised executable issue bodies, or
+declaring them implementation-ready, require a bounded independent sub-agent
+review using `gpt-6.1-terra`. Review related tickets together when useful. Give
+the reviewer the actual bodies, pinned source and applicable policy, without
+relying on conversation history; require a per-ticket READY/NOT READY verdict
+for unambiguous implementation and acceptance. Resolve consequential findings
+and recheck affected bodies before publishing. Follow the readiness procedure in
+the reference above. This requirement does not apply to inspect-only work,
+structure sketches or status/link-only edits, and does not authorize execution.
+
 Separate fixed outcomes and guardrails from implementation choices that can
 change with evidence. Recheck paths against the assigned source; within existing
 authorization, revise stale bodies, inventories, owners and edges before dependent
