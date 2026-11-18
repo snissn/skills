@@ -1,0 +1,15 @@
+interface:
+  display_name: Rewrite Scientific Prose
+  short_description: Rebuild scientific prose around reader understanding
+  default_prompt: Use $rewrite-scientific-prose to diagnose and rewrite this manuscript
+    for a technically trained reader, preserving its scientific claims and reviewing
+    the result.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true
