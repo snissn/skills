@@ -119,7 +119,7 @@ review before implementation; ticket publication is not that approval.
 
 Before publishing new or substantively revised executable issue bodies, or
 declaring them implementation-ready, require a bounded independent sub-agent
-review using `gpt-6.1-terra`. Review related tickets together when useful. Give
+review using `gpt-6.2-sol`. Review related tickets together when useful. Give
 the reviewer the actual bodies, pinned source and applicable policy, without
 relying on conversation history; require a per-ticket READY/NOT READY verdict
 for unambiguous implementation and acceptance. Resolve consequential findings
