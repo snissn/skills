@@ -1,8 +1,7 @@
 interface:
-  display_name: Dot Laptop SSH to 111 or 185
-  short_description: Laptop Dot SSH to 111 or 185 with bounded retries
-  default_prompt: Use $dot-laptop-to-111 to access the requested host 111 or 185 through
-    my laptop Dot instance, with up to three eligible transport attempts.
+  display_name: Laptop SSH to 111 or 185
+  short_description: "Direct laptop SSH to 111 or 185 with safe retries"
+  default_prompt: "Use $dot-laptop-to-111 to access the requested host 111 or 185 directly from my laptop, with up to three eligible transport attempts."
   icon_small: assets/icon.svg
   icon_large: assets/icon.svg
 policy:

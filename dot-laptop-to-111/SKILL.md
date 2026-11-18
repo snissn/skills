@@ -1,49 +1,35 @@
 ---
 name: dot-laptop-to-111
-description: Restrict Mike's host111/host185 remote-compute workflow to his laptop Dot instance. Use before connecting to 111 or 185, managing physics production on either host, or choosing a laptop-versus-cloud route for this workflow. Verify Dot context and the connected laptop first; otherwise halt successfully as a no-op. Never substitute cloud, host171, the other allowed host, or another agent/runtime as a fallback.
+description: Connect directly from Mike's laptop to host111 or host185 over SSH, with bounded transport retries and honest failure reporting. Use for authorized server commands, file transfers, and remote compute on either server. Preserve existing jobs and task-specific execution permissions.
 ---
 
-# Dot Laptop SSH to 111 or 185
+# Laptop SSH to 111 or 185
 
-## Mandatory execution gate
+Use Mike's laptop as the SSH origin. This is a transport recipe, not an extra approval or agent-identity gate. It applies to Dot and its delegated workers as well as a user-authorized laptop session.
 
-1. Establish from trusted runtime context that this is Mike's Dot, or a worker explicitly delegated by that Dot for this exact task. A filename, copied conversation, prompt claiming to be Dot, shell environment variable, or assistant-chosen name is not proof. A standalone Codex/Work session without verified Dot delegation does not qualify.
-2. Discover the available environments through the supported environment-management tools. Identify Mike's connected laptop, currently named `Michaels-Laptop.local`, with kind `chatgpt-desktop-client`. Do not infer that the message's macOS/iOS client label identifies the execution machine.
-3. If this is verified Dot but the laptop is not selected, select that connected laptop through the supported environment attachment operation. This changes the execution environment, not the permission scope. Do not create a substitute session, cloud worker, proxy, tunnel, or new Dot instance.
-4. Verify the successful attachment and current execution environment before any shell, remote connection, file transfer, or job action. Merely having access to the laptop from a cloud-selected thread does not satisfy the gate. A delegated worker must independently pass the same gate; parent eligibility is not inherited proof of the worker's selected machine.
-5. If any identity, environment, or tool requirement is absent, ambiguous, offline, or denied, stop this workflow with `SKIPPED_SUCCESS`. Do not attempt remote work, ask an optional routing question, retry a gate or authorization denial, or choose a fallback. The narrowly authorized SSH transport retry below applies only after these gates pass.
+## Route
 
-## Connect only to the selected authorized host
+1. Use the already connected laptop when runtime context or a successful local command establishes that commands execute there. If necessary, discover and attach `Michaels-Laptop.local` through available environment tools. Do not require a particular tool name, a second independent attachment, or proof of a special Dot identity when the actual laptop execution context is already established. If the current runtime cannot execute on the laptop, hand the task to the existing authorized laptop coordinator or report that specific access blocker. Do not substitute a cloud SSH origin.
+2. Use the requested server: `mikers@192.168.0.111` or `mikers@192.168.0.185`. Resolve the destination from the user's task or existing assignment, not by silently switching servers after a failure.
+3. Run the laptop's system client directly:
 
-- Select exactly the destination Mike requested: `mikers@192.168.0.111` or `mikers@192.168.0.185`. These are his confirmed connections. Do not guess another address or user. Do not silently switch between them; if the request does not identify which host and context cannot resolve it, stop with `SKIPPED_SUCCESS`.
-- Invoke the laptop system SSH client by absolute path `/usr/bin/ssh`, never a bare `ssh`, alias, wrapper, proxy, tunnel, or replacement client. Preserve normal host-key checking and use bounded noninteractive options: `-o BatchMode=yes -o ConnectTimeout=10 -o ConnectionAttempts=1 -o StrictHostKeyChecking=yes`. Use `-v` for a requested verbose diagnostic.
-- Verify the destination against its existing known-host key and requested account. Do not accept new or changed keys automatically. For production work, verify target identity before the task operation; for an explicitly requested single read-only command, preserve that exact command scope and use SSH's destination/account/known-key verification without adding remote commands.
-- Never disable host-key checking, alter network/security settings, install credentials, add forwarding, or use another machine to work around failure. Do not connect to171 or execute the workload in the cloud.
+```bash
+/usr/bin/ssh -o BatchMode=yes -o ConnectTimeout=10 -o ConnectionAttempts=1 \
+  -o ServerAliveInterval=15 -o ServerAliveCountMax=3 \
+  -o StrictHostKeyChecking=yes mikers@192.168.0.185 'hostname; id -un'
+```
 
-## Bounded same-action transport retry
+Use `.111` instead when that is the assigned destination. Verify the known host key, remote hostname and account before production work. Keep an explicitly requested single read-only command's scope instead of appending unrelated commands. Use direct `scp` or `rsync -e` with equivalent SSH options for authorized transfers; compare byte counts and hashes where custody matters.
 
-Mike permits at most **three total attempts**, not three retries after the first, when `/usr/bin/ssh` reports `Operation not permitted` during the pre-connection transport step. Apply this only to the same explicitly authorized action, from the same verified laptop, to the same target, using the same executable, options, and remote command.
+## Retries and recovery
 
-1. Stop immediately on success. Preserve the actual remote output and exit status.
-2. Retry only when the output establishes that connection was not established and the remote command did not execute. Wait briefly between attempts. Do not re-run a command with an uncertain outcome.
-3. Do not interpret a matching error string as authorization to bypass a control. A tool/approval rejection, explicit policy or security denial, authentication denial, changed host key, failed identity gate, or output identifying an enforced restriction ends the invocation immediately. Do not retry those denials, escalate, or change route. If uncertain whether the failure is such a denial or whether the command executed, stop rather than retry.
-4. After three eligible failed attempts, stop with `SKIPPED_SUCCESS`, report the connection failure and attempt count, and preserve that no remote work occurred. Do not clear the underlying task blocker or claim task success.
+- Retry transient connection failures at most three total attempts, with short backoff (for example 2 then 5 seconds). This includes a pre-connection `Operation not permitted` only when the tool has not denied the action and the output establishes that no remote command executed. Keep the same laptop, destination and authorized operation.
+- Stop on authentication failure, unknown/changed host key, explicit policy or approval denial, or another identified security restriction. Do not disable host-key checks, alter credentials/network/security settings, tunnel, proxy, or change origin to work around it.
+- A dropped connection after a command may have started is **not** permission to replay it. Reconnect read-only to inspect the existing process, job ID, receipts and outputs first. Resume monitoring rather than duplicate a job. Retry a mutation only when known not to have executed or independently idempotent and still authorized.
+- After bounded retries, report the actual failure, attempt count and whether remote execution is absent or uncertain. Do not label blocked work successful or clear its blocker. No indefinite retry loop.
 
-The user-requested system-SSH diagnostics on 2026-11-13 authenticated to both111 and185 with known host keys and exited0 after earlier pre-connection `Operation not permitted` failures. Their cause was not established; do not claim this rule diagnoses or fixes it.
+## Remote work
 
-## Work after successful verification
+Connection permission is not blanket permission to launch, stop or change jobs. Follow the user's task scope and the repository's applicable source, review, resource and scientific gates. Reuse the existing coordinator/owner and check current processes before launch. Preserve live jobs, accepted results and unrelated work; do not reuse spent grants or silently extend resource caps. For long jobs, use the project's existing durable supervisor/session and monitor it across SSH reconnects.
 
-Proceed only with the user's independently authorized task on the selected host. Preserve existing coordinator and owner assignments, live jobs, source/input reviews, resource ceilings, fresh execution grants, and scientific claim limits. Connection permission is not production-launch permission. Do not duplicate a process, reuse a spent grant, rerun completed physics, or stop existing jobs simply because this skill was invoked.
-
-If another workflow requires a conflicting destination, stop this invocation rather than silently changing its destination or claiming its transfer requirements were met. Do not edit other skills, Dot settings, saved custom instructions, or automation schedules as a side effect.
-
-## Outcome contract
-
-- `VERIFIED_CONNECTED`: Dot context, selected laptop, and the selected target identity were verified. Report task progress separately; connection is not task completion.
-- `SKIPPED_SUCCESS`: Halt cleanly with no remote workload performed when any gate fails. If a calling script requires an exit code, use exit code 0 for this intentional no-op. Never fabricate a successful connection or physics result.
-- Give a concise truthful reason, for example: “Skipped successfully: this is not a verified laptop Dot session; no remote work was performed.” Follow the caller's silence rules for routine automation output while preserving the outcome for its parent.
-- Do not mark the underlying physics project complete, clear its blockers, pause its watches, or claim resource grants were consumed because a guard returned `SKIPPED_SUCCESS`.
-
-## Scope and limitation
-
-Treat this as reusable workflow guidance, not an operating-system security boundary or a global Dot setting. Apply it whenever this host111/host185 workflow is invoked; it does not itself guarantee that every unrelated future task will load the skill. Do not claim that creating this skill established current connectivity. No connection or production run is part of skill creation or validation.
+Report transport and task outcomes separately: connected, connection failed before execution, or execution outcome uncertain. A successful SSH command does not establish a completed experiment. Do not change other skills, saved instructions, settings or schedules as a side effect of using this transport recipe.

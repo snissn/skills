@@ -5,7 +5,7 @@ Use these templates when dispatching Codex subagents from
 expand them. Supply the worktree, exact head/base, authorization, ownership,
 non-goals, acceptance checks, and stop conditions in every assignment. Do not
 make a worker rediscover coordinator context. Keep handoffs concise and readable.
-Select `gpt-6.1-sol` through the spawn/config fields, not the prompt alone.
+Select `gpt-6.2-sol` through the spawn/config fields, not the prompt alone.
 Use explicit role effort and follow the runtime's fork restrictions in `SKILL.md`;
 do not inherit a different parent model or automatically substitute another model.
 Include large generated paths and their retention/disposal status in every
@@ -62,7 +62,7 @@ safe work exists. Surface an out-of-scope follow-up to the coordinator rather th
 expanding ownership. Collect the result promptly and update the next action; if no
 safe overlap exists, report that constraint instead of fabricating another task.
 
-## Optional GPT-6.1 Sol Inventory Agent
+## Optional GPT-6.2 Sol Inventory Agent
 
 Do not use this template by default. The coordinator performs inventory
 locally. Use it only when a large live-state pass can run beside an existing
@@ -71,7 +71,7 @@ implementation worker without raising concurrency above two.
 ```text
 You are the read-only inventory worker for a Codex issue graph.
 
-Requested routing: gpt-6.1-sol / low.
+Requested routing: gpt-6.2-sol / low.
 
 Task:
 - Read the live GitHub state for these nodes: <ISSUES_OR_PRS>.
@@ -95,7 +95,7 @@ CI/review/merge or request work-ahead opt-in.
 ```text
 You are a Codex worker for issue #<ISSUE> in <OWNER>/<REPO>.
 
-Requested routing: gpt-6.1-sol / <medium for routine work; high for complex work>.
+Requested routing: gpt-6.2-sol / <medium for routine work; high for complex work>.
 The coordinator records whether this route was actually pinned.
 Progress checkpoint: <TIME_BOX, normally 25 minutes without visible progress>.
 
@@ -176,12 +176,12 @@ Every handoff must include:
 - current node state recommendation.
 ```
 
-## GPT-6.1 Sol High-Risk Specialist
+## GPT-6.2 Sol High-Risk Specialist
 
 ```text
 You are the high-risk specialist for <DECISION_OR_SCOPE> in <OWNER>/<REPO>.
 
-Requested routing: gpt-6.1-sol / high.
+Requested routing: gpt-6.2-sol / high.
 
 Context:
 - Trigger: <TICKET_START_RISK_OR_STUCK_AFTER_TWO_REPAIR_HEADS>
@@ -216,7 +216,7 @@ authority and final merge gates still apply.
 ```text
 You are a Codex worker for downstream issue #<ISSUE> in <OWNER>/<REPO>.
 
-Requested routing: gpt-6.1-sol / <medium for routine work; high for complex work>.
+Requested routing: gpt-6.2-sol / <medium for routine work; high for complex work>.
 
 This is provisional downstream work. These PR predecessors await merge:
 <PR_PREDECESSORS>. Accepted non-PR outputs and eligibility: <ACCEPTED_GATES>.
@@ -254,7 +254,7 @@ the coordinator reuses completed evidence instead of restarting review.
 ```text
 You are the active finalization owner for PR <PR_URL>.
 
-Requested routing: gpt-6.1-sol / medium; high for a demonstrated correctness,
+Requested routing: gpt-6.2-sol / medium; high for a demonstrated correctness,
 concurrency, or security risk. Apply repo-required reviewer identity and quota
 fallback rules from SKILL.md. An internal subagent review or a separate same-agent
 mock subagent reviewer pass is acceptable under the shared fallback contract.
@@ -314,7 +314,7 @@ exact-head gate and merge decision.
 
 ```text
 You own one released disk-cleanup batch for <GRAPH>.
-Requested routing: gpt-6.1-sol / medium.
+Requested routing: gpt-6.2-sol / medium.
 
 Load <CODEX_HOME>/skills/codex-issue-graph-executor/references/disk-cleanup.md.
 Hosts and exact released paths, sizes, owners, retention decisions, and expected

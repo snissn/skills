@@ -187,7 +187,7 @@ source/docs; state execution status separately. A checked command recipe is not
 evidence that its tests or benchmarks ran during planning.
 
 For new or substantively revised executable issue bodies, an independent
-`gpt-6.1-terra` sub-agent readiness review is required before publication or an
+`gpt-6.2-sol` sub-agent readiness review is required before publication or an
 implementation-ready claim. Start with only the actual bodies, source revision,
 applicable repository policy and necessary referenced evidence, not the author's
 conversation history or hidden intended answers. A single bounded review may
@@ -200,7 +200,7 @@ behavior/error/lifecycle requirements, and ambiguous acceptance evidence. For
 investigations, judge whether the inquiry and decision boundary are executable;
 do not demand that an unknown root cause already be solved. For evidence tasks,
 check that workload, comparisons, unsupported/invalid cells and claim limits are
-explicit. Resolve consequential findings and have Terra recheck the affected
+explicit. Resolve consequential findings and have gpt-6.2-sol recheck the affected
 text; retain the reviewed body identity and verdict with the planning artifacts.
 If the required model is unavailable, state that the readiness check is pending
 instead of substituting another model or claiming readiness. This is a ticket

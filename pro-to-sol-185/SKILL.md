@@ -20,7 +20,7 @@ Carry exact relevant user quotes and later restrictions in one `<transcript_evid
 ## Establish the route
 
 1. Read the current software-engineering and browser skills and repository instructions. Discover actual tool schemas instead of assuming old names or CLI flags.
-2. Use environment_management to identify/select the requested user browser computer. Host185 may be reached through an existing authorized connection rather than appearing as a selectable environment. Verify its actual identity; do not invent an address or choose a different host.
+2. Use the requested user browser computer for intake. For host185 transfer and remote work, load `dot-laptop-to-111` and SSH directly from Mike's connected laptop to `mikers@192.168.0.185`, with its bounded retry and uncertain-outcome handling. Host185 need not be a selectable environment. Reuse a verified laptop execution context rather than imposing another identity or attachment gate. Verify the remote host/account and preserve normal host-key checks. Do not use cloud-origin SSH, substitute a different server, or duplicate a possibly started transfer/job after a dropped connection.
 3. Locate the existing coordinator and active work for this source/packet/repository. Inspect status before starting a worker or dispatch. Continue matching work rather than duplicating it. Do not interrupt unrelated simulations, shells or agents.
 4. Locate the installed `gh-issue-planner` and `codex-graph-exec` skills, or the repository's current equivalents. Read them before issue planning and graph execution. If missing, report the dependency precisely; do not fake their execution or silently install from an unknown source.
 

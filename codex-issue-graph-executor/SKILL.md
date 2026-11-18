@@ -1,6 +1,6 @@
 ---
 name: codex-issue-graph-executor
-description: "Execute GitHub issue graphs toward agreed outcomes with accepted decisions, ticket revisions, artifacts, and merged PRs. Use GPT-6.1 Sol-only delegation by default, provisional dependent work, conservative concurrency, and current-head PR gates. Use for graph execution, not requests to review or edit this skill."
+description: "Execute GitHub issue graphs toward agreed outcomes with accepted decisions, ticket revisions, artifacts, and merged PRs. Use GPT-6.2 Sol-only delegation by default, provisional dependent work, conservative concurrency, and current-head PR gates. Use for graph execution, not requests to review or edit this skill."
 ---
 
 # Codex Issue Graph Executor
@@ -21,11 +21,14 @@ and Monitoring** below; keep monitoring until the gate resolves.
 Do not ask for separate merge approval unless the user
 explicitly narrowed the request to planning or no-merge execution.
 
-## GPT-6.1 Sol Execution Guidance
+## GPT-6.2 Sol Execution Guidance
 
-Use the [official GPT-6.1 Sol guidance](https://developers.openai.com/api/docs/models/gpt-6.1-sol)
+Execution routing was upgraded to `gpt-6.2-sol` on 2026-11-17 after the local
+Codex catalog confirmed availability and supported efforts. The workflow guidance
+below was originally checked against [GPT-6.1 Sol guidance](https://developers.openai.com/api/docs/models/gpt-6.1-sol)
 and [Codex subagent guidance](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-(checked 2026-10-01), with the runtime-specific routing below:
+on 2026-10-01; it is not a claim that 6.2 API details were independently reverified.
+Use the runtime catalog for current compatibility and the routing below:
 
 - Resolve routine choices and finish authorized work. Clarify only consequential
   unknowns; keep independent work moving. Preserve prior authorization.
@@ -558,7 +561,7 @@ Active descendants, dirty or unpushed work, primary checkouts, and required
 scientific/review evidence remain protected. A blocked remote-branch deletion
 does not block eligible local worktree or output deletion.
 
-Use one direct-child `gpt-6.1-sol` cleanup agent for sizeable released batches
+Use one direct-child `gpt-6.2-sol` cleanup agent for sizeable released batches
 while useful graph work continues. Read
 [references/disk-cleanup.md](references/disk-cleanup.md) before assigning it and
 use the cleanup template in `references/worker-prompts.md`. It counts toward the
@@ -679,35 +682,35 @@ current-head CI or landed-source evidence requirements, or grant new merge autho
 
 Inspect the runtime's exposed model catalog, spawn schema, and concurrency
 limit once. Record unavailable facts as unknown; do not change global config.
-The preferred execution mode is **GPT-6.1 Sol only**: use the exact model ID
-`gpt-6.1-sol` for every delegated worker, finalizer, adviser, support agent, and
+The preferred execution mode is **GPT-6.2 Sol only**: use the exact model ID
+`gpt-6.2-sol` for every delegated worker, finalizer, adviser, support agent, and
 independent reviewer. Adjust effort for the task instead of switching models.
 Do not automatically route to Astra, Terra, Luna, or an older Sol model.
 Explicit user model/effort choices and required repository reviewer identities
 override this preference; record any deviation rather than silently relabeling it.
 
-Prefer `gpt-6.1-sol` for the coordinator when the session model can be selected.
+Prefer `gpt-6.2-sol` for the coordinator when the session model can be selected.
 Keep the current coordinator and its effective supported effort; never spawn a
 replacement coordinator or edit global config to enforce the preference. If it
 uses another model, record that retained-session exception while keeping new
-delegation on `gpt-6.1-sol`.
+delegation on `gpt-6.2-sol`.
 
 | Role | Preferred route when available | Use for |
 | --- | --- | --- |
-| Coordinator and final gate | `gpt-6.1-sol`, current supported effort | Graph, integration, blockers, and merge-authority decisions; retain an existing session as described above. |
-| Complex implementation or specialist | `gpt-6.1-sol`, `high` | Ambiguous multi-file work, architecture, persistence/concurrency, security, or disputed evidence. |
-| Routine implementation | `gpt-6.1-sol`, `medium` | A bounded issue with a clear contract, focused tests, and its fix loop. |
-| PR finalization owner | `gpt-6.1-sol`, `medium` | One mature PR's mutable review/CI repair loop; use `high` for a demonstrated correctness, concurrency, or security risk. |
-| Post-execution cleanup | `gpt-6.1-sol`, `medium` | A bounded batch of released worktrees and disposable generated outputs; sole owner of assigned deletion paths. |
-| Fast support | `gpt-6.1-sol`, `low` | A substantial independent inventory or triage task that saves elapsed time. |
-| Independent review or adviser | `gpt-6.1-sol`, `high` | A mature high-risk candidate or disputed finding, read-only in fresh context. Required reviewer identity is governed by repo policy. |
+| Coordinator and final gate | `gpt-6.2-sol`, current supported effort | Graph, integration, blockers, and merge-authority decisions; retain an existing session as described above. |
+| Complex implementation or specialist | `gpt-6.2-sol`, `high` | Ambiguous multi-file work, architecture, persistence/concurrency, security, or disputed evidence. |
+| Routine implementation | `gpt-6.2-sol`, `medium` | A bounded issue with a clear contract, focused tests, and its fix loop. |
+| PR finalization owner | `gpt-6.2-sol`, `medium` | One mature PR's mutable review/CI repair loop; use `high` for a demonstrated correctness, concurrency, or security risk. |
+| Post-execution cleanup | `gpt-6.2-sol`, `medium` | A bounded batch of released worktrees and disposable generated outputs; sole owner of assigned deletion paths. |
+| Fast support | `gpt-6.2-sol`, `low` | A substantial independent inventory or triage task that saves elapsed time. |
+| Independent review or adviser | `gpt-6.2-sol`, `high` | A mature high-risk candidate or disputed finding, read-only in fresh context. Required reviewer identity is governed by repo policy. |
 
-If `gpt-6.1-sol` is unavailable or cannot be selected, execute locally and record
+If `gpt-6.2-sol` is unavailable or cannot be selected, execute locally and record
 the actual route. Do not silently spawn a different model. The internal or mock
 subagent fallback below may satisfy the default internal review gate; an explicit
 requirement for a separately independent reviewer still needs that reviewer.
 
-### GPT-6.1 Sol Compatibility
+### GPT-6.2 Sol Compatibility
 
 - Supported API efforts are `low`, `medium`, `high`, `xhigh`, and `max`;
   `none` and `minimal` are unsupported. Use `low` for a fresh task that needs
@@ -729,7 +732,7 @@ requirement for a separately independent reviewer still needs that reviewer.
 
 Use actual tool fields: this collaboration runtime exposes `model` and
 `reasoning_effort`; custom-agent config may use `model_reasoning_effort`.
-Here, request `model="gpt-6.1-sol"`, the role's `reasoning_effort`, and
+Here, request `model="gpt-6.2-sol"`, the role's `reasoning_effort`, and
 `fork_turns="none"` or supported bounded history, supplying the task context.
 Full-history forks inherit model/effort and cannot take overrides here; use
 them only when the parent already has the intended model and effort.
@@ -748,9 +751,9 @@ Use additional slots only for ready independent work within the execution budget
 If subagent tools are unavailable or no task has a safe delegation boundary,
 execute locally and record why. Do not pretend work was delegated.
 
-### Bounded GPT-6.1 Sol Advisers
+### Bounded GPT-6.2 Sol Advisers
 
-Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
+Use `gpt-6.2-sol` at `high` as a read-only adviser, not a shadow implementer:
 
 - At ticket start, use at most one roughly ten-minute consultation only when
   architecture, persistence, concurrency, security, benchmark semantics, or a
@@ -817,7 +820,7 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
   delegation cannot run, a separate same-agent mock subagent review
   (`LOCAL_MOCK_SUBAGENT_REVIEW`) is an acceptable internal fallback. Follow
   [the shared contract](../github-pr-mergeable/references/internal-review-fallback.md).
-  Prefer `gpt-6.1-sol` for a real review subagent; record the actual retained
+  Prefer `gpt-6.2-sol` for a real review subagent; record the actual retained
   session model for a local mock review. Bind either mode to the exact candidate
   and record paths/claims, checks, findings, `ACCEPT` or `REJECT`, and no edits.
   Later scientific or review-relevant edits require renewed review. Explicit
@@ -869,7 +872,7 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
    contracts, prerequisites and conflict surfaces, not node count. Delegate when
    useful local or sibling work can proceed alongside it within the conservative
    budget; otherwise implement locally. Keep inventory, graph state, integration, and merge
-   authority allocation with the coordinator. Use a bounded GPT-6.1 Sol adviser
+   authority allocation with the coordinator. Use a bounded GPT-6.2 Sol adviser
    only under the triggers above.
 8. Track node state transitions in durable graph state and any local manifest: `pending`, `running`, `dependency-ready`, `fix-needed`, `review-scope-reset`, `mergeable-candidate`, `merged`, `completed` (accepted non-PR output), or `blocked`. Record deliverable contracts and accepted output links/versions. Track requested and actual agent routing separately.
    A performance no-go normally leaves the node `fix-needed` while the
@@ -896,7 +899,7 @@ Use `gpt-6.1-sol` at `high` as a read-only adviser, not a shadow implementer:
     local ownership via **Critical-Path Finalization and Monitoring**, then
     continuously monitor the outstanding gates locally.
     The finalizer must stop before a third repair head for the same
-    material failure category and return one named question for bounded GPT-6.1 Sol
+    material failure category and return one named question for bounded GPT-6.2 Sol
     advice. The finalizer inventories all current review notes before editing,
     repairs compatible findings in one coherent batch, runs the proportional
     local checks, and then pushes once. Do not pay a CI cycle per comment unless
