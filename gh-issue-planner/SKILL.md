@@ -32,6 +32,11 @@ Before loading the tracker template or designing an issue graph, classify the re
 - **Standalone issue:** one repository, one coherent outcome, normally one PR, and no independently owned dependency or evidence gates.
 - **Tracker:** multiple independently mergeable PRs, cross-repository sequencing, existing-issue reorganization, or multiple authoritative completion gates.
 
+For an independently shippable change, identify the focused test that lets the
+executor open a PR and start CI. Put broader qualification in the merge criteria
+so it can run concurrently. Give independently valuable fixes their own landing
+decision when the larger investigation can continue without them.
+
 Route standalone work to the [Standalone Issue Workflow](#standalone-issue-workflow) and tracker work to the [Tracker Workflow](#tracker-workflow). In inspect/review mode, report:
 
 - the fit decision and rationale;

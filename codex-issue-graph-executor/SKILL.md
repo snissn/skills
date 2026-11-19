@@ -448,6 +448,13 @@ the cancellation/coverage safeguards in [CI capacity](references/ci-capacity.md)
 Measure job creation-to-start separately from execution and verify dependencies;
 queued work is pending, not a failure or proof of a particular account limit.
 
+When an independently useful patch is stable, its focused behavior test passes,
+and required pre-push checks are green, push that commit and open or update its
+PR promptly. Verify that CI started on the intended SHA. Run the broader suite
+and workload qualification alongside CI and post the results on the same PR.
+Merge each qualified increment as soon as its own dependencies and gates clear.
+When delivery stalls, compare commit-to-PR time with CI queue and run time.
+
 Give workers their normal provisional construction grants. Coordinate graph-owned
 pushes: batch compatible fixes, evidence and base syncs into a coherent candidate,
 and avoid redundant intermediate pushes whose only purpose is a fresh CI cycle.

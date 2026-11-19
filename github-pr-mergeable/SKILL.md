@@ -192,6 +192,12 @@ correctness, performance, review, latest-head CI, and final qualification gates 
 
 Use latest-head evidence only.
 
+Open or update the PR once the patch is stable and its focused test and required
+pre-push checks pass. Verify the expected checks have started on that commit.
+List outstanding tests or benchmarks in the PR and run them alongside hosted CI.
+Post results against the tested SHA in the body or a comment. Request final AI
+review at the existing maturity gate and merge once all applicable checks pass.
+
 When a test may be flaky, apply
 [Recurring CI failures](references/recurring-ci-flakes.md): search its exact
 identity and prior fixes, start or adopt a bounded issue/documentation/repair/merge
