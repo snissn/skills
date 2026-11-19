@@ -7,11 +7,11 @@ cleanup service is required.
 
 ## Required Local Deletion
 
-After a merge or candidate retirement, remove eligible local worktrees and their
-disposable generated data promptly once consumers release them. Moving them to
-another directory, an external disk, Trash, a tarball, or a preservation copy is
-not cleanup. Do not retain complete worktrees, test DBs, generated corpora, or
-run-local caches just in case they might be useful again. Retain only required
+Remove eligible local worktrees and their disposable generated data as soon as
+the last consumer releases them. Make that decision at stage completion,
+supersession, candidate retirement, merge, or a stopped lane. Carry out verified
+deletion in the same execution checkpoint, including before merge when a later
+stage can proceed from durable evidence. Retain only required
 evidence or unique work, with its durable location and concrete reason recorded.
 Use pushed source refs plus input recipes, seeds, and hashes for reproducible
 data when those satisfy the evidence contract. Keep an exact fixture or binary
@@ -31,9 +31,11 @@ local branch and remote-branch retention separately under the helper's policy.
   benchmark DBs and fixtures; binaries, test executables, build intermediates;
   temporary profiles/logs, downloads, and run-local caches. Prior-run leftovers
   are eligible only when ownership and release can still be verified.
-- Record exact absolute paths and hosts, estimated sizes, retention reason, and
-  producer/consumer state in existing graph notes. Age, a naming pattern, a
-  merged PR, or regenerability alone does not prove a path is safe to delete.
+- When allocating large paths, record their absolute paths, hosts, expected
+  release events, and producer, consumer, and cleanup ownership in existing
+  graph notes. At release, record estimated sizes and any retention reason.
+  Require evidence of release even if the path is old, its name looks
+  temporary, the PR merged, or the content can be regenerated.
 - Release a path only after its writer/commands have stopped, descendants no
   longer consume it, and useful work and required evidence are preserved.
   At release, capture expected path/type and filesystem identity plus a

@@ -80,6 +80,23 @@ Test-first start, implementation, and close are logical phases inside an
 implementation packet. They are not instructions to create separate PRs, push every small
 change, or wait for CI/review after each phase.
 
+## Plan Local Cleanup In The Owning Packet
+
+When execution creates worktrees, benchmark databases, datasets, caches, or
+other large temporary outputs, name the cleanup owner, the last consumer or
+release event, and the evidence that must survive. Put this in the existing
+issue checklist. Reuse an existing checkout, fixture, or cache when its
+ownership and measurement contract permit.
+
+Plan prompt deletion when each path is released, including after a benchmark
+stage, a rejected experiment, or a superseded candidate. A path can be released
+before the PR merges. Retain the minimum evidence needed for review, recovery,
+or exact reproduction. For regenerable data, record the source, recipe, inputs,
+and applicable hashes. For unique or contractually required bytes, verify
+their durable location. Execute and verify cleanup within the owning packet
+under [the executor's cleanup contract](../codex-issue-graph-executor/references/disk-cleanup.md).
+Planning alone authorizes no deletion.
+
 ## Implementation-Ready Ticket Bodies
 
 Put the executable plan in the owning issue body, not only in conversation,

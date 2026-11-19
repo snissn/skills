@@ -61,6 +61,26 @@ samples. An unexecuted benchmark is not a product regression or a gate rerun.
 For a planning request, capture the evidence gaps and smallest useful experiment;
 do not launch a benchmark campaign merely to draft an issue.
 
+## Release Benchmark Storage During Execution
+
+Before a run, put generated DBs, fixture copies, binaries, caches, and staging
+in identifiable run-owned paths. Name who needs each path and when it can go.
+Write raw samples, failure logs, profiles used in the conclusion, and source,
+binary, and input bindings to the evidence location as the work proceeds.
+Record the recipe and seed for generated data. Preserve exact fixture or DB
+bytes when the acceptance, recovery, or forensic contract requires them.
+
+At the end of each successful, failed, cancelled, or superseded run or stage,
+collect its required evidence, finish readers and transfers, and immediately
+delete released temp data under the execution's cleanup authority. Do this
+before opening another large batch when it would otherwise accumulate copies.
+Reuse an eligible scratch location for an identified next run only while it
+has a consumer. A failed run still needs its raw failure evidence and any
+physical state required to diagnose or reproduce it. Delete only the redundant
+working copies. Verify local removal and report retained large paths with their
+consumer or retention reason. For graph work, hand released paths to the
+[executor's cleanup owner](../codex-issue-graph-executor/references/disk-cleanup.md).
+
 ## Choose The Cheapest Useful Experiment
 
 For an uncertain optimization, use the [efficient experiment loop](references/efficient-experiments.md):

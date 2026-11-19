@@ -62,9 +62,8 @@ Use the runtime catalog for current compatibility and the routing below:
   agreed parent outcome and preserve acceptance criteria, guardrails, ownership,
   and history; necessary issue maintenance needs no repeated permission.
 - Execution includes deleting released local worktrees and verified disposable
-  outputs owned by this graph after merge or retirement, under **Asynchronous
-  Disk Cleanup**. Local cleanup is required; archiving or moving a disposable
-  worktree does not satisfy it.
+  outputs owned by this graph as soon as their consumers finish. Follow
+  **Asynchronous Disk Cleanup** throughout execution.
   Editing this skill does not itself authorize a disk cleanup run.
 - The coordinator may merge after all gates pass; workers may not merge unless
   the coordinator explicitly delegates that action for a specific PR.
@@ -558,12 +557,15 @@ intra-ticket parallelism is not unlimited fanout or new execution authority.
 
 ## Asynchronous Disk Cleanup
 
-After a PR merges, delete its local worktree and disposable test/benchmark DBs,
-datasets, binaries, and run-local caches as soon as their writers and consumers
-release them. Do not save, archive, move to Trash, or copy the complete worktree
-or disposable outputs for possible future use. Keep only explicitly required
-evidence and unique work, with a verified durable location and a retention reason;
-pushed source refs and reproducible input recipes normally suffice for recovery.
+**Delete released local worktrees and disposable outputs during execution.**
+Make the release decision when a test or benchmark stage ends, a candidate is
+retired or superseded, a PR merges, or a lane stops. Assign exact paths to one
+owner and reclaim each released path in that batch, even while related evidence
+review, CI, or merge is pending. Apply this to disposable DBs, generated datasets,
+binaries, and staging. Keep only required evidence and unique work. Verify the
+durable location and record why it must be retained. Pushed source refs and
+reproducible input recipes normally suffice for recovery.
+Delete disposable outputs in place after verification of their release.
 Active descendants, dirty or unpushed work, primary checkouts, and required
 scientific/review evidence remain protected. A blocked remote-branch deletion
 does not block eligible local worktree or output deletion.
@@ -576,15 +578,13 @@ existing concurrency budget; queue cleanup when slots are occupied. Batch and
 reuse this role instead of spawning a cleaner after every command. If delegation
 is unavailable or only cleanup remains, finish the eligible batch locally.
 
-Start after a resolved merge, retired candidate, or completed test/benchmark
-stage releases its worktree or generated outputs. The coordinator assigns exact
-paths and sole deletion ownership; keep active/provisional lanes and retained
-evidence protected. Hand helper-skill post-merge cleanup to that owner rather
-than running two cleaners. Releasing or queuing a path is not completed cleanup;
-verify actual deletion and removal of its worktree registration. Async means an
-exposed subagent running alongside
-execution, not a detached daemon or invented spawn flag. Collect its outcome
-before the final report; never claim cleanup will continue after the turn ends.
+Register large paths and their expected release events when allocating them.
+At each release event, the coordinator gives one owner the exact paths to
+delete. Sweep remaining released paths at closeout. Record a concrete consumer,
+evidence requirement, or blocker for any large path still present. Route helper
+cleanup through the same owner. Verify deletion and worktree deregistration
+before marking cleanup complete. Collect the result of concurrent cleanup
+before the final report.
 
 ## Critical-Path Finalization and Monitoring
 
