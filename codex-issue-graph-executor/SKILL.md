@@ -61,9 +61,9 @@ Use the runtime catalog for current compatibility and the routing below:
   adopt necessary nodes within that scope as evidence changes. Map them to the
   agreed parent outcome and preserve acceptance criteria, guardrails, ownership,
   and history; necessary issue maintenance needs no repeated permission.
-- Execution includes deleting released local worktrees and verified disposable
-  outputs owned by this graph as soon as their consumers finish. Follow
-  **Asynchronous Disk Cleanup** throughout execution.
+- Execution includes reclaiming released local worktrees, verified disposable
+  outputs, and graph-owned Go build caches for the selected repository under
+  **Asynchronous Disk Cleanup**. Complete eligible cleanup on the execution host.
   Editing this skill does not itself authorize a disk cleanup run.
 - The coordinator may merge after all gates pass; workers may not merge unless
   the coordinator explicitly delegates that action for a specific PR.
@@ -391,23 +391,29 @@ clone only when independent repository state is required or no suitable local
 repository exists. Worktrees share Git objects, but still materialize working
 files and generated outputs.
 
-Ordinary Go builds share persistent `GOCACHE` and `GOMODCACHE` within the same
-user/trust boundary. Inspect `go env GOCACHE GOMODCACHE`, reuse configured shared
-paths, and pass the resolved absolute paths to workers. Place newly allocated
-shared caches on the host's preferred high-capacity storage, outside disposable
-lane roots. Do not create per-worker, per-issue, or per-head caches by default,
-silently replace supplied cache paths,
-or change global settings with `go env -w`. Go handles normal source, compiler,
-and option changes. External C-library changes under CGO need an explicit rebuild
-or a justified cache exception.
+Inspect `go env GOCACHE GOMODCACHE GOCACHEPROG`. Honor cache settings supplied
+in the environment or `GOENV`, external cache programs, and benchmark cache
+contracts. Reuse the module cache within the same user/trust boundary. For
+ordinary local Go builds where the executor chooses the build cache, use one
+`GOCACHE` per graph, target repository, and execution host, shared by that
+graph's worktrees and fix loops. Bind it to the graph and resolved Git common
+directory in graph state. On resume, reuse the recorded path after verifying
+ownership. For a new path, allocate a fresh private directory on verified
+high-capacity storage outside disposable lane roots. If allocation fails, use
+the configured or default cache and record it as protected. Pass the effective
+absolute paths to workers in the command environment and leave global Go
+settings intact. Go handles normal source, compiler, and option changes.
+External C-library changes under CGO need an explicit rebuild or a justified
+cache exception.
 
 Keep `TMPDIR`/`GOTMPDIR`, DBs, mutable datasets, binaries and benchmark output
 separate per lane. Follow host storage policy; verify the preferred high-capacity
 mount is available and writable before placing heavy data there. Isolated caches
 are exceptions for an explicit cold-cache/dependency-acquisition check, cache
 diagnosis, or demonstrated compatibility/trust requirement. Record the reason,
-exact paths and disposal owner. Preserve declared benchmark/cache contracts;
-ordinary lane cleanup must not clear shared caches.
+exact paths and disposal owner. Only the coordinator or its assigned cleaner can
+clear a released build cache under **Asynchronous Disk Cleanup**. Protect
+externally owned build caches and shared module caches.
 
 For required file copies, prefer verified same-filesystem copy-on-write support
 (APFS cloning on macOS or reflinks on a supporting Linux filesystem). Record an
@@ -579,12 +585,15 @@ reuse this role instead of spawning a cleaner after every command. If delegation
 is unavailable or only cleanup remains, finish the eligible batch locally.
 
 Register large paths and their expected release events when allocating them.
-At each release event, the coordinator gives one owner the exact paths to
-delete. Sweep remaining released paths at closeout. Record a concrete consumer,
-evidence requirement, or blocker for any large path still present. Route helper
-cleanup through the same owner. Verify deletion and worktree deregistration
-before marking cleanup complete. Collect the result of concurrent cleanup
-before the final report.
+At each release event, delete eligible per-run outputs and check Go caches.
+Keep the graph cache warm for identified upcoming builds when space permits.
+Clear it when its last planned build finishes, or sooner under disk pressure
+when the cache contract permits. Sweep remaining released paths at closeout.
+Record a concrete consumer, evidence requirement, or blocker for any large
+path still present. Route helper-skill post-merge cleanup to the same owner.
+Verify deletion, worktree deregistration, or cleared build entries before
+marking cleanup complete. Use an exposed subagent for cleanup that runs
+alongside execution. Collect its outcome before the final report.
 
 ## Critical-Path Finalization and Monitoring
 
@@ -921,13 +930,13 @@ Use `gpt-6.2-sol` at `high` as a read-only adviser, not a shadow implementer:
     final base, reassess evidence, and run affected or policy-required checks
     before declaring them mergeable. Release the merged node's local worktree
     and disposable outputs immediately after their consumers finish.
-12. Delete eligible worktrees and generated outputs through **Asynchronous Disk
-    Cleanup** as consumers finish; do not accumulate them until graph closeout.
-    Preserve `github-pr-mergeable` branch-cleanup policy and one cleanup owner.
-    Before reporting completion, collect cleanup results or finish locally;
-    verify removed paths are absent and worktrees unregistered. Record every
-    retained path's concrete blocker or explicit retention requirement; do not
-    replace deletion with a local archive.
+12. Reclaim eligible worktrees, generated outputs, and Go build caches through
+    **Asynchronous Disk Cleanup** as consumers finish. Preserve
+    `github-pr-mergeable` branch-cleanup policy and one cleanup owner. Before
+    reporting completion, collect cleanup results or finish locally. Verify
+    removed paths are absent, worktrees are unregistered, and cleaned cache
+    entries are gone. Record every retained path's concrete blocker or explicit
+    retention requirement.
 
 ## Dependency Ready
 
@@ -973,9 +982,9 @@ Lead with the outcome; summarize evidence and link detailed state. Report:
   review, including any requested-versus-actual fallback.
 - Any deferred nodes with blocker, owner, and next action.
 - Per-node local worktree, local branch, and GitHub remote-branch cleanup status.
-- Disk cleanup owner, removed/retained generated paths with reasons, and measured
-  free-space change per affected filesystem; distinguish size estimates from
-  observed recovery.
+- Disk cleanup owner, removed or retained generated paths with reasons, cleared
+  or retained Go build caches, and measured free-space change per affected
+  filesystem. Distinguish size estimates from observed recovery.
 - Durable graph-state location and whether any fallback execution path was used.
 
 Read `references/worker-prompts.md` before dispatching workers. Read

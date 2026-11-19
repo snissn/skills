@@ -392,7 +392,8 @@ storage:
   host: ...
   work_root: ...
   git_common_dir: ...
-  shared_go_caches: {GOCACHE: ..., GOMODCACHE: ...}
+  shared_go_caches: {GOCACHE: ..., GOMODCACHE: ...} # effective paths for graph workers
+  graph_go_build_cache: {owner: ..., consumers: [], release_status: ...} # omit for protected GOCACHE
 nodes:
   id:
     kind: issue|pr

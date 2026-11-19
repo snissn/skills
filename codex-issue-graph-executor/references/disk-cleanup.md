@@ -53,14 +53,35 @@ local branch and remote-branch retention separately under the helper's policy.
   the same paths. New candidates discovered by the cleaner need coordinator
   release before deletion, not a new user prompt for already authorized scope.
 - Preserve primary checkouts, active/provisional worktrees, user files, real DBs,
-  unrelated graph outputs, and shared persistent build/module/package caches.
-  Include resolved shared `GOCACHE`/`GOMODCACHE` paths in the protected-path list,
-  even when they sit under a task-looking directory. Workers must not run
-  `go clean -cache` or `go clean -modcache` against them during lane cleanup.
-  An explicitly isolated cache is eligible only under its recorded exception,
-  disposal owner and normal release checks.
-  Broader cache/host cleanup requires explicit scope; report large unattributed
-  or shared candidates with their sizes instead of deleting them.
+  unrelated graph outputs, externally owned Go build caches, and shared
+  persistent module/package caches. Add externally owned caches to the protected
+  paths even if they sit under a task-looking directory. Separately isolated
+  caches follow their recorded exception, owner, and normal release checks.
+  Report large shared or unattributed candidates with sizes. Broader host
+  cleanup requires explicit scope.
+
+## Go Build Caches
+
+- A build cache is eligible when its exact directory is recorded as exclusively
+  owned by this graph for the target repository on this host, or as a disposable
+  build cache under a recorded lane exception. Use the recorded Git common
+  directory to bind the repository. A path name or package import path cannot
+  establish ownership. Go clears the entire selected cache directory.
+- At a released stage, merge, candidate retirement, disk-pressure checkpoint,
+  or graph closeout, check recorded caches for cleanup. Release a graph cache
+  only after its consumers have released it, their commands have exited,
+  required evidence is preserved, and resumable benchmark cache contracts allow
+  eviction. Keep it warm for upcoming builds if space permits. While the cleaner
+  owns the cache, the coordinator holds new commands that would use it and lets
+  other work proceed.
+- After the normal release and identity rechecks below, use the selected local
+  Go toolchain from a neutral working directory with
+  `GOCACHE="<exact-absolute-path>" go clean -cache`. Supply only `-cache`
+  and leave `GOMODCACHE` intact. Verify that the hexadecimal cache buckets
+  have no entries and measure allocated bytes before and after. Go may leave
+  the directory, metadata, and fuzz data.
+  Report remaining data or a failed verification explicitly. Return ownership
+  before any new build uses the path.
 
 ## Reclaim And Verify
 
@@ -101,9 +122,10 @@ local branch and remote-branch retention separately under the helper's policy.
    binary/fixture outside a removable worktree is source content, not scratch.
    Branch removal stays with the coordinator unless separately delegated under
    `github-pr-mergeable` policy; the disk worker has no merge/push authority.
-5. Verify removed paths are absent and removed worktrees unregistered; confirm
-   protected paths remain and remeasure free space. Report removed paths, kept
-   paths/reasons, and observed filesystem deltas separately from size estimates
+5. Verify removed paths are absent, removed worktrees unregistered, and cleaned
+   build cache entries gone. Confirm protected paths remain and remeasure free
+   space. Report removed paths, cleared caches, kept paths with reasons, and
+   observed filesystem deltas separately from size estimates
    (hard links, snapshots, open files, and concurrent writes can change recovery).
 
 ## Completion And Pressure

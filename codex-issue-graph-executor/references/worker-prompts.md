@@ -13,8 +13,10 @@ implementation or finalization handoff. Also supply the checkout method/Git comm
 directory, resolved shared `GOCACHE`/`GOMODCACHE`, and lane-specific
 `TMPDIR`/`GOTMPDIR` and output paths under
 [Storage And Build Cache Defaults](../SKILL.md#storage-and-build-cache-defaults).
-Workers inherit these paths without allocating replacement caches or clearing
-shared caches. Any isolated-cache exception includes its reason and disposal owner.
+Workers use the assigned cache paths and tell the coordinator when commands
+using them have exited. Handoffs identify any live background consumers. Any
+isolated-cache exception includes its reason and disposal owner. Cache cleanup
+belongs to the coordinator or the assigned cleaner.
 
 An assignment may own a whole issue or an independent slice within it. Use
 [Parallel Slices Within A Node](../SKILL.md#parallel-slices-within-a-node) for the
@@ -320,6 +322,8 @@ Load <CODEX_HOME>/skills/codex-issue-graph-executor/references/disk-cleanup.md.
 Hosts and exact released paths, sizes, owners, retention decisions, and expected
 path/filesystem identities and content snapshots: <ALLOWLIST>.
 Protected paths, active consumers, and measurement windows: <PROTECTED_CONTEXT>.
+Repository bindings, consumer releases, and Go toolchains for eligible caches:
+<GO_CACHE_CONTEXT>.
 Repository/worktree HEADs and retained evidence locations: <IDENTITIES_AND_EVIDENCE>.
 Time box and stop conditions: <BOUNDS>.
 
@@ -329,10 +333,14 @@ Delete eligible local worktrees and disposable DBs/datasets; do not archive,
 move to Trash, relocate, or save complete copies. Required evidence is retained
 at the coordinator's verified durable location. Remote-branch retention does
 not block eligible local deletion. A queued or moved path is not removed.
-Keep scans/deletion outside conflicting benchmark measurement windows. Report
-new large candidates to the coordinator for release; do not expand your scope.
+For each eligible Go build cache on the allowlist, use the exact assigned
+`GOCACHE` with `go clean -cache` and verify the build entries are gone. Leave
+protected build caches and module caches intact. Keep scans and deletion outside
+conflicting benchmark measurement windows. Report new large candidates to the
+coordinator for release.
 Do not edit source, merge, commit, push, request reviews, or spawn subagents.
-Return removed paths, retained paths with reasons, worktree registration checks,
-and before/after filesystem free space with estimates labeled separately. Stop
-after this batch; the coordinator may reuse you for another released batch.
+Return removed paths, cleared caches, retained paths with reasons, worktree
+registration checks, and before/after filesystem free space with estimates
+labeled separately. Stop after this batch. The coordinator may reuse you for
+another released batch.
 ```
