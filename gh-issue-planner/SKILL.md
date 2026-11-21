@@ -531,7 +531,7 @@ Repo extensions preserve project-specific conventions without hardcoding them in
   a new user permission request merely because CI/review is still progressing.
   This specifies execution ownership; planning-only mode still ends after its
   requested planning deliverable and does not start PR monitoring.
-- If CI is backed up, scope any proposed stale-run cancellation to superseded runs of the selected PR, subject to execution authorization and repo policy. Issue planning does not authorize cancelling CI or disturbing other lanes.
+- For CI-demand work, name the event and coverage contract in the issue: which starts are eliminated, where full coverage remains, and which current-head checks must still report. Use the executor’s [CI capacity guide](../codex-issue-graph-executor/references/ci-capacity.md#reduce-starts-before-speeding-up-jobs). Keep proposed cancellation scoped to superseded owned runs; planning does not authorize cancellation or changes to repository settings.
 - Never mark aspirational work as already proven. Use “current evidence,” “target,” and “completion criteria” distinctly.
 - For umbrella work in apply mode, create a parent tracker for sequencing and acceptance, then child issues for executable slices. Cross-link children from the umbrella and link the umbrella from every child.
 - Every issue that requires PRs should state the branch policy and merge policy from the repo. If the repo requires topic branches, human approval, or no self-merge, include that explicitly.
