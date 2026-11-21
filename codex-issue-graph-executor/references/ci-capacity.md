@@ -48,6 +48,31 @@ an unrelated CI project.
    setup step does not establish a faster vet/test command, and cached test
    results do not replace required current-candidate execution.
 
+## Reduce starts before speeding up jobs
+
+For a CI-demand change, map each expensive lane to its purpose: PR correctness,
+post-merge integration, routine benchmark, or pinned evidence/release. Find
+same-candidate push/PR overlap, but compare the actual tested ref and assertions
+before treating two runs as interchangeable. Prefer one ordinary PR route over
+an unrestricted branch push plus PR route for the same purpose. Keep full
+default-branch integration and deliberate manual or pinned qualification. Move
+heavy routine benchmarks off ordinary pushes where a cheap PR smoke protects the
+changed path; do not make the smoke stand in for scale or latency qualification.
+
+Scope costly platform jobs by their actual inputs, including transitive shared
+code, build metadata, harness changes and CI configuration, not package prefixes
+alone. For required checks, keep a stable aggregate and validate why each omitted
+job is inapplicable; uncertain impact takes the full path. Don't silently drop a
+unique platform check just because another workflow also requests that OS.
+
+Record intended behavior for a relevant PR, an unrelated PR, a rapid replacement
+head, parallel PRs/forks, and main/manual/merge-group runs that must survive.
+Test the event and impact cases, then verify actual hosted admissions and latest
+head coverage. Review live branch protection/rulesets before changing check names;
+GitHub Actions configuration belongs in workflow files, and does not by itself
+require an admin setting change. Report avoided job starts, runner time and
+observed wall time separately; label anything not yet verified on GitHub.
+
 ## Reduce obsolete work safely
 
 Batch compatible local repairs and evidence with the next necessary push. Keep
