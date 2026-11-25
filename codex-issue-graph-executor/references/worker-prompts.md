@@ -10,13 +10,14 @@ Use explicit role effort and follow the runtime's fork restrictions in `SKILL.md
 do not inherit a different parent model or automatically substitute another model.
 Include large generated paths and their retention/disposal status in every
 implementation or finalization handoff. Also supply the checkout method/Git common
-directory, resolved shared `GOCACHE`/`GOMODCACHE`, and lane-specific
-`TMPDIR`/`GOTMPDIR` and output paths under
+directory, resolved shared `GOCACHE`/`GOMODCACHE`, selected Go toolchain and
+command-specific `-trimpath` setting, and lane-specific `TMPDIR`/`GOTMPDIR`
+and output paths under
 [Storage And Build Cache Defaults](../SKILL.md#storage-and-build-cache-defaults).
-Workers use the assigned cache paths and tell the coordinator when commands
-using them have exited. Handoffs identify any live background consumers. Any
-isolated-cache exception includes its reason and disposal owner. Cache cleanup
-belongs to the coordinator or the assigned cleaner.
+Workers use the assigned cache paths and build settings and tell the coordinator
+when commands using the caches have exited. Handoffs identify any live
+background consumers. Any isolated-cache exception includes its reason and
+disposal owner. Cache cleanup belongs to the coordinator or the assigned cleaner.
 
 An assignment may own a whole issue or an independent slice within it. Use
 [Parallel Slices Within A Node](../SKILL.md#parallel-slices-within-a-node) for the

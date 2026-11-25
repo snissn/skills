@@ -406,6 +406,16 @@ settings intact. Go handles normal source, compiler, and option changes.
 External C-library changes under CGO need an explicit rebuild or a justified
 cache exception.
 
+For routine local `go build` commands where the executor chooses the build
+flags, pass `-trimpath` explicitly so matching packages can reuse cached
+builds across worktrees. Use it for `go test` when the selected tests are known
+to work with trimmed source paths. Some tests use compiled paths to locate
+source files or fixtures and need absolute paths. Preserve explicit user and
+repository build settings and pinned benchmark or qualification recipes. Record
+the selected Go toolchain and command-specific `-trimpath` setting in the
+existing cache handoff so equivalent commands use consistent settings across
+worktrees and resumes.
+
 Keep `TMPDIR`/`GOTMPDIR`, DBs, mutable datasets, binaries and benchmark output
 separate per lane. Follow host storage policy; verify the preferred high-capacity
 mount is available and writable before placing heavy data there. Isolated caches
