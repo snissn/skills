@@ -5,16 +5,47 @@ problem. A flaky test is repair work, not a reason to park the whole execution g
 
 ## Establish history before classification
 
-Search the exact test identity and failure signature in current and closed issues,
-PRs, and retained logs. Inspect earlier merged fixes and current owners before
-creating another ticket. Record the failing head/job and distinguish a documented
-recurring test from proof that this occurrence has the same cause. A passing retry
-does not establish either the cause or a repair. Preserve the original failure.
+Capture and preserve the failing run ID, attempt, job ID/URL, exact test or gate
+name, and decisive failure/race/timing log lines **before** running
+`gh run rerun --failed` (rerunning can hide the failed attempt behind a new
+attempt). Search the exact test identity and failure signature in current and
+closed issues, PRs, and retained logs. Inspect earlier merged fixes and current
+owners before creating another ticket. Record the failing head/job and
+distinguish a documented recurring test from proof that this occurrence has the
+same cause. A passing retry does not establish either the cause or a repair.
+Preserve the original failure.
+
+## Dispatch asynchronously on sight (do not idle for reruns)
+
+Do **not** classify a CI failure as an "unrelated flake" or "runner noise", plan
+`gh run rerun --failed` after sibling shards finish, and then sit idle waiting
+for the run to complete. Observing an unrelated CI flake or noisy gate with no
+active repair PR/owner is an immediate trigger to launch an asynchronous repair
+lane in parallel with the waiting CI run:
+
+- **Spawn an isolated async worker immediately** (for example, an Antigravity
+  `graph-worker` via `invoke_subagent` or a Codex subagent) on a clean,
+  disjoint `git worktree add` lane branched off `origin/main` within the active
+  concurrency budget (normally 1–2 workers). Share the graph `GOCACHE` with a
+  lane-local `TMPDIR`/`GOTMPDIR`.
+- **Fallback when delegation is unavailable:** if no subagent slot can be used,
+  use the CI wait locally in a separate worktree off `origin/main` to search
+  history, reproduce, and open the focused repair while the background CI
+  watcher monitors the primary PR.
+- **Deduplicate before launching:** check live open issues, open PRs, and active
+  workers for the same test/gate signature first so two lanes never fix the same
+  flake concurrently. When multiple distinct flakes appear at once, prioritize
+  the most recurring or highest-impact flake within the concurrency budget.
+- **Stay disjoint and non-blocking:** branch the flake repair off `origin/main`
+  (never stack it on the product PR unless shared code requires it), respect
+  measurement-host isolation if any benchmark host is busy, and never delay the
+  primary PR's bounded rerun or eligible merge waiting for the flake PR to land.
 
 ## Start a bounded repair completion packet
 
-Compose `gh-issue-planner`, `codex-issue-graph-executor`, and
-`github-pr-mergeable` into one issue-to-repair-to-merge loop. Reuse an existing
+Compose `gh-issue-planner`, the active issue-graph executor
+(`agy-issue-graph-executor` in Antigravity or `codex-issue-graph-executor` in
+Codex), and `github-pr-mergeable` into one issue-to-repair-to-merge loop. Reuse an existing
 active owner/ticket when its scope fits; otherwise create one focused recurrence
 issue linking the historical fix and new failure. Keep source ownership disjoint
 from product work where possible. Use an available execution slot and the existing

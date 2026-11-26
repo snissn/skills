@@ -104,7 +104,7 @@ For Codex review state, use the bundled classifier instead of inspecting only
 the pull-request `reviews` array:
 
 ```sh
-python3 "${CODEX_HOME:-${HOME}/.codex}/skills/github-pr-mergeable/scripts/codex_review_gate.py" \
+python3 "${SKILLS_ROOT:-${CODEX_HOME:-${HOME}/.codex}/skills}/github-pr-mergeable/scripts/codex_review_gate.py" \
   --repo <OWNER>/<REPO> --pr <PR> --check
 ```
 
@@ -180,7 +180,9 @@ Do not optimize unrelated upstream cost inside every PR. If performance drops af
 
 Within an authorized optimization graph, a measured material performance/allocation
 gap alongside a correctness blocker automatically triggers independent profile-ranked
-work under the [executor](../codex-issue-graph-executor/SKILL.md#orthogonal-performance-workstreams)
+work under the active executor
+([AGY](../agy-issue-graph-executor/SKILL.md#execution-policies-shared-contracts) /
+[Codex](../codex-issue-graph-executor/SKILL.md#orthogonal-performance-workstreams))
 and [planner](../gh-issue-planner/SKILL.md#orthogonal-performance-workstreams) policies.
 Apply [Go performance guidance](../go-performance-optimization/SKILL.md) where relevant;
 start eligible provisional construction without waiting for unrelated correctness
@@ -198,14 +200,18 @@ List outstanding tests or benchmarks in the PR and run them alongside hosted CI.
 Post results against the tested SHA in the body or a comment. Request final AI
 review at the existing maturity gate and merge once all applicable checks pass.
 
-When a test may be flaky, apply
-[Recurring CI failures](references/recurring-ci-flakes.md): search its exact
-identity and prior fixes, start or adopt a bounded issue/documentation/repair/merge
-loop, and continue independent product work. Refresh unsuitable incidental fixture
+When a test or CI gate may be flaky or noisy, apply
+[Recurring CI failures](references/recurring-ci-flakes.md): **capture the
+failing run/job/attempt and log excerpt before any `gh run rerun --failed`**,
+search its exact identity and prior fixes, and **proactively launch an
+asynchronous bounded repair lane off `origin/main`** (via a background worker
+within the executor's budget, or locally during the CI wait) rather than sitting
+idle waiting to rerun failed jobs. Refresh unsuitable incidental fixture
 assumptions or budgets causally; preserve the asserted invariant and intentional
 deadline tests. Known recurrence permits a documented bounded gate rerun where
 policy allows, not an automatic waiver or retry-until-pass repair. Already-green
-current CI needs no rerun, and an adjacent repair need not block an eligible merge.
+current CI needs no rerun, and an adjacent flake-repair PR stays disjoint and
+never blocks an eligible product merge.
 
 When repairing a timeout, identify whether its clock covers one test, the whole
 package, or the job, including earlier work sharing that budget. An isolated
@@ -343,10 +349,14 @@ both local and PR-lifetime review budgets permit it.
 
 An internal read-only subagent review (`INTERNAL_SUBAGENT_REVIEW`) or a separate
 same-agent mock subagent review (`LOCAL_MOCK_SUBAGENT_REVIEW`) is an acceptable
-fallback when hosted review or delegation cannot run. Both must inspect the
-actual exact candidate, record findings and their disposition, and return
-`ACCEPT` or `REJECT`. Label the actual mode and model; a mock review is a real
-reviewer pass performed by the current agent, not an independent agent run.
+fallback when hosted review or delegation cannot run (and serves as the primary
+internal review in Antigravity/AGY when repository policy does not require
+hosted `@codex review`). In Antigravity, launch `INTERNAL_SUBAGENT_REVIEW` via a
+fresh-context read-only subagent (`define_subagent` with `EnableWriteTools=false`,
+`EnableSubagentTools=false`, and `Model="inherit"` or `"pro"`). Both modes must
+inspect the actual exact candidate, record findings and their disposition, and
+return `ACCEPT` or `REJECT`. Label the actual mode and model; a mock review is a
+real reviewer pass performed by the current agent, not an independent agent run.
 
 Follow [the fallback contract](references/internal-review-fallback.md) for
 evidence, model routing, renewal, and explicit target-repository exceptions.

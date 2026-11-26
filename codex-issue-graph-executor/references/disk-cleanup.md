@@ -7,16 +7,22 @@ cleanup service is required.
 
 ## Required Local Deletion
 
-Remove eligible local worktrees and their disposable generated data as soon as
-the last consumer releases them. Make that decision at stage completion,
-supersession, candidate retirement, merge, or a stopped lane. Carry out verified
-deletion in the same execution checkpoint, including before merge when a later
-stage can proceed from durable evidence. Retain only required
-evidence or unique work, with its durable location and concrete reason recorded.
-Use pushed source refs plus input recipes, seeds, and hashes for reproducible
-data when those satisfy the evidence contract. Keep an exact fixture or binary
-only when the contract actually requires those bytes. Never delete protected or
-unreleased content to meet this requirement.
+Remove eligible local worktrees, no-longer-needed checkouts, their per-lane
+`TMPDIR`/`GOTMPDIR` scratch roots, and their disposable generated data as soon
+as the last consumer releases them. Make that decision at stage completion,
+supersession, candidate retirement, merge, or a stopped lane, and close/release
+finished worker runtimes so harness-managed worktrees are also reclaimed
+immediately. Carry out verified deletion in the same execution checkpoint,
+including before merge when a later stage can proceed from durable evidence.
+Apply the same release-and-reclaim rule on remote execution/benchmark hosts
+(for example, deleting disposable benchmark DB directories like `treedb_data/`
+immediately after reopen verification while preserving JSON, HTML, and profile
+artifacts). Retain only required evidence or unique work, with its durable
+location and concrete reason recorded. Use pushed source refs plus input
+recipes, seeds, and hashes for reproducible data when those satisfy the
+evidence contract. Keep an exact fixture or binary only when the contract
+actually requires those bytes. Never delete protected or unreleased content to
+meet this requirement.
 
 Local worktree/output deletion proceeds independently of remote branch cleanup.
 A protected remote ref, squash merge, or retained source ref is not a reason to
@@ -62,26 +68,42 @@ local branch and remote-branch retention separately under the helper's policy.
 
 ## Go Build Caches
 
+- Go's built-in `GOCACHE` eviction is a 5-day idle TTL with **no byte cap**, so
+  multi-worktree, `-race`, and cross-OS builds (`GOOS=...`) accumulate tens of
+  gigabytes quickly unless bounded. Always allocate a private graph-owned
+  `GOCACHE` per `(graph, target repository, execution host)` — including on
+  remote benchmark/execution hosts — and pass `-trimpath` on `go build` and
+  compile-only cross-OS checks (`GOOS=... go test -c -trimpath ...`) so worktrees
+  share compiled actions.
 - A build cache is eligible when its exact directory is recorded as exclusively
   owned by this graph for the target repository on this host, or as a disposable
   build cache under a recorded lane exception. Use the recorded Git common
   directory to bind the repository. A path name or package import path cannot
   establish ownership. Go clears the entire selected cache directory.
-- At a released stage, merge, candidate retirement, disk-pressure checkpoint,
-  or graph closeout, check recorded caches for cleanup. Release a graph cache
-  only after its consumers have released it, their commands have exited,
-  required evidence is preserved, and resumable benchmark cache contracts allow
-  eviction. Keep it warm for upcoming builds if space permits. While the cleaner
+- At every wave/sprint boundary, released stage, merge, candidate retirement,
+  disk-pressure checkpoint, or graph closeout, measure the graph `GOCACHE` size
+  and filesystem free space. Release and clear a graph cache when:
+  - its consumers have released it and the graph is closing or advancing to a
+    new sprint/base-SHA wave where prior compiled artifacts will mostly miss; or
+  - its size exceeds the soft cap (default `8 GiB`) or host free space drops
+    below `25 GiB` (or `< 15%`), once active build commands have exited and
+    resumable benchmark cache contracts allow eviction.
+  Keep it warm within the active wave when space permits. While the cleaner
   owns the cache, the coordinator holds new commands that would use it and lets
   other work proceed.
 - After the normal release and identity rechecks below, use the selected local
   Go toolchain from a neutral working directory with
   `GOCACHE="<exact-absolute-path>" go clean -cache`. Supply only `-cache`
-  and leave `GOMODCACHE` intact. Verify that the hexadecimal cache buckets
-  have no entries and measure allocated bytes before and after. Go may leave
-  the directory, metadata, and fuzz data.
+  (which also clears cached test results inside `GOCACHE`) and leave
+  `GOMODCACHE` intact. Verify that the hexadecimal cache buckets have no entries
+  and measure allocated bytes before and after. At final graph closeout, after
+  verifying bucket emptiness and zero active consumers, remove the empty private
+  graph-owned `GOCACHE` directory itself so dead bucket trees do not linger.
   Report remaining data or a failed verification explicitly. Return ownership
   before any new build uses the path.
+- Delete each lane's dedicated `TMPDIR`/`GOTMPDIR` root together with its
+  released worktree so orphaned `go-build*` and `t.TempDir()`/`Benchmark*`
+  directories are reclaimed immediately.
 
 ## Reclaim And Verify
 

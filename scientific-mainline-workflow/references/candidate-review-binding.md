@@ -56,7 +56,7 @@ assumption, or an inference stronger than the selected evidence level.
 Generate a deterministic manifest from the explicit candidate path set:
 
 ```bash
-python3 /home/mikers/.codex/skills/scientific-mainline-workflow/scripts/candidate_manifest.py \
+python3 "${SKILLS_ROOT:-${HOME}/.codex/skills}/scientific-mainline-workflow/scripts/candidate_manifest.py" \
   --repo /path/to/worktree \
   --base <candidate-base-sha> \
   --path path/to/definition.md \

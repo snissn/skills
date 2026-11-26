@@ -17,8 +17,10 @@ Both modes require actual review work, disposition of findings, and an explicit
 `ACCEPT` or `REJECT` bound to the exact head or deterministic byte manifest.
 A simulated reviewer role must not invent an agent invocation, checks, findings,
 or acceptance. An implementation summary or green CI alone is not a reviewer
-pass. Use the executor's permitted model routing and record the actual model;
-these modes do not require GPT-5.6 Pro unless target-repository policy does.
+pass. Use the active executor's permitted model routing (`gpt-6.2-sol` in Codex;
+a fresh-context read-only subagent at `Model="inherit"` or `"pro"` in
+Antigravity/AGY) and record the actual model; these modes do not require
+GPT-5.6 Pro unless target-repository policy does.
 
 ## Review Record
 

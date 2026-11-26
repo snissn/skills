@@ -25,7 +25,7 @@ an unrelated CI project.
    run IDs without mutating GitHub:
 
    ```sh
-   python3 ~/.codex/skills/codex-issue-graph-executor/scripts/ci_capacity.py \
+   python3 "${SKILLS_ROOT:-${HOME}/.codex/skills}/codex-issue-graph-executor/scripts/ci_capacity.py" \
      --repo OWNER/REPO --run-id RUN_ID --run-id OTHER_RUN_ID --show-steps
    ```
 

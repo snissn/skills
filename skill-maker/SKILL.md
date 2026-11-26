@@ -1,24 +1,24 @@
 ---
 name: skill-maker
-description: Create high-quality reusable agent skills in ~/.codex/skills and install them for Pi. Use when the user asks to create, improve, validate, or package a skill with best-practice SKILL.md structure, progressive disclosure, references, and Pi settings integration.
+description: Create high-quality reusable agent skills in the shared skills repo (~/.codex/skills) and wire them for Antigravity (AGY), Codex, and optionally Pi. Use when the user asks to create, improve, validate, or package a skill with best-practice SKILL.md structure, progressive disclosure, references, and AGY discovery manifest integration.
 ---
 
 # Skill Maker
 
-Use this skill to create or revise agent skills that live in `~/.codex/skills/<skill-name>/` and are discoverable by Pi through `~/.pi/agent/settings.json`.
+Use this skill to create or revise agent skills in the shared skills repository (`~/.codex/skills/<skill-name>/`) so they are automatically discoverable by Antigravity (`agy` CLI, App, and IDE via `~/.gemini/config/skills.json`), Codex, and optionally Pi (`~/.pi/agent/settings.json`).
 
 ## Goals
 
 A good skill should be:
 
-- **Discoverable**: frontmatter name/description clearly tell the agent when to load it.
+- **Discoverable**: frontmatter `name`/`description` clearly tell the agent when to load it.
 - **Focused**: one coherent workflow or capability, not a broad catch-all.
 - **Actionable**: provides concrete steps, commands, checklists, templates, and success criteria.
-- **Progressively disclosed**: keeps `SKILL.md` concise and moves long examples/references into `references/`.
-- **Portable**: uses relative paths inside the skill directory and avoids machine-specific assumptions unless required.
+- **Progressively disclosed**: keeps `SKILL.md` concise (ideally under ~40 KB / ~600 lines so Antigravity's 46 KB / 800-line `read_file` loads it in a single call) and moves long templates/contracts into `references/`.
+- **Portable**: uses relative links inside the skill directory and avoids hardcoded `/home/<user>` or single-harness assumptions unless the skill is intentionally harness-specific.
 - **Safe**: calls out destructive commands, credentials, network access, review requirements, and performance-regression gates when creating issue/PR/execution workflows.
 - **Testable**: includes validation steps for frontmatter, file paths, scripts, and expected outputs.
-- **Pi-accessible**: installed in Pi settings so `/skill:<name>` and automatic discovery can find it.
+- **AGY-discoverable**: wired via `~/.gemini/config/skills.json` (absolute paths, no `~` expansion, exact names in `exclude`/`include_only`) and verified with `/skills reload` or `/skills`.
 
 ## Standard Workflow
 
@@ -122,36 +122,24 @@ If adding scripts:
 - avoid hidden destructive behavior;
 - prefer dry-run flags for risky operations.
 
-### 8. Install the skill for Pi
+### 8. Verify Antigravity (AGY) discovery (and optional Pi registration)
 
-Add the skill directory to `~/.pi/agent/settings.json` under `skills` if not already present:
+Antigravity CLI, App, and IDE all read `~/.gemini/config/skills.json` globally across workspaces. Ensure the shared skills repo is registered using an **absolute path** (Antigravity does **not** expand `~` and does **not** support wildcards in `exclude`/`include_only`):
 
 ```json
 {
-  "skills": [
-    "~/.codex/skills/<skill-name>"
+  "entries": [
+    {
+      "path": "/Users/<user>/.codex/skills",
+      "exclude": ["<legacy-or-other-harness-skill>"]
+    }
   ]
 }
 ```
 
-Use an idempotent update so existing settings are preserved.
+When `~/.gemini/config/skills.json` uses `entries` with `exclude`, new skills added to `~/.codex/skills/<skill-name>/` load automatically without editing the manifest. Inside an active `agy` CLI session, run `/skills reload` (or start a new conversation) and confirm the skill appears in `/skills` and as `/<skill-name>`. Ensure no stale duplicate with the same name exists in `~/.gemini/skills/` (which shadows `~/.gemini/config/skills.json` in `agy` CLI).
 
-Example:
-
-```sh
-python3 - <<'PY'
-import json
-from pathlib import Path
-p = Path.home() / '.pi/agent/settings.json'
-data = json.loads(p.read_text()) if p.exists() else {}
-skills = data.setdefault('skills', [])
-entry = '~/.codex/skills/<skill-name>'
-if entry not in skills:
-    skills.append(entry)
-p.parent.mkdir(parents=True, exist_ok=True)
-p.write_text(json.dumps(data, indent=2) + '\n')
-PY
-```
+If Pi is also used on the machine, optionally register `~/.codex/skills/<skill-name>` in `~/.pi/agent/settings.json` idempotently (see [references/skill-template.md](references/skill-template.md)).
 
 ### 9. Validate
 
@@ -159,33 +147,27 @@ Run lightweight validation:
 
 ```sh
 test -f ~/.codex/skills/<skill-name>/SKILL.md
-python3 - <<'PY'
-from pathlib import Path
-p = Path.home() / '.codex/skills/<skill-name>/SKILL.md'
-text = p.read_text()
-assert text.startswith('---\n')
-assert 'name: <skill-name>' in text
-assert 'description:' in text
-print('skill frontmatter sanity ok')
-PY
+python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
+  ~/.codex/skills/<skill-name>
+wc -l -c ~/.codex/skills/<skill-name>/SKILL.md
 ```
 
-Also inspect `~/.pi/agent/settings.json` to confirm the skill path is present.
+Also inspect `~/.gemini/config/skills.json` to confirm the skill is not excluded and run `/skills reload` in `agy`.
 
 ## Quality Checklist
 
 Before reporting done, verify:
 
 - [ ] Skill directory is under `~/.codex/skills/`.
-- [ ] `SKILL.md` exists and starts with valid frontmatter.
+- [ ] `SKILL.md` exists, passes `quick_validate.py`, and stays comfortably under 46 KB / 800 lines.
 - [ ] `name` is valid lowercase hyphen form.
-- [ ] `description` is specific and trigger-oriented.
-- [ ] Instructions are scoped and actionable.
+- [ ] `description` is specific, third-person, and trigger-oriented.
+- [ ] Instructions are scoped, actionable, and free of hardcoded user home paths.
 - [ ] Long examples/templates live in `references/`.
 - [ ] Relative links point to existing files.
 - [ ] Commands preserve existing user settings and are idempotent.
 - [ ] Issue/PR/execution skills include the normalized rule that material performance regressions block mergeability until optimized or explicitly accepted.
-- [ ] Pi settings include `~/.codex/skills/<skill-name>`.
+- [ ] `~/.gemini/config/skills.json` exposes the skill (and no stale shadow exists in `~/.gemini/skills/`).
 - [ ] Final response lists created/modified paths.
 
 ## Common Pitfalls
@@ -195,11 +177,12 @@ Avoid:
 - creating a broad “general helper” skill with no clear trigger;
 - omitting frontmatter or using invalid names;
 - making the description too vague for automatic discovery;
-- embedding huge reference docs in `SKILL.md`;
-- using absolute paths inside skill instructions unless the path is intentionally user-specific;
-- overwriting Pi settings instead of updating them;
+- letting `SKILL.md` exceed 46 KB / 800 lines (forces multi-call reads in AGY);
+- using `~` or wildcards in `~/.gemini/config/skills.json` (unsupported by AGY);
+- using hardcoded `/home/<user>` paths inside skill instructions unless intentionally machine-specific;
+- overwriting settings manifests instead of updating them;
 - adding destructive scripts without warnings and dry-run guidance;
-- claiming the skill is installed without checking settings;
+- claiming the skill is installed without verifying `~/.gemini/config/skills.json` / `/skills`;
 - omitting a performance regression gate from skills that create issues, execute PRs, or declare PRs mergeable.
 
 ## Template
@@ -212,6 +195,6 @@ When creating or updating a skill, report:
 
 - skill name;
 - files created/modified;
-- whether Pi settings were updated;
+- whether `~/.gemini/config/skills.json` (or Pi settings) was updated;
 - any validation performed;
-- how to invoke it, e.g. `/skill:<skill-name>`.
+- how to invoke it, e.g. `/<skill-name>` in Antigravity (or `/skill:<skill-name>` in Pi).

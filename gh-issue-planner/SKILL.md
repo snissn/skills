@@ -140,8 +140,11 @@ the intended COW owner. Preserve any explicitly requested graph/skill readiness
 review before implementation; ticket publication is not that approval.
 
 Before publishing new or substantively revised executable issue bodies, or
-declaring them implementation-ready, require a bounded independent sub-agent
-review using `gpt-6.2-sol`. Review related tickets together when useful. Give
+declaring them implementation-ready, require a bounded independent read-only
+sub-agent review using the active harness's primary high-capability route
+(`gpt-6.2-sol` in Codex; a fresh-context read-only subagent with
+`EnableWriteTools=false`, `EnableSubagentTools=false`, and `Model="inherit"` or
+`"pro"` in Antigravity/AGY). Review related tickets together when useful. Give
 the reviewer the actual bodies, pinned source and applicable policy, without
 relying on conversation history; require a per-ticket READY/NOT READY verdict
 for unambiguous implementation and acceptance. Resolve consequential findings
@@ -247,16 +250,19 @@ simplification helper's suggestions within these boundaries.
 
 ## Proportional Reassessment
 
-For a recurring CI failure, use the
+For a recurring CI failure or noisy CI gate, use the
 [bounded flake repair policy](../github-pr-mergeable/references/recurring-ci-flakes.md).
-Search the exact test/signature and prior merged repairs, reuse an existing owner
-where suitable, and choose one focused repair issue rather than another umbrella.
-Its completion packet owns causal fixture/source correction, relevant canonical
-docs or a no-change rationale, changed-risk validation, review, current CI and
-merge. Hand the executable packet to `codex-issue-graph-executor` and use
-`github-pr-mergeable` for final readiness and authorized merge.
-Keep unrelated product nodes independent, and distinguish known recurring test
-identity from proof of the new occurrence's cause.
+Preserve the failing run/job/attempt evidence before any rerun, search the exact
+test/signature and prior merged repairs, reuse an existing owner where suitable,
+and choose one focused repair issue off `origin/main` rather than another
+umbrella. Its completion packet owns causal fixture/source correction, relevant
+canonical docs or a no-change rationale, changed-risk validation, review,
+current CI and merge. Hand the executable packet asynchronously to the active
+issue-graph executor (`agy-issue-graph-executor` in Antigravity or
+`codex-issue-graph-executor` in Codex) and use `github-pr-mergeable` for final
+readiness and authorized merge so flake repair advances in parallel during CI
+waits without blocking unrelated product nodes or eligible merges. Distinguish
+known recurring test identity from proof of the new occurrence's cause.
 
 Match reassessment to uncertainty and the consequences of a wrong premise,
 not ticket size or detail:
@@ -271,8 +277,9 @@ not ticket size or detail:
   to reassess the architecture and remaining plan at meaningful implementation
   or evidence boundaries, even when individual tickets pass. Name task-specific
   boundaries where findings could change the next work. Also name a lightweight
-  progress backstop for long uncertain execution; use the executor's
-  [outcome checkpoints](../codex-issue-graph-executor/SKILL.md#outcome-and-algorithm-checkpoints)
+  progress backstop for long uncertain execution; use the active executor's
+  outcome checkpoints ([AGY](../agy-issue-graph-executor/SKILL.md#execution-policies-shared-contracts)
+  / [Codex](../codex-issue-graph-executor/SKILL.md#outcome-and-algorithm-checkpoints))
   when composed with it. Do not require an extra reviewer or benchmark campaign.
 
 Make those boundaries decision-bearing: identify the next public-path proof,
@@ -522,8 +529,10 @@ Repo extensions preserve project-specific conventions without hardcoding them in
 - Record hosted Codex quota, usage-limit, rate-limit, capacity, or service unavailability as `CODEX_REVIEW_UNAVAILABLE_QUOTA`, never acceptance or a finding. An internal read-only subagent review or, when delegation cannot run, a separate same-agent mock subagent review is an acceptable fallback under [the shared contract](../github-pr-mergeable/references/internal-review-fallback.md). Record the actual mode/model, exact candidate, paths/claims, checks, findings, `ACCEPT` or `REJECT`, and no candidate edits. Later scientific or review-relevant edits require renewed review. State any explicit target-repository requirement for a separately independent reviewer, named model, or hosted-only review.
 - For executable PR packets, assign one readiness owner through required CI,
   review, authorized merge, and final verification. Pending CI/review is work in
-  progress, not a completed packet or a blocker by itself. Carry the executor's
-  [continuous monitoring and resumable checkpoint contract](../codex-issue-graph-executor/SKILL.md#critical-path-finalization-and-monitoring)
+  progress, not a completed packet or a blocker by itself. Carry the active
+  executor's continuous monitoring and resumable checkpoint contract
+  ([AGY](../agy-issue-graph-executor/SKILL.md#critical-path-finalization-and-monitoring)
+  / [Codex](../codex-issue-graph-executor/SKILL.md#critical-path-finalization-and-monitoring))
   into execution requirements: bounded watch/poll calls, progress updates,
   inspection of genuinely stalled gates, policy-approved recovery, and a durable
   exact-head continuation checkpoint for a real harness exit. Do not prescribe

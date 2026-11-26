@@ -92,7 +92,24 @@ description: Helps with GitHub.
 description: General coding workflow.
 ```
 
-## Pi Installation Snippet
+## Antigravity (AGY) Discovery Manifest (`~/.gemini/config/skills.json`)
+
+Use an absolute path (AGY does not expand `~` or wildcards):
+
+```json
+{
+  "entries": [
+    {
+      "path": "/Users/<user>/.codex/skills",
+      "exclude": ["codex-issue-graph-executor"]
+    }
+  ]
+}
+```
+
+Then run `/skills reload` inside `agy` CLI (or start a new session).
+
+## Optional Pi Installation Snippet
 
 ```sh
 python3 - <<'PY'

@@ -112,6 +112,10 @@ Graph state:
 - Remaining issue merge/final-qualification gates: <REMAINING_GATES_OR_NONE>.
 - Worktree and candidate SHA: <WORKTREE> / <HEAD_SHA>
 - Base ref/SHA: <BASE_REF> / <BASE_SHA>
+- Storage & Go cache environment (use on every Go build/test command; do NOT pollute the user's global GOCACHE):
+  - Shared graph `GOCACHE`: `<GRAPH_GOCACHE_ABS_PATH>` (and `GOMODCACHE`: `<SHARED_GOMODCACHE>`)
+  - Lane-local `TMPDIR` / `GOTMPDIR`: `<LANE_TMPDIR_ABS_PATH>` (deleted when this lane releases)
+  - Go toolchain & `-trimpath`: `<GO_TOOLCHAIN>` — always pass `-trimpath` on `go build` and cross-OS compile checks (`GOOS=... go test -c -trimpath ...`), and on `go test` where tests do not depend on absolute source paths.
 - Parent tracker/invariants: <SUMMARY>
 - Non-goals: <NON_GOALS>
 - Required tests/benchmarks/evidence: <REQUIREMENTS>
@@ -175,6 +179,7 @@ Every handoff must include:
 - tests run;
 - benchmark evidence or rationale;
 - unresolved risks;
+- large generated paths, lane `TMPDIR`/`GOTMPDIR` status, and confirmation that all cache-using commands have exited;
 - effective review policy and PR-lifetime request/finding counts;
 - current node state recommendation.
 ```
@@ -224,6 +229,7 @@ Requested routing: gpt-6.2-sol / <medium for routine work; high for complex work
 This is provisional downstream work. These PR predecessors await merge:
 <PR_PREDECESSORS>. Accepted non-PR outputs and eligibility: <ACCEPTED_GATES>.
 Assignment: <WHOLE_NODE_OR_NAMED_SLICE>; prerequisites/files/worktree: <BOUNDARY>.
+Storage & Go cache environment: `GOCACHE=<GRAPH_GOCACHE_ABS_PATH>`, `GOMODCACHE=<SHARED_GOMODCACHE>`, `TMPDIR=<LANE_TMPDIR_ABS_PATH>`, `GOTMPDIR=<LANE_TMPDIR_ABS_PATH>`, `-trimpath` on `go build` and compile-only cross-OS checks (`GOOS=... go test -c -trimpath ...`). Confirm all cache-using commands exited in handoff.
 Integration/acceptance owner and parallel siblings: <OWNER_AND_SIBLINGS>.
 
 You may implement against this contract snapshot:
@@ -264,6 +270,7 @@ mock subagent reviewer pass is acceptable under the shared fallback contract.
 Record the exact candidate, actual mode/model, checks, findings, and disposition;
 an explicit requirement for a separately independent reviewer still applies.
 Candidate worktree/head SHA and base: <WORKTREE> / <HEAD_SHA> / <BASE_SHA>.
+Storage & Go cache environment: `GOCACHE=<GRAPH_GOCACHE_ABS_PATH>`, `GOMODCACHE=<SHARED_GOMODCACHE>`, `TMPDIR=<LANE_TMPDIR_ABS_PATH>`, `GOTMPDIR=<LANE_TMPDIR_ABS_PATH>`, `-trimpath` on `go build` and compile-only cross-OS checks (`GOOS=... go test -c -trimpath ...`). Confirm all cache-using commands exited in handoff.
 Acceptance requirements and raw evidence: <REQUIREMENTS_AND_ARTIFACTS>.
 
 Use <CODEX_HOME>/skills/github-pr-mergeable/SKILL.md.
@@ -344,4 +351,44 @@ Return removed paths, cleared caches, retained paths with reasons, worktree
 registration checks, and before/after filesystem free space with estimates
 labeled separately. Stop after this batch. The coordinator may reuse you for
 another released batch.
+```
+
+## Async CI Flake-Repair Worker
+
+Dispatch proactively as soon as CI exposes an unrelated flaky test or noisy CI
+gate with no active repair PR/owner—especially while sibling CI shards are still
+running and before idling to run `gh run rerun --failed`. Use an isolated
+`git worktree add` lane branched cleanly off `origin/main`.
+
+```text
+You are an asynchronous Codex CI flake-repair worker for <OWNER>/<REPO>.
+
+Requested routing: gpt-6.2-sol / <medium for straightforward fixture/timing fix; high for concurrency/race or subtle gate noise>.
+Worktree and base: <WORKTREE> branched cleanly off `origin/main` (<ORIGIN_MAIN_SHA>) — completely disjoint from primary PR #<PRIMARY_PR>.
+Storage & Go cache environment: `GOCACHE=<GRAPH_GOCACHE_ABS_PATH>`, `GOMODCACHE=<SHARED_GOMODCACHE>`, `TMPDIR=<LANE_TMPDIR_ABS_PATH>`, `GOTMPDIR=<LANE_TMPDIR_ABS_PATH>`, `-trimpath` on `go build` and compile-only cross-OS checks (`GOOS=... go test -c -trimpath ...`). Confirm all cache-using commands exited in handoff.
+Merge authority: <NOT_DELEGATED | EXPLICITLY_DELEGATED_FOR_THIS_FLAKE_PR_ONLY>.
+
+Observed CI failure (preserved before any rerun):
+- Test / gate identity: <EXACT_TEST_OR_GATE_NAME>
+- Workflow / job / URL / attempt: <JOB_URL_AND_ATTEMPT>
+- Triggering PR / head SHA (context only — do NOT branch from this PR): #<PRIMARY_PR> / <PRIMARY_HEAD_SHA>
+- Failure / race / timing log excerpt:
+<FAILURE_LOG_EXCERPT>
+
+Load and follow:
+- <SKILLS_ROOT>/github-pr-mergeable/references/recurring-ci-flakes.md
+- <SKILLS_ROOT>/gh-issue-planner/SKILL.md
+- <SKILLS_ROOT>/github-pr-mergeable/SKILL.md
+
+Rules:
+- Work exclusively in `<WORKTREE>` on a dedicated topic branch off `origin/main` (for example `fix/flake-<short-slug>`). Never touch the primary PR's branch/worktree or contend with an active benchmark measurement host.
+- Enumerate tracked root/nested `AGENTS.md` files at `origin/main` for touched paths and follow repo policy.
+- Search open and closed GitHub issues and PRs for `<EXACT_TEST_OR_GATE_NAME>` and its failure signature first. If an active PR already owns a valid fix for this exact cause, report that link and stop without duplicating work.
+- Reuse/adopt an existing open flake issue or create one concise focused repair issue linking historical fixes and the preserved failure URL/log.
+- Diagnose and reproduce locally (e.g., `-race -count=20`, parallel load, or exact failing profile/flags) before patching.
+- Implement the smallest causal repair (deterministic readiness/coordination, isolated state/ports, causal hysteresis/budget calibration, or runner-variance-safe gating). Preserve asserted invariants and intentional deadline tests; never skip the test, weaken assertions, or add blind sleeps.
+- Validate with focused plus repeated stress/`-race` runs and affected checks, open a focused PR linking the issue and preserved evidence, and drive it through exact-head review and CI.
+- Do not wait on primary PR #<PRIMARY_PR>, do not merge unless explicitly delegated above, and do not spawn subagents.
+
+Return a concise handoff with: deduplication findings, issue URL, root cause and RED->GREEN + stress/race evidence, branch/HEAD SHA/PR URL, CI/review status, confirmation all cache-using commands exited, and recommended state (`already-owned`, `mergeable-candidate`, `merged` if delegated, or blocker).
 ```

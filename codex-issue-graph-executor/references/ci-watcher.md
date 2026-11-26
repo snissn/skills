@@ -18,7 +18,7 @@ ruleset, test-merge, or merge-queue contract. Run-only mode cannot monitor a PR 
 or branch movement: include `--pr` and `--base` when those identities matter.
 
 ```bash
-python3 ~/.codex/skills/codex-issue-graph-executor/scripts/watch_ci.py \
+python3 "${SKILLS_ROOT:-${HOME}/.codex/skills}/codex-issue-graph-executor/scripts/watch_ci.py" \
   --repo OWNER/REPO --pr 123 --head FULL_HEAD_SHA --base FULL_BASE_SHA \
   --run-id 456 --run-attempt 456:1 --require-check 'unit tests' \
   --max-wait 50
@@ -141,7 +141,7 @@ Keep artifacts or logs under a verified task directory on `/mnt/fast4tb` if need
 ```javascript
 // @exec: {"yield_time_ms": 1000, "max_output_tokens": 1200}
 const launch = await tools.exec_command({
-  cmd: "python3 /home/mikers/.codex/skills/codex-issue-graph-executor/scripts/watch_ci.py --repo OWNER/REPO --pr 123 --head FULL_HEAD_SHA --base FULL_BASE_SHA --run-id 456 --run-attempt 456:1 --max-wait 3600",
+  cmd: "python3 ${SKILLS_ROOT:-${HOME}/.codex/skills}/codex-issue-graph-executor/scripts/watch_ci.py --repo OWNER/REPO --pr 123 --head FULL_HEAD_SHA --base FULL_BASE_SHA --run-id 456 --run-attempt 456:1 --max-wait 3600",
   yield_time_ms: 1000,
   max_output_tokens: 1200
 });
@@ -177,13 +177,39 @@ agent wake. A watcher deadline does not complete the graph or justify ending an
 otherwise executable task. Reclaim or stop owned monitoring when its candidate
 is retired, and collect the actual outcome before claiming completion.
 
+## Asynchronous Antigravity (AGY) continuation
+
+In Antigravity (`agy` CLI, App, or IDE), use native background command notifications
+instead of Codex JS cells or shell `sleep` loops:
+
+1. Launch `watch_ci.py` via `run_command` with `WaitMsBeforeAsync=500`,
+   `IsDaemon=false`, and `NotificationTimeoutSeconds=1800` (or the desired
+   checkpoint interval), passing `--max-wait 3600`:
+
+   ```bash
+   python3 "${SKILLS_ROOT:-${HOME}/.codex/skills}/codex-issue-graph-executor/scripts/watch_ci.py" \
+     --repo OWNER/REPO --pr 123 --head FULL_HEAD_SHA --base FULL_BASE_SHA \
+     --run-id 456 --run-attempt 456:1 --max-wait 3600
+   ```
+
+2. Record the returned background `TaskId` and pinned bindings in durable graph
+   state, then continue useful independent graph work (or end the turn to wait
+   reactively). Antigravity automatically wakes the session when the watcher
+   exits or reaches `NotificationTimeoutSeconds`.
+3. Inspect intermediate `--notify-job-id` output or cancel a superseded watcher
+   with `manage_task(Action="status"|"kill", TaskId=...)`. Do not launch a second
+   watcher for the same PR head.
+4. For a separate review-check timer (distinct from CI), use `schedule` with
+   `DurationSeconds` and `TimerCondition` (cancelled early on matching task or
+   subagent notifications) rather than a shell sleep.
+
 Offline validation:
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover \
-  -s ~/.codex/skills/codex-issue-graph-executor/tests -v
-python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py \
-  ~/.codex/skills/codex-issue-graph-executor
+  -s "${SKILLS_ROOT:-${HOME}/.codex/skills}/codex-issue-graph-executor/tests" -v
+python3 "${SKILLS_ROOT:-${HOME}/.codex/skills}/.system/skill-creator/scripts/quick_validate.py" \
+  "${SKILLS_ROOT:-${HOME}/.codex/skills}/codex-issue-graph-executor"
 ```
 
 API semantics: [workflow runs and attempts](https://docs.github.com/en/rest/actions/workflow-runs),

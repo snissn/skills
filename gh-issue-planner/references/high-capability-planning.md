@@ -1,7 +1,8 @@
 # High-Capability Planning Advisory Pass
 
 Use this reference only when the user requests Astra or another high-capability
-planning advisor, or when a compact architecture pass is likely to remove
+planning advisor (such as a read-only high-capability Antigravity subagent or
+user-invoked `/boost`), or when a compact architecture pass is likely to remove
 substantial implementation ambiguity. It supplements the ordinary preflight; it
 does not authorize GitHub writes, code changes, extra agents, or a larger graph.
 

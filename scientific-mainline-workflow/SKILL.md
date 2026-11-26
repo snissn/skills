@@ -160,7 +160,8 @@ remains. Repeated scoped diagnostics, exact-source packets, and reviews do not
 by themselves demonstrate progress toward the parent claim.
 
 When composed with an issue-graph executor, use its bounded progress review
-([Codex checkpoints](../codex-issue-graph-executor/SKILL.md#outcome-and-algorithm-checkpoints)).
+([AGY](../agy-issue-graph-executor/SKILL.md#execution-policies-shared-contracts)
+/ [Codex](../codex-issue-graph-executor/SKILL.md#outcome-and-algorithm-checkpoints)).
 Before another equivalent batch, compare the remaining cost and acceptance path
 with a materially different algorithm, representation, analytic reduction, or
 integration strategy. Check relevant landed and parallel results before

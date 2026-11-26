@@ -300,7 +300,9 @@ explicit pause, a genuine authority/input blocker or harness limit can end the
 turn. All predecessor and evidence gates still apply.
 
 If the same material blocker category survives two repair heads, stop before a
-third and route one named question through the bounded GPT-6.2 Sol adviser.
+third and route one named question through the active executor's bounded
+high-capability adviser (for example, `gpt-6.2-sol` at `high` in Codex or a
+read-only `graph-reviewer` at `Model="inherit"`/`"pro"` in Antigravity).
 Keep the same PR across base advancement; sync once pre-finalization or on a real
 conflict/predecessor trigger. Replace it only when repo policy permits and either
 its branch is genuinely irreparable or a recorded coordinator **Graph Reassessment**
@@ -380,7 +382,7 @@ max_parallel_agents: N
 max_agent_depth: 1
 coordinator:
   agent_role: graph-coordinator
-  requested_model: gpt-6.2-sol
+  requested_model: gpt-6.2-sol # or current session model in Antigravity (e.g., Gemini 4 Neon (XHigh))
   requested_effort: inherited
   actual_model: ...
   actual_effort: ...
@@ -413,8 +415,8 @@ nodes:
     state: pending
     agent: ...
     agent_role: inventory|implementation|high-risk-specialist|finalization|independent-review
-    requested_model: gpt-6.2-sol
-    requested_effort: low|medium|high|xhigh|max
+    requested_model: gpt-6.2-sol|inherit|pro|flash
+    requested_effort: low|medium|high|xhigh|max|n/a
     actual_model: ...
     actual_effort: ...
     routing_rationale: ...
@@ -447,7 +449,10 @@ When this skill is invoked, `merge_authorized` defaults to `true` for the
 selected graph. Record a narrower scope only when the user explicitly requests
 plan-only or no-merge execution.
 
-Routing defaults to `gpt-6.2-sol` for every delegated role. Record retained
-coordinator, explicit user, or required reviewer-identity exceptions with their
-actual model and rationale; never relabel another model or an external hosted
-review as Sol. If actual routing is not observable, record it as unknown.
+Routing defaults follow the active executor: `gpt-6.2-sol` for every delegated
+role under `codex-issue-graph-executor`, or the role's `Model` tier (`inherit`/
+`pro`/`flash`) under `agy-issue-graph-executor`. Record retained coordinator,
+explicit user, or required reviewer-identity exceptions with their actual model
+and rationale; never relabel another model or an external hosted review as Sol
+or as a pinned subagent. If actual routing is not observable, record it as
+unknown.

@@ -57,6 +57,13 @@ Use the runtime catalog for current compatibility and the routing below:
   than asking the user to choose this default again.
 - Authorization is scoped to the target repo, parent tracker, child issues, and
   PRs created or explicitly adopted during this execution.
+- **Proactive asynchronous flake repair is authorized by default within the same
+  repository:** whenever CI exposes an unrelated flaky test or noisy CI gate
+  with no active repair PR/owner, the coordinator is authorized to adopt or open
+  one focused flake-repair issue, dispatch an asynchronous background worker in
+  an isolated worktree off `origin/main`, open a focused maintenance PR, and
+  drive it through normal review, CI, and authorized merge gates without asking
+  for separate permission or blocking the primary product PR.
 - The coordinator may revise the remaining graph and create or explicitly
   adopt necessary nodes within that scope as evidence changes. Map them to the
   agreed parent outcome and preserve acceptance criteria, guardrails, ownership,
@@ -67,7 +74,7 @@ Use the runtime catalog for current compatibility and the routing below:
   Editing this skill does not itself authorize a disk cleanup run.
 - The coordinator may merge after all gates pass; workers may not merge unless
   the coordinator explicitly delegates that action for a specific PR.
-- Do not merge PRs outside the selected graph, even if they are nearby.
+- Do not merge unrelated non-flake PRs outside the selected graph, even if they are nearby.
 - Do not merge if repo policy or branch protection requires missing human
   approval.
 - Do not merge with stale, missing, red, or inconclusive latest-head CI unless
@@ -336,14 +343,19 @@ maintenance. Reuse applicable evidence and unchanged artifact producers: fix a f
 checker/decoder and replay the original artifact rather than rerunning its producer.
 Preserve source-bound history and acceptance criteria.
 
-For suspected recurring CI flakes, apply the merge skill's
+For suspected recurring CI flakes or noisy CI gates, apply the merge skill's
 [bounded repair and parallel progress policy](../github-pr-mergeable/references/recurring-ci-flakes.md).
-Search the exact test's historical issues and merged fixes before classification.
-Initiate or adopt the `gh-issue-planner` → `codex-issue-graph-executor` →
-`github-pr-mergeable` completion loop within the existing coordinator;
-do not stop at filing a ticket. Continue independent engine work and eligible
-merges. Make the repair a dependency only where an actual shared-code or required
-gate relationship needs it, and preserve the failed evidence and normal final gates.
+Capture the failing run/job/attempt and failure log excerpt *before* any
+`gh run rerun --failed`, search the exact test's historical issues and merged
+fixes, and **proactively dispatch one asynchronous flake-repair worker** in an
+isolated worktree off `origin/main` (using the **Async CI Flake-Repair Worker**
+template in `references/worker-prompts.md`) instead of sitting idle waiting to
+rerun failed jobs. Initiate or adopt the `gh-issue-planner` →
+`codex-issue-graph-executor` → `github-pr-mergeable` completion loop within the
+existing coordinator; do not stop at filing a ticket. Continue independent engine
+work and eligible merges. Make the repair a dependency only where an actual
+shared-code or required gate relationship needs it, and preserve the failed
+evidence and normal final gates.
 
 ## Compose With
 
@@ -393,37 +405,56 @@ files and generated outputs.
 
 Inspect `go env GOCACHE GOMODCACHE GOCACHEPROG`. Honor cache settings supplied
 in the environment or `GOENV`, external cache programs, and benchmark cache
-contracts. Reuse the module cache within the same user/trust boundary. For
-ordinary local Go builds where the executor chooses the build cache, use one
-`GOCACHE` per graph, target repository, and execution host, shared by that
-graph's worktrees and fix loops. Bind it to the graph and resolved Git common
-directory in graph state. On resume, reuse the recorded path after verifying
-ownership. For a new path, allocate a fresh private directory on verified
-high-capacity storage outside disposable lane roots. If allocation fails, use
-the configured or default cache and record it as protected. Pass the effective
-absolute paths to workers in the command environment and leave global Go
-settings intact. Go handles normal source, compiler, and option changes.
-External C-library changes under CGO need an explicit rebuild or a justified
-cache exception.
+contracts. Reuse the module cache within the same user/trust boundary. Go's
+built-in `GOCACHE` maintenance uses a 5-day idle TTL with **no byte cap**, so
+parallel worktrees, `-race`, and cross-OS builds can silently grow a shared
+global cache to tens of gigabytes within hours. Therefore, for ordinary local
+and remote-host Go builds where the executor chooses the build cache, **always
+allocate one private graph-owned `GOCACHE` per `(graph, target repository,
+execution host)`**, shared across that graph's worktrees and fix loops rather
+than letting workers fall back to the user's protected global `GOCACHE`. Bind
+the path to the graph and resolved Git common directory in graph state. On
+resume, reuse the recorded path after verifying ownership. Allocate new paths
+on verified high-capacity storage outside disposable lane roots. Only if
+allocation fails should you fall back to the configured/default cache (and
+record it as protected). Pass the effective absolute `GOCACHE`, `GOMODCACHE`,
+and lane-local `TMPDIR`/`GOTMPDIR` explicitly in every worker and remote-host
+command environment, leaving global Go settings intact. Go handles normal
+source, compiler, and option changes; external C-library changes under CGO need
+an explicit rebuild or a justified cache exception.
 
-For routine local `go build` commands where the executor chooses the build
-flags, pass `-trimpath` explicitly so matching packages can reuse cached
-builds across worktrees. Use it for `go test` when the selected tests are known
-to work with trimmed source paths. Some tests use compiled paths to locate
-source files or fixtures and need absolute paths. Preserve explicit user and
-repository build settings and pinned benchmark or qualification recipes. Record
-the selected Go toolchain and command-specific `-trimpath` setting in the
-existing cache handoff so equivalent commands use consistent settings across
-worktrees and resumes.
+For routine local and remote `go build` commands and **all compile-only cross-OS
+checks** (e.g. `GOOS=windows go test -c -trimpath ...`), always pass
+`-trimpath` explicitly so matching packages share compiled actions across
+different worktree paths instead of duplicating stdlib and dependency builds per
+worktree. Also pass `-trimpath` on `go test` whenever the selected tests do not
+rely on absolute compiled source paths to locate fixtures. Preserve explicit
+user and repository build settings and pinned benchmark or qualification
+recipes. Record the selected Go toolchain and command-specific `-trimpath`
+setting in the existing cache handoff so equivalent commands use consistent
+settings across worktrees and resumes.
 
 Keep `TMPDIR`/`GOTMPDIR`, DBs, mutable datasets, binaries and benchmark output
-separate per lane. Follow host storage policy; verify the preferred high-capacity
-mount is available and writable before placing heavy data there. Isolated caches
-are exceptions for an explicit cold-cache/dependency-acquisition check, cache
-diagnosis, or demonstrated compatibility/trust requirement. Record the reason,
-exact paths and disposal owner. Only the coordinator or its assigned cleaner can
-clear a released build cache under **Asynchronous Disk Cleanup**. Protect
-externally owned build caches and shared module caches.
+in a **per-lane scratch root** separate from the shared graph `GOCACHE`, and
+delete each lane's scratch root together with its worktree as soon as the lane
+is released so orphaned `go-build*` and `t.TempDir()`/`Benchmark*` directories
+never accumulate in shared `/tmp` or OS temp folders. Follow host storage
+policy; verify the preferred high-capacity mount is available and writable
+before placing heavy data there. Isolated caches are exceptions for an explicit
+cold-cache/dependency-acquisition check, cache diagnosis, or demonstrated
+compatibility/trust requirement; record the reason, exact paths and disposal
+owner. Only the coordinator or its assigned cleaner can clear a released build
+cache under **Asynchronous Disk Cleanup**. Protect externally owned build
+caches and shared module caches.
+
+At every wave/sprint boundary (and before launching a new wave or remote
+qualification run), check filesystem free space and the graph-owned `GOCACHE`
+size on every active execution host. Clear the graph-owned `GOCACHE` when
+advancing across a sprint/base-SHA boundary where prior builds will no longer
+hit, when the graph `GOCACHE` exceeds a soft cap (default `8 GiB`), or when
+host free space drops below `25 GiB` (or `< 15%`). At final graph closeout,
+clear and remove the private graph-owned `GOCACHE` directory itself once all
+consumers have exited and bucket emptiness is verified.
 
 For required file copies, prefer verified same-filesystem copy-on-write support
 (APFS cloning on macOS or reflinks on a supporting Linux filesystem). Record an
@@ -595,10 +626,16 @@ reuse this role instead of spawning a cleaner after every command. If delegation
 is unavailable or only cleanup remains, finish the eligible batch locally.
 
 Register large paths and their expected release events when allocating them.
-At each release event, delete eligible per-run outputs and check Go caches.
-Keep the graph cache warm for identified upcoming builds when space permits.
-Clear it when its last planned build finishes, or sooner under disk pressure
-when the cache contract permits. Sweep remaining released paths at closeout.
+At each release event (stage completion, PR merge, candidate retirement, or
+stopped worker), immediately delete no-longer-needed checkouts/worktrees (and
+close/release finished worker runtimes that hold harness-managed worktrees),
+delete their per-lane `TMPDIR`/`GOTMPDIR` roots and verified disposable DBs
+(including remote benchmark host data directories such as `treedb_data/` after
+reopen/evidence checks), and check graph-owned Go caches. Keep the graph cache
+warm within the current wave when space permits; clear it at sprint/base-SHA
+boundaries, when it exceeds the soft cap (`8 GiB`), or under disk pressure
+(`< 25 GiB` or `< 15%` free) when the cache contract permits. Sweep remaining
+released paths and delete empty private graph `GOCACHE` directories at closeout.
 Record a concrete consumer, evidence requirement, or blocker for any large
 path still present. Route helper-skill post-merge cleanup to the same owner.
 Verify deletion, worktree deregistration, or cleared build entries before
@@ -630,9 +667,13 @@ push, including when no ownership transfer occurred. Ordinary
 pending CI/review is not a reason to end the turn or require the user to say
 "resume" again. Before waiting, inspect the remaining graph for meaningful
 authorized work: implement an independent ready node, start an eligible
-provisional successor from its recorded predecessor contract, resolve existing
-review findings, or prepare the merge packet (policy, description, evidence
-applicability, predecessor state, and cleanup ownership). Choose work that
+provisional successor from its recorded predecessor contract, **proactively
+dispatch an async flake-repair worker off `origin/main` for any newly observed
+unrelated CI flake or noisy gate** (rather than idling until `gh run rerun --failed`
+can run), resolve existing review findings, or prepare the merge packet (policy,
+description, evidence applicability, predecessor state, and cleanup ownership).
+If delegation is unavailable during a long CI wait, start the isolated flake
+diagnosis/repair locally while the watcher monitors the primary PR. Choose work that
 advances an acceptance criterion or removes a known merge blocker; do not
 manufacture tests, reports, tracker edits, or repeated inventories to fill time.
 Preserve one writer per surface, measurement isolation, and final-base gates.

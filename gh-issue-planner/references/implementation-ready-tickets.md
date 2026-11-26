@@ -187,8 +187,11 @@ source/docs; state execution status separately. A checked command recipe is not
 evidence that its tests or benchmarks ran during planning.
 
 For new or substantively revised executable issue bodies, an independent
-`gpt-6.2-sol` sub-agent readiness review is required before publication or an
-implementation-ready claim. Start with only the actual bodies, source revision,
+read-only sub-agent readiness review is required before publication or an
+implementation-ready claim, using the active harness's primary high-capability
+route (`gpt-6.2-sol` in Codex; a fresh-context read-only subagent with
+`EnableWriteTools=false`, `EnableSubagentTools=false`, and `Model="inherit"` or
+`"pro"` in Antigravity/AGY). Start with only the actual bodies, source revision,
 applicable repository policy and necessary referenced evidence, not the author's
 conversation history or hidden intended answers. A single bounded review may
 cover the related graph; do not repeat review for unchanged bodies or status-only
@@ -200,9 +203,10 @@ behavior/error/lifecycle requirements, and ambiguous acceptance evidence. For
 investigations, judge whether the inquiry and decision boundary are executable;
 do not demand that an unknown root cause already be solved. For evidence tasks,
 check that workload, comparisons, unsupported/invalid cells and claim limits are
-explicit. Resolve consequential findings and have gpt-6.2-sol recheck the affected
-text; retain the reviewed body identity and verdict with the planning artifacts.
-If the required model is unavailable, state that the readiness check is pending
-instead of substituting another model or claiming readiness. This is a ticket
+explicit. Resolve consequential findings and have the independent reviewer
+recheck the affected text; retain the reviewed body identity, actual model/tier,
+and verdict with the planning artifacts. If the required high-capability route
+or sub-agent delegation is unavailable, state that the readiness check is pending
+instead of substituting a weak model or claiming readiness. This is a ticket
 clarity review, not PR approval, evidence that implementation ran, or permission
 to execute the graph. Inspect-only work and structure sketches need no such pass.
