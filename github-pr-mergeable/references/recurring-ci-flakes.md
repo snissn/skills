@@ -69,8 +69,7 @@ durability, membership and result checks. Never retry an ambiguously committed
 mutation, suppress a real failure, or add an unconditional sleep to obtain green.
 
 Use a deterministic old-versus-repaired control when feasible, focused repetitions
-or race checks that answer the changed risk, then the affected current-base CI.
-Collect failures into one coherent repair batch. Finish source review, necessary
+or race checks (e.g., `-race -count=10` or the exact failing profile) that answer the changed risk, and the mandatory local pre-push gate (`gofmt`/formatter, `go vet`/linter, affected tests) **before** pushing so the flake-repair PR lands cleanly in one push instead of churning CI runners. Collect failures into one coherent repair batch. Finish source review, necessary
 documentation, latest-head review/CI and merge under normal policy; an issue alone
 is not completion. Reassess a recurring cause instead of rerolling indefinitely.
 

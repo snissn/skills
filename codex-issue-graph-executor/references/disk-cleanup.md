@@ -68,39 +68,35 @@ local branch and remote-branch retention separately under the helper's policy.
 
 ## Go Build Caches
 
-- Go's built-in `GOCACHE` eviction is a 5-day idle TTL with **no byte cap**, so
-  multi-worktree, `-race`, and cross-OS builds (`GOOS=...`) accumulate tens of
-  gigabytes quickly unless bounded. Always allocate a private graph-owned
-  `GOCACHE` per `(graph, target repository, execution host)` — including on
-  remote benchmark/execution hosts — and pass `-trimpath` on `go build` and
-  compile-only cross-OS checks (`GOOS=... go test -c -trimpath ...`) so worktrees
-  share compiled actions.
-- A build cache is eligible when its exact directory is recorded as exclusively
-  owned by this graph for the target repository on this host, or as a disposable
-  build cache under a recorded lane exception. Use the recorded Git common
-  directory to bind the repository. A path name or package import path cannot
-  establish ownership. Go clears the entire selected cache directory.
-- At every wave/sprint boundary, released stage, merge, candidate retirement,
-  disk-pressure checkpoint, or graph closeout, measure the graph `GOCACHE` size
-  and filesystem free space. Release and clear a graph cache when:
-  - its consumers have released it and the graph is closing or advancing to a
-    new sprint/base-SHA wave where prior compiled artifacts will mostly miss; or
-  - its size exceeds the soft cap (default `8 GiB`) or host free space drops
-    below `25 GiB` (or `< 15%`), once active build commands have exited and
-    resumable benchmark cache contracts allow eviction.
-  Keep it warm within the active wave when space permits. While the cleaner
-  owns the cache, the coordinator holds new commands that would use it and lets
-  other work proceed.
-- After the normal release and identity rechecks below, use the selected local
-  Go toolchain from a neutral working directory with
-  `GOCACHE="<exact-absolute-path>" go clean -cache`. Supply only `-cache`
-  (which also clears cached test results inside `GOCACHE`) and leave
-  `GOMODCACHE` intact. Verify that the hexadecimal cache buckets have no entries
-  and measure allocated bytes before and after. At final graph closeout, after
-  verifying bucket emptiness and zero active consumers, remove the empty private
-  graph-owned `GOCACHE` directory itself so dead bucket trees do not linger.
-  Report remaining data or a failed verification explicitly. Return ownership
-  before any new build uses the path.
+- Go's built-in `DiskCache.Trim()` uses a 5-day idle TTL with **no byte cap**, so
+  multi-worktree, `-race` (`100–350 MB` per `.a`), and cross-OS builds quickly
+  grow a cache to `15–20+ GiB`, and ad-hoc per-worker caches multiply that bloat
+  across `/tmp`. Standardize on **ONE persistent host-level shared agent
+  `GOCACHE`** per `(execution host, user)` (macOS:
+  `$HOME/Library/Caches/agent-go-build`; Linux/remote: high-capacity mount such
+  as `/mnt/fast4tb/.cache/agent-go-build` or
+  `${XDG_CACHE_HOME:-$HOME/.cache}/agent-go-build`), and pass `-trimpath` on
+  `go build`, `go vet`, compile-only cross-OS checks, and `-trimpath`-safe
+  `go test` invocations so all worktrees share compiled actions. Never create
+  per-worker `/tmp/*-gocache` directories for routine work.
+- **Prefer live-safe mtime-LRU byte-capped pruning over nuclear `go clean -cache`:**
+  Go's `DiskCache` updates `mtime` on cache hits (`1h` resolution) and treats
+  missing `*-a`/`*-d` files as benign misses. At coordinator startup, wave/sprint
+  boundaries, lane releases, disk-pressure checkpoints, and graph closeout, run:
+  `python3 <SKILLS_ROOT>/codex-issue-graph-executor/scripts/gocache_prune.py --cache-dir "<SHARED_GOCACHE>" --max-gb 10 --target-gb 6 --min-age-seconds 7200`
+  (use `--max-gb 8 --target-gb 5` on laptops with `< 50 GiB` free; `--max-gb 20
+  --target-gb 12` on high-capacity hosts such as `/mnt/fast4tb`). Because entries
+  newer than `2h` are never touched (lowered to `15m` only under `< 15 GiB`
+  emergency disk pressure), this safely bounds disk usage even while concurrent
+  builds run and preserves warm stdlib/`-race`/dependency artifacts across waves.
+- **When full `go clean -cache` is used (isolated exceptions or orphaned legacy
+  caches only):** never run `go clean -cache` while any Go process uses that
+  cache. After verifying zero active consumers (and identity/release checks
+  below), run `GOCACHE="<exact-absolute-path>" go clean -cache` from a neutral
+  working directory (leaving `GOMODCACHE` intact), verify the hexadecimal buckets
+  are empty, and remove disposable isolated/orphaned `/tmp/*-gocache` directories
+  so dead bucket trees do not linger. Never delete the user's protected personal
+  `GOCACHE` or shared `GOMODCACHE` without explicit authorization.
 - Delete each lane's dedicated `TMPDIR`/`GOTMPDIR` root together with its
   released worktree so orphaned `go-build*` and `t.TempDir()`/`Benchmark*`
   directories are reclaimed immediately.

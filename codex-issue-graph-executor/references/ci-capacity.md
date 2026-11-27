@@ -75,6 +75,19 @@ observed wall time separately; label anything not yet verified on GitHub.
 
 ## Reduce obsolete work safely
 
+**Local pre-push gate, draft discipline, and review-window batching:** before
+every PR push, verify formatting (`gofmt -l` clean for Go), static checks
+(`go vet`/linters), affected package tests, and doc-contract checks when
+docs/specs changed so hosted runners are never burned on avoidable format or
+compile failures. Keep incomplete WIP iterations in Draft PRs (which run
+lightweight preflight checks in tiered CI setups) and avoid pushing unreviewed
+WIP branches that trigger unrestricted `push:` workflows. While an external
+review such as `@codex review` is actively pending, hold non-urgent follow-up
+pushes and base rebases unless fixing a blocking compile/format bug, then land
+review fixes + base sync in one push. Use surgical PR CI for normal changes and
+apply `[ci full]` / `ci:full` (where supported) for high-risk
+OS/mmap/durability/format edits or post-sprint qualification.
+
 Batch compatible local repairs and evidence with the next necessary push. Keep
 durable checkpoints and dependency-ready snapshots available when needed, and
 do not hold a mature critical-path candidate waiting for runner capacity. If

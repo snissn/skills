@@ -112,10 +112,10 @@ Graph state:
 - Remaining issue merge/final-qualification gates: <REMAINING_GATES_OR_NONE>.
 - Worktree and candidate SHA: <WORKTREE> / <HEAD_SHA>
 - Base ref/SHA: <BASE_REF> / <BASE_SHA>
-- Storage & Go cache environment (use on every Go build/test command; do NOT pollute the user's global GOCACHE):
-  - Shared graph `GOCACHE`: `<GRAPH_GOCACHE_ABS_PATH>` (and `GOMODCACHE`: `<SHARED_GOMODCACHE>`)
-  - Lane-local `TMPDIR` / `GOTMPDIR`: `<LANE_TMPDIR_ABS_PATH>` (deleted when this lane releases)
-  - Go toolchain & `-trimpath`: `<GO_TOOLCHAIN>` — always pass `-trimpath` on `go build` and cross-OS compile checks (`GOOS=... go test -c -trimpath ...`), and on `go test` where tests do not depend on absolute source paths.
+- Storage & Go cache environment (use on every Go build/vet/test command; NEVER invent per-worker `/tmp/*-gocache` directories):
+  - Persistent host-shared `GOCACHE`: `<SHARED_GOCACHE_ABS_PATH>` (and `GOMODCACHE`: `<SHARED_GOMODCACHE>`)
+  - Lane-local `TMPDIR` and `GOTMPDIR` (export BOTH): `<LANE_TMPDIR_ABS_PATH>` (deleted when this lane releases)
+  - Go toolchain, `-trimpath`, & concurrency: `<GO_TOOLCHAIN>` — always pass `-trimpath` explicitly on `go build`, `go vet`, cross-OS compile checks (`CGO_ENABLED=0 GOOS=... go test -trimpath -vet=off -exec=true -run=^$ ...`), and `-trimpath`-safe `go test` / `go test -race` commands (do not export global `GOFLAGS` if repo scripts assert `GOFLAGS=""`). On laptop-class hosts (`<= 8` CPUs / `<= 16 GiB` RAM) with `>= 2` active local lanes, pass `-p=2` or `-p=3` and avoid parallel `go test -race` invocations in the same worker.
 - Parent tracker/invariants: <SUMMARY>
 - Non-goals: <NON_GOALS>
 - Required tests/benchmarks/evidence: <REQUIREMENTS>
@@ -229,7 +229,7 @@ Requested routing: gpt-6.2-sol / <medium for routine work; high for complex work
 This is provisional downstream work. These PR predecessors await merge:
 <PR_PREDECESSORS>. Accepted non-PR outputs and eligibility: <ACCEPTED_GATES>.
 Assignment: <WHOLE_NODE_OR_NAMED_SLICE>; prerequisites/files/worktree: <BOUNDARY>.
-Storage & Go cache environment: `GOCACHE=<GRAPH_GOCACHE_ABS_PATH>`, `GOMODCACHE=<SHARED_GOMODCACHE>`, `TMPDIR=<LANE_TMPDIR_ABS_PATH>`, `GOTMPDIR=<LANE_TMPDIR_ABS_PATH>`, `-trimpath` on `go build` and compile-only cross-OS checks (`GOOS=... go test -c -trimpath ...`). Confirm all cache-using commands exited in handoff.
+Storage & Go cache environment: `GOCACHE=<SHARED_GOCACHE_ABS_PATH>`, `GOMODCACHE=<SHARED_GOMODCACHE>`, `TMPDIR=<LANE_TMPDIR_ABS_PATH>`, `GOTMPDIR=<LANE_TMPDIR_ABS_PATH>` (export BOTH; never invent a per-worker `GOCACHE`), `-trimpath` on `go build`, `go vet`, compile-only cross-OS checks, and `-trimpath`-safe `go test` (`-p=2` or `-p=3` when `>= 2` local lanes share an 8-core/16 GiB laptop). Confirm all cache-using commands exited in handoff.
 Integration/acceptance owner and parallel siblings: <OWNER_AND_SIBLINGS>.
 
 You may implement against this contract snapshot:
@@ -270,7 +270,7 @@ mock subagent reviewer pass is acceptable under the shared fallback contract.
 Record the exact candidate, actual mode/model, checks, findings, and disposition;
 an explicit requirement for a separately independent reviewer still applies.
 Candidate worktree/head SHA and base: <WORKTREE> / <HEAD_SHA> / <BASE_SHA>.
-Storage & Go cache environment: `GOCACHE=<GRAPH_GOCACHE_ABS_PATH>`, `GOMODCACHE=<SHARED_GOMODCACHE>`, `TMPDIR=<LANE_TMPDIR_ABS_PATH>`, `GOTMPDIR=<LANE_TMPDIR_ABS_PATH>`, `-trimpath` on `go build` and compile-only cross-OS checks (`GOOS=... go test -c -trimpath ...`). Confirm all cache-using commands exited in handoff.
+Storage & Go cache environment: `GOCACHE=<SHARED_GOCACHE_ABS_PATH>`, `GOMODCACHE=<SHARED_GOMODCACHE>`, `TMPDIR=<LANE_TMPDIR_ABS_PATH>`, `GOTMPDIR=<LANE_TMPDIR_ABS_PATH>` (export BOTH; never invent a per-worker `GOCACHE`), `-trimpath` on `go build`, `go vet`, compile-only cross-OS checks, and `-trimpath`-safe `go test` (`-p=2` or `-p=3` when `>= 2` local lanes share an 8-core/16 GiB laptop). Confirm all cache-using commands exited in handoff.
 Acceptance requirements and raw evidence: <REQUIREMENTS_AND_ARTIFACTS>.
 
 Use <CODEX_HOME>/skills/github-pr-mergeable/SKILL.md.
@@ -341,9 +341,12 @@ Delete eligible local worktrees and disposable DBs/datasets; do not archive,
 move to Trash, relocate, or save complete copies. Required evidence is retained
 at the coordinator's verified durable location. Remote-branch retention does
 not block eligible local deletion. A queued or moved path is not removed.
-For each eligible Go build cache on the allowlist, use the exact assigned
-`GOCACHE` with `go clean -cache` and verify the build entries are gone. Leave
-protected build caches and module caches intact. Keep scans and deletion outside
+For the persistent host-shared `GOCACHE`, run live-safe LRU pruning with
+`python3 <SKILLS_ROOT>/codex-issue-graph-executor/scripts/gocache_prune.py --cache-dir "<exact-abs-path>" --max-gb 10 --target-gb 6 --min-age-seconds 7200`
+(or `--max-gb 8 --target-gb 5` on low-free-space laptops) rather than wiping warm
+caches; only run `GOCACHE="<exact-abs-path>" go clean -cache` on verified-idle
+disposable/orphaned caches on the allowlist. Leave protected user caches and
+shared `GOMODCACHE` intact. Keep scans and deletion outside
 conflicting benchmark measurement windows. Report new large candidates to the
 coordinator for release.
 Do not edit source, merge, commit, push, request reviews, or spawn subagents.
@@ -365,7 +368,7 @@ You are an asynchronous Codex CI flake-repair worker for <OWNER>/<REPO>.
 
 Requested routing: gpt-6.2-sol / <medium for straightforward fixture/timing fix; high for concurrency/race or subtle gate noise>.
 Worktree and base: <WORKTREE> branched cleanly off `origin/main` (<ORIGIN_MAIN_SHA>) — completely disjoint from primary PR #<PRIMARY_PR>.
-Storage & Go cache environment: `GOCACHE=<GRAPH_GOCACHE_ABS_PATH>`, `GOMODCACHE=<SHARED_GOMODCACHE>`, `TMPDIR=<LANE_TMPDIR_ABS_PATH>`, `GOTMPDIR=<LANE_TMPDIR_ABS_PATH>`, `-trimpath` on `go build` and compile-only cross-OS checks (`GOOS=... go test -c -trimpath ...`). Confirm all cache-using commands exited in handoff.
+Storage & Go cache environment: `GOCACHE=<SHARED_GOCACHE_ABS_PATH>`, `GOMODCACHE=<SHARED_GOMODCACHE>`, `TMPDIR=<LANE_TMPDIR_ABS_PATH>`, `GOTMPDIR=<LANE_TMPDIR_ABS_PATH>` (export BOTH; never invent a per-worker `GOCACHE`), `-trimpath` on `go build`, `go vet`, compile-only cross-OS checks, and `-trimpath`-safe `go test` (`-p=2` or `-p=3` when `>= 2` local lanes share an 8-core/16 GiB laptop). Confirm all cache-using commands exited in handoff.
 Merge authority: <NOT_DELEGATED | EXPLICITLY_DELEGATED_FOR_THIS_FLAKE_PR_ONLY>.
 
 Observed CI failure (preserved before any rerun):

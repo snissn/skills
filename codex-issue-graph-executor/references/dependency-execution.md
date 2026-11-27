@@ -394,8 +394,8 @@ storage:
   host: ...
   work_root: ...
   git_common_dir: ...
-  shared_go_caches: {GOCACHE: ..., GOMODCACHE: ...} # effective paths for graph workers
-  graph_go_build_cache: {owner: ..., consumers: [], release_status: ...} # omit for protected GOCACHE
+  shared_go_caches: {GOCACHE: ..., GOMODCACHE: ..., prune_policy: "gocache_prune.py --max-gb 10 --target-gb 6 --min-age-seconds 7200"} # persistent host-level shared paths for all worktrees
+  disposable_go_build_caches: [] # omit unless an isolated cold-cache exception exists
 nodes:
   id:
     kind: issue|pr

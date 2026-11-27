@@ -405,56 +405,62 @@ files and generated outputs.
 
 Inspect `go env GOCACHE GOMODCACHE GOCACHEPROG`. Honor cache settings supplied
 in the environment or `GOENV`, external cache programs, and benchmark cache
-contracts. Reuse the module cache within the same user/trust boundary. Go's
-built-in `GOCACHE` maintenance uses a 5-day idle TTL with **no byte cap**, so
-parallel worktrees, `-race`, and cross-OS builds can silently grow a shared
-global cache to tens of gigabytes within hours. Therefore, for ordinary local
-and remote-host Go builds where the executor chooses the build cache, **always
-allocate one private graph-owned `GOCACHE` per `(graph, target repository,
-execution host)`**, shared across that graph's worktrees and fix loops rather
-than letting workers fall back to the user's protected global `GOCACHE`. Bind
-the path to the graph and resolved Git common directory in graph state. On
-resume, reuse the recorded path after verifying ownership. Allocate new paths
-on verified high-capacity storage outside disposable lane roots. Only if
-allocation fails should you fall back to the configured/default cache (and
-record it as protected). Pass the effective absolute `GOCACHE`, `GOMODCACHE`,
-and lane-local `TMPDIR`/`GOTMPDIR` explicitly in every worker and remote-host
-command environment, leaving global Go settings intact. Go handles normal
-source, compiler, and option changes; external C-library changes under CGO need
-an explicit rebuild or a justified cache exception.
+contracts. Reuse the shared `GOMODCACHE` within the same user/trust boundary.
 
-For routine local and remote `go build` commands and **all compile-only cross-OS
-checks** (e.g. `GOOS=windows go test -c -trimpath ...`), always pass
-`-trimpath` explicitly so matching packages share compiled actions across
-different worktree paths instead of duplicating stdlib and dependency builds per
-worktree. Also pass `-trimpath` on `go test` whenever the selected tests do not
-rely on absolute compiled source paths to locate fixtures. Preserve explicit
-user and repository build settings and pinned benchmark or qualification
-recipes. Record the selected Go toolchain and command-specific `-trimpath`
-setting in the existing cache handoff so equivalent commands use consistent
-settings across worktrees and resumes.
+Go's `DiskCache` is concurrency-safe across parallel `go build`/`go vet`/`go test`
+invocations (`*-d` outputs are content-addressed with hash/size checks and `*-a`
+entries are written idempotently), **but** its built-in trim uses a 5-day idle
+TTL with **no byte cap** — so `-race` archives (`100–350 MB` each), cross-OS
+builds, and ad-hoc per-worker caches can silently consume `20–50+ GiB` within
+hours. Therefore, for ordinary local and remote-host Go builds where the
+executor chooses the build cache:
 
-Keep `TMPDIR`/`GOTMPDIR`, DBs, mutable datasets, binaries and benchmark output
-in a **per-lane scratch root** separate from the shared graph `GOCACHE`, and
-delete each lane's scratch root together with its worktree as soon as the lane
-is released so orphaned `go-build*` and `t.TempDir()`/`Benchmark*` directories
-never accumulate in shared `/tmp` or OS temp folders. Follow host storage
-policy; verify the preferred high-capacity mount is available and writable
-before placing heavy data there. Isolated caches are exceptions for an explicit
-cold-cache/dependency-acquisition check, cache diagnosis, or demonstrated
-compatibility/trust requirement; record the reason, exact paths and disposal
-owner. Only the coordinator or its assigned cleaner can clear a released build
-cache under **Asynchronous Disk Cleanup**. Protect externally owned build
-caches and shared module caches.
-
-At every wave/sprint boundary (and before launching a new wave or remote
-qualification run), check filesystem free space and the graph-owned `GOCACHE`
-size on every active execution host. Clear the graph-owned `GOCACHE` when
-advancing across a sprint/base-SHA boundary where prior builds will no longer
-hit, when the graph `GOCACHE` exceeds a soft cap (default `8 GiB`), or when
-host free space drops below `25 GiB` (or `< 15%`). At final graph closeout,
-clear and remove the private graph-owned `GOCACHE` directory itself once all
-consumers have exited and bucket emptiness is verified.
+- **Use ONE persistent host-level shared `GOCACHE` per `(execution host, user)`**
+  rather than allocating ephemeral per-graph or per-worker `/tmp/*-gocache`
+  directories that start 100% cold and multiply disk usage:
+  - macOS default: `$HOME/Library/Caches/agent-go-build` (or the user's default
+    `$HOME/Library/Caches/go-build` if the user explicitly opts into sharing
+    their personal cache).
+  - Linux / remote-host default: preferred verified high-capacity mount when
+    available (for example `/mnt/fast4tb/.cache/agent-go-build`), otherwise
+    `${XDG_CACHE_HOME:-$HOME/.cache}/agent-go-build`.
+  - Record the resolved absolute `GOCACHE`, `GOMODCACHE`, and toolchain in graph
+    state and pass them explicitly to every worker and remote-host command. Never
+    let workers invent ad-hoc `/tmp/*-gocache` directories.
+- **Pass `-trimpath` explicitly across worktrees** on every `go build`, `go vet`,
+  and compile-only cross-OS check (for example `go vet -trimpath <pkgs>` and
+  `CGO_ENABLED=0 GOOS=windows go test -trimpath -vet=off -exec=true -run=^$ ...`),
+  and on `go test` / `go test -race` whenever tests are `-trimpath`-safe. Without
+  `-trimpath`, Go embeds each worktree's absolute path into compiled `.a`
+  archives and drops cross-worktree cache hits on module-local packages to 0%;
+  with `-trimpath`, unchanged local packages hit 100% across worktrees. Pass
+  `-trimpath` as an explicit CLI flag rather than exporting global `GOFLAGS`
+  when repository benchmark or receipt harnesses assert `GOFLAGS=""`. Keep
+  `GOROOT`, `GOTOOLCHAIN=local`, `CGO_ENABLED`, and `-trimpath` uniform across
+  worktrees so action IDs match.
+- **Keep `TMPDIR` and `GOTMPDIR` strictly lane-local** (always export **both**)
+  along with DBs, mutable datasets, binaries, and benchmark output in a
+  **per-lane scratch root** separate from the shared `GOCACHE`, and delete each
+  lane's scratch root together with its worktree as soon as the lane releases.
+- **Bound local compile concurrency on laptop-class hosts** (`<= 8` CPUs or
+  `<= 16 GiB` RAM): when `>= 2` local worktrees are active, pass `-p=2` or
+  `-p=3` on heavy `go test`/`go vet`/`go build` commands (`-p` does not alter
+  `GOCACHE` keys), avoid running multiple parallel `go test -race` commands in
+  one worker, and keep pre-push `go vet` scoped to affected packages.
+- **Enforce a live-safe byte cap with `scripts/gocache_prune.py` (never live
+  `go clean -cache`):** at coordinator startup, wave/sprint boundaries, and lane
+  closeout, run:
+  `python3 <SKILLS_ROOT>/codex-issue-graph-executor/scripts/gocache_prune.py --cache-dir "<SHARED_GOCACHE>" --max-gb 10 --target-gb 6 --min-age-seconds 7200`
+  (use `--max-gb 8 --target-gb 5` on laptops with `< 50 GiB` free; `--max-gb 20
+  --target-gb 12` on high-capacity hosts such as `/mnt/fast4tb`). Because Go's
+  `DiskCache` bumps `mtime` on cache hits (`1h` interval) and treats missing
+  entries as benign misses, pruning entries `>= 2h` old oldest-first is safe even
+  while concurrent builds run and keeps hot stdlib/`-race`/dependency caches warm
+  while shedding superseded `300 MB` `-race` `.a` archives. Use `go test -count=1`
+  when fresh test execution is required without invalidating compiled packages.
+  Reserve isolated temporary caches strictly for explicit cold-cache or
+  dependency-acquisition checks (record reason, exact paths, and disposal owner),
+  and force `-a` on affected packages if external C libraries change under CGO.
 
 For required file copies, prefer verified same-filesystem copy-on-write support
 (APFS cloning on macOS or reflinks on a supporting Linux filesystem). Record an
@@ -495,7 +501,13 @@ Measure job creation-to-start separately from execution and verify dependencies;
 queued work is pending, not a failure or proof of a particular account limit.
 
 When an independently useful patch is stable, its focused behavior test passes,
-and required pre-push checks are green, push that commit and open or update its
+and the local pre-push gate is green (formatting clean via `gofmt -l`, `go vet`
+or linter clean, affected package tests passing, and doc-contract checks clean
+when docs/specs changed), push that commit and open or update its
+PR (keeping incomplete iterations in Draft PRs to avoid burning heavy CI
+matrices, holding non-urgent pushes/rebases while `@codex review` is pending,
+and opting into `[ci full]` / `ci:full` when touching high-risk
+OS/mmap/durability/format internals or final qualification).
 PR promptly. Verify that CI started on the intended SHA. Run the broader suite
 and workload qualification alongside CI and post the results on the same PR.
 Merge each qualified increment as soon as its own dependencies and gates clear.
@@ -631,11 +643,14 @@ stopped worker), immediately delete no-longer-needed checkouts/worktrees (and
 close/release finished worker runtimes that hold harness-managed worktrees),
 delete their per-lane `TMPDIR`/`GOTMPDIR` roots and verified disposable DBs
 (including remote benchmark host data directories such as `treedb_data/` after
-reopen/evidence checks), and check graph-owned Go caches. Keep the graph cache
-warm within the current wave when space permits; clear it at sprint/base-SHA
-boundaries, when it exceeds the soft cap (`8 GiB`), or under disk pressure
-(`< 25 GiB` or `< 15%` free) when the cache contract permits. Sweep remaining
-released paths and delete empty private graph `GOCACHE` directories at closeout.
+reopen/evidence checks), and run live-safe LRU pruning on the persistent shared
+agent `GOCACHE` via `scripts/gocache_prune.py` (default `--max-gb 10
+--target-gb 6 --min-age-seconds 7200`, or `--max-gb 8 --target-gb 5` on laptops
+with `< 50 GiB` free) so hot stdlib/`-race`/dependency artifacts stay warm while
+superseded large `.a` archives are bounded. Sweep remaining released paths and
+any orphaned ad-hoc `/tmp/*-gocache` directories at closeout (only wipe an
+entire cache with `go clean -cache` when zero consumers are active and an
+explicit exception or full reset is needed).
 Record a concrete consumer, evidence requirement, or blocker for any large
 path still present. Route helper-skill post-merge cleanup to the same owner.
 Verify deletion, worktree deregistration, or cleared build entries before
