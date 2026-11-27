@@ -13,15 +13,15 @@ For general `treedb-repo-mcp` query methodology and full tool schemas, see the c
 
 Use this skill when:
 
-- looking up prior definitions, theorems, claims, provenance, or design decisions across `snissn/physics` files and GitHub discussions;
+- looking up prior definitions, theorems, claims, provenance, or design decisions across `snissn/physics` files and GitHub discussions (using `mode: "lexical"`, semantic `mode: "vector"`, or fused `mode: "hybrid"`);
+- running conceptual or terminology-bridging queries via `mode: "hybrid"` (RRF over BM25F + `BAAI/bge-base-en-v1.5` 768d cosine ANN) or pure semantic `mode: "vector"`;
 - running exact phrase or proximity queries (for example `"elastic electron"`, `"Bell inequality"`, `"common-past preparation"`) across the full corpus;
 - searching GitHub issues, PRs, reviews, and comments in `snissn/physics` with bot exclusion, state, label, author, number range, or date filters;
 - reconstructing full file chunks or chronological GitHub issue/PR threads without burning GitHub API quota.
 
 Do not use this skill for:
 
-- searching excluded numeric/structured output dumps (`.json`, `.jsonl`, `.csv`, `.tsv`, `.log`, `.npz`, `.f64le`, `.pdf`) — inspect those files directly in the workspace or on `host185`;
-- running `mode: "hybrid"` or `mode: "vector"` — this instance is configured in fast lexical-only mode (`embedding.enabled: false`).
+- searching excluded numeric/structured output dumps (`.json`, `.jsonl`, `.csv`, `.tsv`, `.log`, `.npz`, `.f64le`, `.pdf`) — inspect those files directly in the workspace or on `host185`.
 
 ## Live Endpoints & Corpus Profile
 
@@ -30,14 +30,16 @@ Do not use this skill for:
   - Status JSON: `http://192.168.0.185:7337/status`
 - **Unix socket on `host185`**: `/home/mikers/treedb-mcp-work/physics.sock`
 - **Daemon binary / data dir on `host185`**: `/home/mikers/treedb-mcp-work/bin/treedb-repo-mcp` serving `/home/mikers/treedb-mcp-work/physics-db`
+- **Local GPU embedding service on `host185`**: `/home/mikers/treedb-mcp-work/bin/embed_server.py` serving `BAAI/bge-base-en-v1.5` (768d, FP16 CUDA on RTX 3060 Ti) at `http://127.0.0.1:8089/v1/embeddings` (health: `http://127.0.0.1:8089/health`)
 - **Capabilities**:
   - Full-text BM25F (`text-v2`, camelCase/snake_case splitting, `MaxTokenBytes: 256` with phrase-gap preservation)
-  - Native streaming Block-Max WAND exact/proximity `phrase_search` (zero app-side fallback even on 15k-DF terms like `"elastic electron"`, ~50 ms) with `match_fields`, `match_line`..`match_end_line`, `match_excerpt`, plus optional `body_only`, `exact_literal`, and `dedupe_content` filters
+  - Semantic vector & hybrid RRF search (`embedding.enabled: true`, `BAAI/bge-base-en-v1.5` 768d cosine `column_graph` ANN across `repo_chunks`, `gh_items`, and `gh_comments`): supports `mode: "lexical"`, `mode: "vector"`, and `mode: "hybrid"` on `search`, `search_code`, and `search_github`
+  - Compressed outer B+tree leaves in `leaf_vlog` (`IndexOuterLeavesInValueLog=true`, compact internal-node-only `index.db` ~60–70 MiB) with automatic `ColumnAssetGC` on superseded vector graph assets
+  - Native streaming Block-Max WAND exact/proximity `phrase_search` (zero app-side fallback even on 15k-DF terms like `"elastic electron"`) with `match_fields`, `match_line`..`match_end_line`, `match_excerpt`, plus optional `body_only`, `exact_literal`, and `dedupe_content` filters
   - Snapshot provenance (`snapshot: {repo, indexed_head_sha, repo_synced_at, github_synced_at}`) and rank/collapse/truncation counters (`stats: {returned_hits, unique_parents, candidates_evaluated, omitted_by_parent_cap, omitted_by_post_filter, truncated, candidate_budget_exhausted}`) on search responses
   - Explicit `status` (`indexed`, `excluded`, `not_found`, `unindexed`) and `skip_reason` (e.g. `excluded_extension` for `.json`/`.csv`, `gitignored`, `too_large`, `not_indexed_yet`) on `get_file_context`
-  - O(1) `status` (~12 ms across ~885k sealed posting blocks)
-  - Realtime `fsnotify` watching + default-on 60 s safe remote git fast-forward polling + 60 s incremental GitHub polling + 15 m periodic maintenance
-  - Lexical-only (`embedding.enabled: false`; always use `mode: "lexical"` or omit `mode`)
+  - O(1) `status` (~12 ms across ~918k sealed posting blocks)
+  - Realtime `fsnotify` watching + default-on 60 s safe remote git fast-forward polling + 60 s incremental GitHub polling (with live vector-graph rebuilds) + 15 m periodic maintenance
 
 ## Quick Commands
 
@@ -51,8 +53,10 @@ MCP="$HOME/.codex/skills/treedb-repo-mcp-search/scripts/mcp_call.py"
 "$MCP" health
 "$MCP" call status
 
-# 2. Broad search across repo + GitHub (excluding bots)
+# 2. Broad search across repo + GitHub (lexical, semantic vector, or fused hybrid RRF)
 "$MCP" call search --arg query="local measurement-dependent CHSH" --arg exclude_bots=true --arg top_k=8
+"$MCP" call search --arg query="how does pilot-wave guidance distribute kinetic energy across modes" --arg mode=hybrid --arg exclude_bots=true --arg top_k=8
+"$MCP" call search_code --arg query="Bohmian kinetic energy budget stability" --arg mode=vector --arg top_k=8
 
 # 3. Targeted code/paper search inside a lane or extension
 "$MCP" call search_code --arg query="elastic electron" --arg top_dir=qm-foundations --arg ext=md --arg top_k=8
