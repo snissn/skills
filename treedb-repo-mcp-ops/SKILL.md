@@ -98,11 +98,27 @@ Healthy post-maintenance indicators:
 - Disk footprint and open-FD hygiene:
   ```sh
   du -sh /path/to/repo-db /path/to/repo-db/treedb/maindb/*
-  # On Linux, confirm bounded FDs and zero unlinked "(deleted)" value-log handles after maintenance:
-  ls -l "/proc/$PID/fd" | wc -l
-  ls -l "/proc/$PID/fd" | grep -c '(deleted)' || true
+  # On Linux, confirm bounded FDs and zero genuinely unlinked (nlink == 0) handles after maintenance
+  # (hard-linked leaf_vlog/manifest.stage.tmp.* or promoted pack handles show "(deleted)" with nlink > 0 and are live):
+  python3 - "$PID" <<'PY'
+  import os, sys
+  d = f"/proc/{sys.argv[1]}/fd"
+  total, dead = 0, []
+  for name in os.listdir(d):
+      p = os.path.join(d, name)
+      try:
+          target = os.readlink(p)
+          total += 1
+          if target.endswith(" (deleted)") and os.stat(p).st_nlink == 0:
+              dead.append(target)
+      except OSError:
+          continue
+  print(f"total_fds={total} unlinked_nlink0_fds={len(dead)}")
+  for target in dead:
+      print("  DEAD:", target)
+  PY
   ```
-  Confirm `0` `(deleted)` FDs after maintenance/GC, bounded total FDs that do not grow across repeated maintenance cycles, and expected on-disk footprint (`index.db` + `value_vlog` + `leaf_vlog`).
+  Confirm `0` genuinely unlinked (`nlink == 0`) FDs after maintenance/GC (allowing ~5–8 s for `index.db.bak` ghost drain), bounded total FDs across both `value_vlog` and `leaf_vlog` that do not grow across repeated maintenance cycles, and expected on-disk footprint (compact internal-node-only `index.db` plus compressed `leaf_vlog` and `value_vlog` segments). Note that Linux `/proc/$PID/fd` shows `(deleted)` on live hard-linked `leaf_vlog/manifest.stage.tmp.*` / promoted pack handles whose `nlink > 0`; those are active inodes pinned by TreeDB durable-root tokens, not leaks.
 
 Periodic maintenance runs every `--maintain-interval` (default `15m`). To force sealing/compaction immediately without restarting, invoke MCP `sync_now` with `{"repo": true, "github": true, "maintain": true}`.
 
@@ -146,7 +162,7 @@ Never overwrite a live `--data-dir` in place or delete `<data-dir>/gh-cache/item
 | --- | --- | --- |
 | `daemon.watch_degraded: true` | Linux `fs.inotify.max_user_watches` exhausted on large directory trees | Raise `fs.inotify.max_user_watches` (e.g. `524288`) via `sysctl`; daemon falls back to periodic polling until raised |
 | `daemon.last_git_skip` or `daemon.last_git_error` populated | Checkout is dirty/detached/diverged, remote unreachable, or non-fast-forward history | Clean/reconcile the mirror checkout (`git status`, `git fetch`), or disable remote polling on active developer worktrees with `--git-poll 0` |
-| Growing `(deleted)` FDs or oversized `index.db` | Older `gomap` pin or uncompacted pre-upgrade DB | Upgrade to current `main` (with bounded value-log lanes + retired-segment reconciliation + index footprint fixes) and run Step 5 atomic regeneration |
+| Growing `(deleted)` FDs or oversized `index.db` | Older `gomap` pin or pre-compressed-outer-leaf DB (`index_outer_leaves_in_vlog: false`) | Upgrade to current `main` (compressed outer leaves in `leaf_vlog` + leaf-log/value-log GC fixes) and run Step 5 atomic regeneration |
 | `status` returns fail-closed text index error | Un-migrated pre-D3 DB layout or non-ready index | Run Step 5 atomic regeneration into `<db>.new` |
 | `open treedb ... lock` error | Second read-write `sync` or `daemon` opened on active `--data-dir` | Only one RW process may hold `--data-dir`; use `sync_now` on the running daemon or `--readonly` / `query` / `status` for RO reads |
 | GitHub sync auth or rate-limit error | Missing `GITHUB_TOKEN`/`GH_TOKEN`/`gh auth` or exhausted GraphQL points | Run `gh auth status`, export `GITHUB_TOKEN`, or pass `--gh-poll 5m` / `--no-github` |
@@ -158,7 +174,7 @@ Before declaring an install, upgrade, or regeneration complete:
 
 - [ ] Binary built cleanly from merged `main` (`go vet`, `go test -race`, zero `replace` in `go.mod`).
 - [ ] `GET /health` responds `200 OK` and cold `status` returns `< 100 ms` with `stale_postings: 0`, `micro_posting_blocks: 0`, and (when `--git-poll > 0`) `daemon.git_polling: true` with `last_git_error` / `last_git_skip` absent or `""`.
-- [ ] On Linux, `/proc/<pid>/fd` shows `0` `(deleted)` FDs and bounded total FDs across maintenance cycles, and `du -sh <db>` confirms expected disk usage.
+- [ ] On Linux, `/proc/<pid>/fd` shows `0` genuinely unlinked (`nlink == 0`) FDs after ghost drain and bounded total FDs across maintenance cycles, and `du -sh <db>` confirms expected disk usage.
 - [ ] Live search (`search`, `phrase_search` with zero fallback notes) passes over HTTP and/or Unix socket proxy.
 - [ ] Backup dirs (`.bak`) cleaned up only after live verification passes, and disk usage checked (`df -h`).
 

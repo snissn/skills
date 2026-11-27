@@ -252,7 +252,8 @@ curl -fsS "http://${HTTP_ADDR}/status" | jq '{
 # 2. Check disk footprint breakdown
 du -sh "$DB_DIR" "$DB_DIR/treedb/maindb" "$DB_DIR/treedb/maindb"/* 2>/dev/null || du -sh "$DB_DIR"
 
-# 3. On Linux, check open FDs for the daemon serving $DB_DIR and ensure zero "(deleted)" handles remain after maintenance
+# 3. On Linux, check open FDs for the daemon serving $DB_DIR and ensure zero genuinely unlinked (nlink == 0) handles remain after maintenance
+#    (live hard-linked leaf_vlog/manifest.stage.tmp.* or promoted pack handles have nlink > 0 and are active inodes, not leaks)
 PID=$(python3 - "$DB_DIR" <<'PY'
 import os, sys
 want_db = os.path.realpath(sys.argv[1])
@@ -271,7 +272,23 @@ for pid in os.listdir("/proc") if os.path.isdir("/proc") else []:
 PY
 )
 if [ -n "$PID" ] && [ -d "/proc/$PID/fd" ]; then
-  echo "total_fds=$(ls -1 "/proc/$PID/fd" | wc -l)"
-  echo "deleted_fds=$(ls -l "/proc/$PID/fd" | grep -c '(deleted)' || true)"
+  python3 - "$PID" <<'PY'
+import os, sys
+d = f"/proc/{sys.argv[1]}/fd"
+total, dead = 0, []
+for name in os.listdir(d):
+    p = os.path.join(d, name)
+    try:
+        target = os.readlink(p)
+        total += 1
+        if target.endswith(" (deleted)") and os.stat(p).st_nlink == 0:
+            dead.append(target)
+    except OSError:
+        continue
+print(f"total_fds={total}")
+print(f"unlinked_nlink0_fds={len(dead)}")
+for target in dead:
+    print(f"  dead_fd={target}")
+PY
 fi
 ```
