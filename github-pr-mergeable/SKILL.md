@@ -245,10 +245,16 @@ Useful commands:
 ```sh
 gh run list --repo <OWNER>/<REPO> --branch <HEAD_BRANCH> --json databaseId,headSha,status,conclusion,displayTitle,workflowName,createdAt
 gh run cancel <RUN_ID> --repo <OWNER>/<REPO>
-gh run watch <RUN_ID> --repo <OWNER>/<REPO>
+# Prefer watch_ci.py (fail-fast, quiet, SHA-pinned, advisory-ack capable).
+# If falling back to gh pr checks --watch, ALWAYS pass --fail-fast so an early
+# shard failure wakes immediately instead of blocking for a full 30m run:
+gh pr checks <PR> --repo <OWNER>/<REPO> --watch --fail-fast -i 20
+# Inspect an early failed job's log while sibling jobs are still running
+# (gh run view --log-failed waits until the whole run finishes):
+gh api /repos/<OWNER>/<REPO>/actions/jobs/<JOB_ID>/logs
 ```
 
-Cancel only stale/non-head runs unless the user explicitly authorizes broader cleanup. Do not cancel the only active CI for a PR head unless you are about to push or have already pushed a newer head.
+When fail-fast wakes on an early failure, start diagnosing and reproducing locally immediately (or dispatch an async flake worker if unrelated) while sibling shards finish—pushing immediately for clear blocking compile/format failures, or letting near-done sibling shards complete when batching fixes avoids extra CI cycles. Cancel only stale/non-head runs unless the user explicitly authorizes broader cleanup. Do not cancel the only active CI for a PR head unless you are about to push or have already pushed a newer head.
 
 ## Base Advancement Without PR Replacement
 

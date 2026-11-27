@@ -26,10 +26,17 @@ python3 "${SKILLS_ROOT:-${HOME}/.codex/skills}/codex-issue-graph-executor/script
 
 The default foreground deadline is 50 seconds, including requests; each request
 times out within 30 seconds. `--max-wait 0` waits until an event, and a larger
-value supports asynchronous execution. Polls default to 60 seconds, minimum 15;
-unchanged polls print nothing. Failures wake on the next snapshot rather than
-waiting for sibling jobs or the workflow to finish. This is polling, so normal
-notification latency includes the poll interval and API calls.
+value supports asynchronous execution. Polls default to 60 seconds, minimum 15
+(use `--poll-interval 20` or `30` for fast 3–6 minute CI pipelines); unchanged
+polls print nothing. Failures wake on the next snapshot rather than waiting for
+sibling jobs or the workflow to finish (fail-fast observation). Immediately inspect
+an early failed job's log via `gh api /repos/OWNER/REPO/actions/jobs/<JOB_ID>/logs`
+(works while sibling jobs are still running, unlike `gh run view --log-failed`) so
+diagnosis and local reproduction start immediately instead of waiting out the full
+run. If falling back to `gh pr checks --watch` when `watch_ci.py` is unavailable,
+**always pass `--fail-fast`** (for example `gh pr checks <PR> --watch --fail-fast -i 20`);
+never block on bare `gh pr checks --watch` without `--fail-fast`. This is polling,
+so normal notification latency includes the poll interval and API calls.
 
 By default the process writes JSON lines: one start line and one terminal event line. Keep the output
 with the existing readiness evidence if failures matter; the final line preserves

@@ -694,15 +694,25 @@ manufacture tests, reports, tracker edits, or repeated inventories to fill time.
 Preserve one writer per surface, measurement isolation, and final-base gates.
 Record the concrete reason if no useful independent work can proceed.
 
-Start one quiet watch/event mechanism for the sole readiness owner and continue
-that work while it waits. Prefer [scripts/watch_ci.py](scripts/watch_ci.py) when
-its scope fits; read [references/ci-watcher.md](references/ci-watcher.md) for
-exact head/base and workflow-attempt bindings, exit events, bounded foreground
-invocations, and the asynchronous harness continuation pattern. The watcher
-surfaces a failed workflow job while sibling jobs are still running, distinguishes
+Start one quiet, fail-fast watch/event mechanism for the sole readiness owner and
+continue useful work while it waits. Prefer [scripts/watch_ci.py](scripts/watch_ci.py)
+(with `--poll-interval 20` or `30` for fast runs) when its scope fits; read
+[references/ci-watcher.md](references/ci-watcher.md) for exact head/base and
+workflow-attempt bindings, exit events, bounded foreground invocations, and the
+asynchronous harness continuation pattern. The watcher fails fast—surfacing a
+failed job on the next snapshot while sibling jobs are still running—distinguishes
 required from advisory PR checks, and reports observed failures without rerunning
 or merging. Its CI-success notification still requires the full live merge gate.
-Use a native event tool or bounded fallback polling when this helper is unavailable.
+When falling back to `gh pr checks --watch`, **always pass `--fail-fast`** (e.g.
+`gh pr checks <PR> --watch --fail-fast -i 20`) and never sit blocked for a full
+30-minute run on bare `gh pr checks --watch` after an early shard fails. On an
+early failure wakeup, pull the completed failed job's log immediately via
+`gh api /repos/<OWNER>/<REPO>/actions/jobs/<JOB_ID>/logs` (which works while the
+workflow run is still in progress, unlike `gh run view --log-failed`), start
+diagnosing/reproducing locally right away (or dispatch an async flake worker if
+unrelated), and decide whether to push immediately (blocking compile/format or
+clear single-cause failure) or let near-done sibling shards finish so related
+failures land in one coherent batch.
 Keep tool output compact and updates brief; avoid duplicate monitors, fresh
 reviews, pushes or tests just because time passed.
 The delegated-owner polling cadence does not prohibit monitoring external CI
