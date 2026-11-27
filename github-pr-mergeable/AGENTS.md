@@ -50,7 +50,9 @@ artifact. It does not waive:
 
 - latest-head CI or an explicit permitted CI-unavailability disposition;
 - branch protection;
-- unresolved findings or threads from any Codex review that did run;
+- unresolved findings or threads from **any** reviewer (Codex, CodeRabbit, Copilot, or human) — note that CodeRabbit's check run reports `success` even while posting unresolved `Critical`/`Major`/`Minor` threads;
+- waiting for an active exact-head CodeRabbit review to either finish cleanly (`0` unresolved threads) or report rate-limited/quota-exhausted (`neutral` / `Review rate limited`), which is conditional on quota support;
+- re-running exact-head review convergence (Codex required + CodeRabbit conditional on quota + `0` unresolved threads) after **every** code fix pushed in response to review findings;
 - required human or external review;
 - exact-head synchronization and expected-head merge checks;
 - performance, test, security, or scientific acceptance gates; or

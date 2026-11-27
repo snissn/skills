@@ -40,12 +40,15 @@ A PR is mergeable only when current evidence proves:
 - code has had an internal deep review for correctness, drift, complexity, and tests;
 - tests cover the behavior changed by the PR;
 - performance-sensitive changes include relevant benchmark evidence in the PR body or a PR comment, do **not** show an unaccepted material regression, and meet any explicit improvement/saturation gate unless the PR is explicitly instrumentation/safety-only or a linked blocker/waiver is recorded;
-- Codex review, when required by the effective repository/workstream policy, has been requested only after the PR is mature enough to avoid review-credit churn, and after meaningful pushes where available;
-- when Codex remains required, the latest-head review has completed cleanly as either an explicit no-findings issue comment or an approved/clean review tied to the exact head SHA, with no unresolved Codex threads, or a documented internal review fallback has accepted that exact candidate under the effective policy;
+- **Hard exact-head AI review convergence gate (required before merge):**
+  - **Codex review is REQUIRED** (unless repository-local proportional/scientific policy replaces it or concrete `CODEX_REVIEW_UNAVAILABLE_QUOTA` triggers a qualifying exact-head `INTERNAL_SUBAGENT_REVIEW` fallback): the exact latest head SHA MUST have an explicit completed clean Codex review (`clean_comment` / `clean_review` / structured `codex-review-state:v1` with `commit_sha == head`, `status == "completed"`, `has_any_findings == false`, `has_unresolved_findings == false`) AND zero unresolved Codex threads.
+  - **CodeRabbit (and other configured AI reviewers) are CONDITIONAL ON QUOTA SUPPORT:**
+    - If CodeRabbit is `queued` / `in_progress` on the exact head, **WAIT** until it finishes or reports rate-limited/quota-exhausted — never merge ahead of an in-flight CodeRabbit run.
+    - If CodeRabbit reports rate-limited / quota-exhausted (`conclusion == "neutral"`, `Review rate limited` / `Review limit reached`) AND zero unresolved CodeRabbit threads exist, it does **not** block mergeability (record `coderabbit_state: rate_limited`).
+    - **CRITICAL TRAP:** CodeRabbit's GitHub check run reports **`✓ SUCCESS` even when it posts `Critical`, `Major`, or `Minor` unresolved inline review threads.** Never equate `CodeRabbit: ✓` with clean! Every unresolved CodeRabbit (or Copilot/human) thread MUST be explicitly audited, fixed or refuted with source-grounded rationale in the thread, and marked resolved.
+  - **Strict convergence on passing after fixes:** Whenever review findings (Codex, CodeRabbit, or internal review) result in a code push, the new head SHA invalidates all prior clean reviews. You MUST wait for fresh exact-head CI, fresh exact-head Codex clean (requesting `@codex review` if auto-review did not start on the new head), and fresh exact-head CodeRabbit convergence (`clean` with `0` unresolved threads OR `rate_limited` with `0` unresolved threads), plus `0` unresolved threads across ALL reviewers (`codex_review_gate.py --check` exit `0`), before claiming mergeable or merging.
 - when repository-local proportionality or scientific stop rules replace the default Codex gate, the PR records that policy, the bounded review disposition, and the acceptance evidence required by that policy; every existing thread is still fixed or explicitly rejected with rationale;
-- any additional completed reviews have their actual findings, checks, and threads resolved; unavailable optional reviews or acknowledgement reactions alone do not block mergeability;
-- AI review findings are fixed or explicitly rejected with rationale;
-- review threads are commented on and marked resolved where the platform supports resolution;
+- review threads across ALL reviewers (Codex, CodeRabbit, Copilot, human) are commented on and marked resolved where the platform supports resolution — zero dangling unresolved threads may remain when claiming mergeable or merging;
 - PR description accurately states scope, tests, benchmarks, risks, and remaining caveats.
 
 Do not use stale green checks, stale reviews, or older benchmark numbers as proof for the latest head.
@@ -194,6 +197,14 @@ correctness, performance, review, latest-head CI, and final qualification gates 
 
 Use latest-head evidence only.
 
+### Mandatory Local Pre-Push Gate
+
+Before **every** `git push` to a PR branch, run the repository's cheap local gate so hosted runners are never burned on avoidable format, lint, or doc-contract failures:
+
+- Formatting: for Go repos, verify `gofmt -l $(git ls-files '*.go')` (or all touched `.go` files) is empty; for other languages, run the repo's formatter check.
+- Static checks & focused tests: run `go vet` and focused `go test` on directly affected packages (plus doc/naming checks such as `make docs-check`, `go test ./TreeDB/docs`, or repo-documented equivalents when docs/specs change).
+- Draft WIP & tiered CI opt-in: keep incomplete iterations in a **Draft PR** (which avoids burning heavy cross-OS/race matrices where the repo uses tiered CI). For ordinary changes, rely on surgical PR checks; add `[ci full]` / `ci:full` (or the repo's documented full-matrix opt-in) when touching high-risk OS/mmap/durability/format internals or running final post-sprint validation.
+
 Open or update the PR once the patch is stable and its focused test and required
 pre-push checks pass. Verify the expected checks have started on that commit.
 List outstanding tests or benchmarks in the PR and run them alongside hosted CI.
@@ -266,11 +277,10 @@ Before every push or new review request, run one coherent repair batch:
    mismatch, nonblocking hardening, incorrect finding, or unrelated failure.
 3. Repair all accepted in-scope findings locally; comment on rejected or
    deferred findings and resolve their threads where appropriate.
-4. Audit sibling invariants, run focused validation for the whole batch, and
-   update the PR body/evidence.
+4. Audit sibling invariants, run the mandatory local pre-push gate (`gofmt`/formatter, `go vet`/linter, focused validation for the whole batch), and update the PR body/evidence.
 5. Push once, then start one latest-head CI/review cycle. A batch may contain
    multiple local commits. New external information may start the next batch,
-   but do not push and wait one finding at a time.
+   but do not push and wait one finding at a time. **Hold non-urgent follow-up pushes and base rebases while a requested `@codex review` is still pending** unless fixing a blocking compile or format failure; batch incoming review fixes and any needed base sync into one single push so neither CI runners nor review credits are burned twice.
 
 Keep the PR draft until its issue-wide implementation packet is complete. If
 the same material blocker category returns on the second repair head, stop
@@ -385,11 +395,17 @@ Before posting final mergeability evidence or merging, re-inventory each request
   bounded retry policy completes or concrete quota/service evidence establishes
   unavailability. Record fallback acceptance separately from that hosted state.
 - Do not merge while a still-required hosted Codex latest-head review is pending, even if `mergeable=MERGEABLE`, `mergeStateStatus=CLEAN`, local validation passes, or earlier threads are resolved. A qualifying internal fallback `ACCEPT` or repository-local proportional scientific acceptance satisfies the default internal gate; an explicit hosted-only requirement still applies.
-- If an optional reviewer has an active required status check under branch protection, treat that check as CI and wait for it or document why it is non-blocking. Do not treat a plain acknowledgement reaction from an optional reviewer as a pending merge blocker.
+- **CodeRabbit & other AI reviewers (conditional on quota, hard-blocking on active findings):**
+  - Run `scripts/codex_review_gate.py --repo <OWNER>/<REPO> --pr <PR> --check` on the exact final head SHA — it now inspects exact-head `check_runs` (for `CodeRabbit`) AND **all** unresolved review threads (`unresolved_codex_threads`, `unresolved_coderabbit_threads`, `unresolved_other_threads`).
+  - If `coderabbit_state == "pending"`, wait for CodeRabbit to complete or report `rate_limited` before merging.
+  - If `coderabbit_state == "rate_limited"` (quota/OSS rate limit hit, e.g. check run `neutral` / `Review rate limited`) and `unresolved_coderabbit_threads` is empty, CodeRabbit does not block mergeability; record that state in the merge summary.
+  - If `unresolved_coderabbit_threads` or `unresolved_other_threads` is non-empty (even when the `CodeRabbit` GitHub check run reports `conclusion == "success"`!), mergeability is **HARD BLOCKED** (`clean: false`, exit `2`). Audit every thread directly against the source code:
+    - Fix every valid correctness, data-integrity, concurrency, spec, or coverage finding in one coherent repair commit, push, and **re-run the full exact-head convergence loop** (fresh CI + fresh exact-head Codex clean + fresh exact-head CodeRabbit `clean`/`rate_limited` + `0` unresolved threads).
+    - For a verified false positive or explicitly out-of-scope nit, post a concise source-grounded reply in the thread explaining why and resolve the thread. Never silently ignore or leave unresolved threads when merging!
 - A reaction alone is not a clean artifact. Require an explicit exact-head
   clean comment/review or qualifying fallback `ACCEPT`, plus zero unresolved
-  Codex threads.
-- If an optional review completes after the PR was merged and reports real findings, open or push a follow-up fix PR and resolve the late threads.
+  threads across Codex, CodeRabbit, and all other reviewers.
+- If a review completes after an already-merged PR and reports real findings, immediately open a follow-up hardening/fix PR covering every valid finding and resolve/link the threads.
 
 ## Review Thread Resolution
 

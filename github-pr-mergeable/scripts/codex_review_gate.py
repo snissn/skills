@@ -18,6 +18,7 @@ from typing import Any
 
 
 DEFAULT_CODEX_LOGINS = {"chatgpt-codex-connector"}
+DEFAULT_CODERABBIT_LOGINS = {"coderabbitai"}
 REVIEWED_COMMIT_RE = re.compile(
     r"reviewed\s+commit[^0-9a-f]{0,20}([0-9a-f]{7,40})\b", re.IGNORECASE
 )
@@ -31,6 +32,11 @@ REQUEST_RE = re.compile(r"^\s*@codex\s+review(?:\s|$)", re.IGNORECASE | re.MULTI
 QUOTA_RE = re.compile(
     r"(?:reached your Codex usage limits for code reviews|"
     r"code review (?:usage )?(?:quota|limit)(?: has been)? (?:reached|exceeded|exhausted))",
+    re.IGNORECASE,
+)
+CODERABBIT_RATE_LIMIT_RE = re.compile(
+    r"(?:rate\s+limited|review\s+limit\s+reached|all\s+free\s+(?:oss\s+)?reviews|"
+    r"usage\s+limits?\s+(?:reached|exceeded|exhausted))",
     re.IGNORECASE,
 )
 REVIEW_STATE_RE = re.compile(r"<!--\s*codex-review-state:v1\s+(.*?)\s*-->", re.DOTALL)
@@ -219,30 +225,125 @@ def classify(
     total_codex_threads = 0
 
     unresolved_threads = []
+    unresolved_coderabbit_threads = []
+    unresolved_other_threads = []
     for thread in data.get("threads", []):
         thread_comments = thread.get("comments") or []
         if isinstance(thread_comments, dict):
             thread_comments = thread_comments.get("nodes") or []
+        valid_comments = [c for c in thread_comments if isinstance(c, dict)]
         codex_comments = [
             comment
-            for comment in thread_comments
-            if isinstance(comment, dict)
-            and _is_codex_login(_login(comment.get("author")), configured)
+            for comment in valid_comments
+            if _is_codex_login(_login(comment.get("author")), configured)
         ]
-        if not codex_comments:
+        coderabbit_comments = [
+            comment
+            for comment in valid_comments
+            if _is_codex_login(_login(comment.get("author")), DEFAULT_CODERABBIT_LOGINS)
+        ]
+        if codex_comments:
+            total_codex_threads += 1
+            if not thread.get("isResolved"):
+                unresolved_threads.append(
+                    {
+                        "id": thread.get("id", ""),
+                        "urls": [comment.get("url", "") for comment in codex_comments],
+                        "summaries": [
+                            (comment.get("body") or "").splitlines()[0][:200]
+                            for comment in codex_comments
+                        ],
+                    }
+                )
             continue
-        total_codex_threads += 1
-        if not thread.get("isResolved"):
-            unresolved_threads.append(
+        if coderabbit_comments:
+            if not thread.get("isResolved"):
+                unresolved_coderabbit_threads.append(
+                    {
+                        "id": thread.get("id", ""),
+                        "urls": [comment.get("url", "") for comment in coderabbit_comments],
+                        "summaries": [
+                            next(
+                                (
+                                    line.strip()[:200]
+                                    for line in (comment.get("body") or "").splitlines()
+                                    if line.strip() and not line.strip().startswith("<!--")
+                                ),
+                                "",
+                            )
+                            for comment in coderabbit_comments
+                        ],
+                    }
+                )
+            continue
+        if valid_comments and not thread.get("isResolved"):
+            unresolved_other_threads.append(
                 {
                     "id": thread.get("id", ""),
-                    "urls": [comment.get("url", "") for comment in codex_comments],
+                    "authors": sorted({_login(c.get("author")) for c in valid_comments}),
+                    "urls": [comment.get("url", "") for comment in valid_comments],
                     "summaries": [
                         (comment.get("body") or "").splitlines()[0][:200]
-                        for comment in codex_comments
+                        for comment in valid_comments
                     ],
                 }
             )
+
+    cr_checks = [
+        run
+        for run in data.get("check_runs", [])
+        if isinstance(run, dict) and "coderabbit" in str(run.get("name") or "").lower()
+    ]
+    cr_checks.sort(
+        key=lambda run: run.get("completed_at") or run.get("started_at") or ""
+    )
+    latest_cr_check = cr_checks[-1] if cr_checks else None
+    cr_check_info: dict[str, Any] | None = None
+    cr_check_state: str | None = None
+    if latest_cr_check:
+        cr_status = str(latest_cr_check.get("status") or "").lower()
+        cr_conclusion = str(latest_cr_check.get("conclusion") or "").lower()
+        cr_output = latest_cr_check.get("output") if isinstance(latest_cr_check.get("output"), dict) else {}
+        cr_title = str(cr_output.get("title") or "")
+        cr_summary = str(cr_output.get("summary") or "")
+        cr_check_info = {
+            "name": latest_cr_check.get("name", ""),
+            "status": cr_status,
+            "conclusion": cr_conclusion,
+            "title": cr_title[:200],
+            "url": latest_cr_check.get("details_url") or latest_cr_check.get("html_url") or "",
+        }
+        if cr_status in {"queued", "in_progress", "waiting", "pending"}:
+            cr_check_state = "pending"
+        elif cr_conclusion == "neutral" or CODERABBIT_RATE_LIMIT_RE.search(f"{cr_title}\n{cr_summary}"):
+            cr_check_state = "rate_limited"
+        elif cr_conclusion == "success":
+            cr_check_state = "completed"
+        elif cr_conclusion in {"skipped"}:
+            cr_check_state = "rate_limited"
+        elif cr_conclusion:
+            cr_check_state = "failed"
+    else:
+        for comment in data.get("comments", []):
+            if not _is_codex_login(_login(comment.get("user")), DEFAULT_CODERABBIT_LOGINS):
+                continue
+            body = comment.get("body") or ""
+            ts = _parse_time(comment.get("updated_at") or comment.get("created_at"))
+            if head_time and ts and ts >= head_time and CODERABBIT_RATE_LIMIT_RE.search(body):
+                cr_check_state = "rate_limited"
+
+    if unresolved_coderabbit_threads:
+        coderabbit_state = "findings"
+    elif cr_check_state == "pending":
+        coderabbit_state = "pending"
+    elif cr_check_state == "rate_limited":
+        coderabbit_state = "rate_limited"
+    elif cr_check_state == "completed":
+        coderabbit_state = "clean"
+    elif cr_check_state == "failed":
+        coderabbit_state = "failed"
+    else:
+        coderabbit_state = "not_configured"
 
     requests = []
     for comment in data.get("comments", []):
@@ -370,6 +471,25 @@ def classify(
         should_request = True
         action = "request one Codex review after the mature-head gate passes"
 
+    codex_state = state
+    codex_clean = clean
+    if codex_clean:
+        if unresolved_coderabbit_threads or unresolved_other_threads:
+            state = "findings"
+            clean = False
+            should_request = False
+            action = "resolve every unresolved review thread (CodeRabbit/other) and push a converged exact-head fix or documented refusal before merging"
+        elif coderabbit_state == "pending":
+            state = "coderabbit_pending"
+            clean = False
+            should_request = False
+            action = "wait for the running exact-head CodeRabbit review to complete or report rate-limited before merging"
+        elif coderabbit_state == "failed":
+            state = "coderabbit_failed"
+            clean = False
+            should_request = False
+            action = "inspect the failed exact-head CodeRabbit check run before merging"
+
     if hosted_unavailable and state == "findings":
         action = "disposition every existing finding; record hosted failure/quota and use a permitted exact-candidate internal fallback, without automatic waiver or retry"
 
@@ -380,6 +500,10 @@ def classify(
         "head": head,
         "state": state,
         "clean": clean,
+        "codex_state": codex_state,
+        "codex_clean": codex_clean,
+        "coderabbit_state": coderabbit_state,
+        "coderabbit_check": cr_check_info,
         "should_request": should_request,
         "action": action,
         "latest_artifact": latest,
@@ -402,6 +526,8 @@ def classify(
         },
         "latest_request": latest_request,
         "unresolved_codex_threads": unresolved_threads,
+        "unresolved_coderabbit_threads": unresolved_coderabbit_threads,
+        "unresolved_other_threads": unresolved_other_threads,
     }
 
 
@@ -469,6 +595,24 @@ query($owner:String!,$name:String!,$number:Int!,$after:String){
         after = page["pageInfo"]["endCursor"]
 
 
+def _check_runs(repo: str, head: str, fetch: Any = None) -> list[dict[str, Any]]:
+    """Fetch paginated exact-head check runs."""
+    fetch = fetch or _gh_json
+    runs: list[dict[str, Any]] = []
+    page_number = 1
+    while True:
+        payload = fetch(["api", f"repos/{repo}/commits/{head}/check-runs?per_page=100&page={page_number}"])
+        if not isinstance(payload, dict):
+            raise RuntimeError("GitHub check-runs response was not an object")
+        page = payload.get("check_runs")
+        if not isinstance(page, list) or any(not isinstance(item, dict) for item in page):
+            raise RuntimeError("GitHub check-runs array was malformed")
+        runs.extend(page)
+        if len(page) < 100:
+            return runs
+        page_number += 1
+
+
 def fetch_live(repo: str, number: int) -> dict[str, Any]:
     owner, name = repo.split("/", 1)
     pull = _gh_json(["api", f"repos/{repo}/pulls/{number}"])
@@ -485,6 +629,7 @@ def fetch_live(repo: str, number: int) -> dict[str, Any]:
         "comments": _rest_pages(f"repos/{repo}/issues/{number}/comments"),
         "reviews": _rest_pages(f"repos/{repo}/pulls/{number}/reviews"),
         "threads": _review_threads(owner, name, number),
+        "check_runs": _check_runs(repo, head),
     }
 
 
@@ -494,6 +639,7 @@ def _fixture(
     comments: list[dict[str, Any]] | None = None,
     reviews: list[dict[str, Any]] | None = None,
     threads: list[dict[str, Any]] | None = None,
+    check_runs: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     return {
         "head": head,
@@ -501,6 +647,7 @@ def _fixture(
         "comments": comments or [],
         "reviews": reviews or [],
         "threads": threads or [],
+        "check_runs": check_runs or [],
     }
 
 
@@ -721,6 +868,49 @@ def self_test() -> None:
         ["api", "repos/example/project/issues/1/comments?per_page=100&page=1"],
         ["api", "repos/example/project/issues/1/comments?per_page=100&page=2"],
     ]
+
+    # CodeRabbit conditional-on-quota + all-unresolved-threads convergence checks.
+    cr_bot = {"login": "coderabbitai[bot]"}
+    cr_unresolved = {
+        "id": "cr-thread-1",
+        "isResolved": False,
+        "comments": {"nodes": [{"author": cr_bot, "body": "<!-- coderabbit -->\nMajor finding", "url": "cr-1"}]},
+    }
+    cr_resolved = {**cr_unresolved, "isResolved": True}
+    cr_success = {"name": "CodeRabbit", "status": "completed", "conclusion": "success", "output": {"title": "Finished", "summary": "Review completed"}}
+    cr_pending = {"name": "CodeRabbit", "status": "in_progress", "conclusion": None, "output": {"title": "Reviewing", "summary": ""}}
+    cr_rate_limited = {"name": "CodeRabbit", "status": "completed", "conclusion": "neutral", "output": {"title": "Review rate limited", "summary": "Result: Rate limited"}}
+    other_unresolved = {
+        "id": "human-thread-1",
+        "isResolved": False,
+        "comments": {"nodes": [{"author": {"login": "reviewer"}, "body": "Please fix this", "url": "h-1"}]},
+    }
+
+    # CodeRabbit check success STILL blocks when inline CodeRabbit threads are unresolved.
+    result = classify(_fixture(head=head, comments=[structured_clean], threads=[cr_unresolved], check_runs=[cr_success]))
+    assert result["codex_clean"] and not result["clean"] and result["state"] == "findings"
+    assert result["coderabbit_state"] == "findings" and len(result["unresolved_coderabbit_threads"]) == 1
+
+    # Pending exact-head CodeRabbit blocks until it finishes or reports rate-limited.
+    result = classify(_fixture(head=head, comments=[structured_clean], check_runs=[cr_pending]))
+    assert result["codex_clean"] and not result["clean"] and result["state"] == "coderabbit_pending"
+    assert result["coderabbit_state"] == "pending"
+
+    # Rate-limited CodeRabbit does NOT block once zero unresolved threads remain.
+    result = classify(_fixture(head=head, comments=[structured_clean], threads=[cr_resolved], check_runs=[cr_rate_limited]))
+    assert result["clean"] and result["state"] == "clean" and result["coderabbit_state"] == "rate_limited"
+
+    # Rate-limited CodeRabbit STILL blocks if an older CodeRabbit thread remains unresolved.
+    result = classify(_fixture(head=head, comments=[structured_clean], threads=[cr_unresolved], check_runs=[cr_rate_limited]))
+    assert not result["clean"] and result["state"] == "findings" and result["coderabbit_state"] == "findings"
+
+    # Converged exact-head Codex clean + CodeRabbit clean + zero unresolved threads passes.
+    result = classify(_fixture(head=head, comments=[structured_clean], threads=[cr_resolved], check_runs=[cr_success]))
+    assert result["clean"] and result["state"] == "clean" and result["coderabbit_state"] == "clean"
+
+    # Any unresolved human/other review thread blocks even when Codex and CodeRabbit are clean.
+    result = classify(_fixture(head=head, comments=[structured_clean], threads=[other_unresolved], check_runs=[cr_success]))
+    assert not result["clean"] and result["state"] == "findings" and len(result["unresolved_other_threads"]) == 1
 
     print("codex_review_gate self-test: PASS")
 
