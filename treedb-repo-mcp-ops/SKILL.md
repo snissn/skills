@@ -54,8 +54,14 @@ Keep `go.mod` pinned directly to a merged `github.com/snissn/gomap` commit with 
   ```
 - **Local-only (skip GitHub)**: add `--no-github`.
 - **Tune corpus defaults**: by default numeric/structured dumps and binaries (`.json`, `.jsonl`, `.csv`, `.tsv`, `.log`, `.npz`, `.pdf`, images, archives) are excluded; override with `--include-ext json,csv`, `--exclude-ext ...`, `--max-file-bytes`, `--chunk-size`, `--chunk-overlap`, or extra `--bot-login` values.
-- **Optional semantic vector + Hybrid RRF**: pass `--embed-provider openai_compat --embed-url <base> --embed-model <model> --embed-dims <N> --embed-api-key-env <ENV_VAR>` (or `--embed-provider hashing --embed-dims <N>`, or set `TREEDB_MCP_EMBED_*` env vars). Vector mode automatically selects `ProfileCommandWALDurable` while still running unified `MaintainTextIndexes` sealing and compaction.
-  - **Important**: changing embedding provider/model/dimensions changes `EmbeddingConfig.Fingerprint()` and requires regenerating the DB cleanly.
+- **Optional semantic vector + Hybrid RRF**: pass `--embed-provider openai_compat --embed-url <base> --embed-model <model> --embed-dims <N> --embed-api-key-env <ENV_VAR>` (or `--embed-provider hashing --embed-dims <N>`, or set `TREEDB_MCP_EMBED_*` env vars). Additional tuning flags:
+  - `--embed-max-tokens <N>` (`TREEDB_MCP_EMBED_MAX_TOKENS`): embedder context window in tokens (e.g. `8192` for `BAAI/bge-m3`); write paths validate `--chunk-size` against this budget fail-closed to prevent silent truncation.
+  - `--embed-encoding-format base64|float` (`TREEDB_MCP_EMBED_ENCODING_FORMAT`, default `base64` for `openai_compat`): uses compact base64 float32 wire encoding when supported by the embedding server.
+  - `--embed-vector-mode quantized_rerank|exact` (`TREEDB_MCP_EMBED_VECTOR_MODE`, default `quantized_rerank`): selects `scalar_u8` quantized candidate generation + exact FP32 rerank vs full FP32 graph search (also overridable per query via `vector_mode`).
+  - `--embed-query-prefix <str>` (`TREEDB_MCP_EMBED_QUERY_PREFIX`): optional instruction prefix prepended only to live search queries for asymmetric retrieval models.
+  - `--embed-batch-size <N>` (`TREEDB_MCP_EMBED_BATCH_SIZE`, default `128`): batch size for pipelined ingest embedding calls.
+  - Vector mode automatically selects `ProfileCommandWALDurable` with `ColumnRetainedPayloadNonColumn` float32 column projection + `scalar_u8` quantization while still running unified `MaintainTextIndexes` sealing and compaction.
+  - **Important**: changing embedding provider/model/dimensions or chunking configuration changes `EmbeddingConfig.Fingerprint()` / `ChunkConfigFingerprint()` and requires regenerating the DB cleanly.
 
 ### 3. Start the realtime daemon and wire MCP clients
 

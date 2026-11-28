@@ -13,8 +13,8 @@ For general `treedb-repo-mcp` query methodology and full tool schemas, see the c
 
 Use this skill when:
 
-- looking up prior definitions, theorems, claims, provenance, or design decisions across `snissn/physics` files and GitHub discussions (using `mode: "lexical"`, semantic `mode: "vector"`, or fused `mode: "hybrid"`);
-- running conceptual or terminology-bridging queries via `mode: "hybrid"` (RRF over BM25F + `BAAI/bge-base-en-v1.5` 768d cosine ANN) or pure semantic `mode: "vector"`;
+- looking up prior definitions, theorems, claims, provenance, or design decisions across `snissn/physics` files and GitHub discussions (default `mode: "hybrid"` when embeddings are enabled, or explicit `mode: "lexical"` / `mode: "vector"`);
+- running conceptual or terminology-bridging queries via `mode: "hybrid"` (weighted RRF over BM25F + `BAAI/bge-m3` 1024d / 8,192-token cosine ANN with `scalar_u8` `quantized_rerank` default and optional `vector_mode: "exact"` override) or pure semantic `mode: "vector"`;
 - running exact phrase or proximity queries (for example `"elastic electron"`, `"Bell inequality"`, `"common-past preparation"`) across the full corpus;
 - searching GitHub issues, PRs, reviews, and comments in `snissn/physics` with bot exclusion, state, label, author, number range, or date filters;
 - reconstructing full file chunks or chronological GitHub issue/PR threads without burning GitHub API quota.
@@ -30,11 +30,12 @@ Do not use this skill for:
   - Status JSON: `http://192.168.0.185:7337/status`
 - **Unix socket on `host185`**: `/home/mikers/treedb-mcp-work/physics.sock`
 - **Daemon binary / data dir on `host185`**: `/home/mikers/treedb-mcp-work/bin/treedb-repo-mcp` serving `/home/mikers/treedb-mcp-work/physics-db`
-- **Local GPU embedding service on `host185`**: `/home/mikers/treedb-mcp-work/bin/embed_server.py` serving `BAAI/bge-base-en-v1.5` (768d, FP16 CUDA on RTX 3060 Ti) at `http://127.0.0.1:8089/v1/embeddings` (health: `http://127.0.0.1:8089/health`)
+- **Local GPU embedding service on `host185`**: `/home/mikers/treedb-mcp-work/bin/embed_server.py` serving `BAAI/bge-m3` (1024d, 8,192-token context window, FP16 CUDA on RTX 3060 Ti, `encoding_format=base64` wire transport) at `http://127.0.0.1:8089/v1/embeddings` (health: `http://127.0.0.1:8089/health`)
 - **Capabilities**:
-  - Full-text BM25F (`text-v2`, camelCase/snake_case splitting, `MaxTokenBytes: 256` with phrase-gap preservation)
-  - Semantic vector & hybrid RRF search (`embedding.enabled: true`, `BAAI/bge-base-en-v1.5` 768d cosine `column_graph` ANN across `repo_chunks`, `gh_items`, and `gh_comments`): supports `mode: "lexical"`, `mode: "vector"`, and `mode: "hybrid"` on `search`, `search_code`, and `search_github`
-  - Compressed outer B+tree leaves in `leaf_vlog` (`IndexOuterLeavesInValueLog=true`, compact internal-node-only `index.db` ~60–70 MiB) with automatic `ColumnAssetGC` on superseded vector graph assets
+  - Full-text BM25F (`text-v2`, camelCase/snake_case splitting, `MaxTokenBytes: 256` with phrase-gap preservation, and automatic `OR -> AND` / single-digit token budget retry for decimal literals like `"0.497092635"`)
+  - Format-aware chunking (`Markdown`, `Code`, `LaTeX` presets, `SeparatorPlacementStart`, `SnapOverlapToBoundary`, fenced-code / display-math guards, and `H1 > H2 > H3` heading breadcrumbs) with fail-closed chunk-vs-embedder context-window validation
+  - Semantic vector & weighted hybrid RRF search (`embedding.enabled: true`, `BAAI/bge-m3` 1024d cosine `column_graph` ANN with `scalar_u8` `quantized_rerank` default + optional `vector_mode: "exact"` FP32 override across `repo_chunks`, `gh_items`, and `gh_comments`): supports `mode: "hybrid"` (default), `mode: "lexical"`, and `mode: "vector"` on `search`, `search_code`, and `search_github`, with graceful lexical fallback during transient vector-graph rebuilds
+  - Column-projected vector storage (`ColumnRetainedPayloadNonColumn` + `ExcludePaths: ["embedding"]` on doc fetches, zero JSON vector decode overhead) and compressed outer B+tree leaves in `leaf_vlog` (`IndexOuterLeavesInValueLog=true`, compact internal-node-only `index.db` ~53 MiB, ~3.2 GiB fresh DB footprint) with automatic `ColumnAssetGC` on superseded vector graph assets
   - Native streaming Block-Max WAND exact/proximity `phrase_search` (zero app-side fallback even on 15k-DF terms like `"elastic electron"`) with `match_fields`, `match_line`..`match_end_line`, `match_excerpt`, plus optional `body_only`, `exact_literal`, and `dedupe_content` filters
   - Snapshot provenance (`snapshot: {repo, indexed_head_sha, repo_synced_at, github_synced_at}`) and rank/collapse/truncation counters (`stats: {returned_hits, unique_parents, candidates_evaluated, omitted_by_parent_cap, omitted_by_post_filter, truncated, candidate_budget_exhausted}`) on search responses
   - Explicit `status` (`indexed`, `excluded`, `not_found`, `unindexed`) and `skip_reason` (e.g. `excluded_extension` for `.json`/`.csv`, `gitignored`, `too_large`, `not_indexed_yet`) on `get_file_context`
